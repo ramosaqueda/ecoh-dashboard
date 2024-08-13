@@ -1,10 +1,10 @@
 'use client';
 import { ColumnDef } from '@tanstack/react-table';
 import { CellAction } from './cell-action';
-import { User } from '@/constants/data';
+import { Causa } from '@/constants/data';
 import { Checkbox } from '@/components/ui/checkbox';
 
-export const columns: ColumnDef<User>[] = [
+export const columns: ColumnDef<Causa>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -25,21 +25,48 @@ export const columns: ColumnDef<User>[] = [
     enableHiding: false
   },
   {
-    accessorKey: 'name',
-    header: 'NAME'
+    accessorKey: 'RUC',
+    header: 'RUC'
   },
   {
-    accessorKey: 'company',
-    header: 'COMPANY'
+    accessorKey: 'DENOMINACIONCAUSA',
+    header: 'DENOMINACION CAUSA'
   },
   {
-    accessorKey: 'role',
-    header: 'ROLE'
+    accessorKey: 'DELITO',
+    header: 'DELITO'
   },
   {
-    accessorKey: 'status',
-    header: 'STATUS'
+    accessorKey: 'FECHADELHECHO',
+    header: 'FEHCA DEL HECHO'
   },
+  {
+    accessorKey: 'FISCALACARGO',
+    header: 'FISCAL A CARGO'
+  },
+  {
+    accessorKey: 'ANALISTA',
+    header: 'ANALISTA'
+  },
+  {
+    accessorKey: 'ABOGADO',
+    header: 'ABOGADO'
+  },
+  {
+    accessorKey: 'VICITMA',
+    header: 'VICTIMA'
+  },
+
+  {
+    accessorKey: 'RUTDELA_VICTIMA',
+    header: 'RUN DE LA VICTIMA'
+  },
+
+  {
+    accessorKey: 'NACIONALIDAD',
+    header: 'NACIONALIDAD'
+  },
+
   {
     id: 'actions',
     cell: ({ row }) => <CellAction data={row.original} />
