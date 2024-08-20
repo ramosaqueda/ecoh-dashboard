@@ -716,14 +716,14 @@ export const navItems: NavItem[] = [
   },
   {
     title: 'Cauas',
-    href: '/dashboard/user',
+    href: '/dashboard/causas',
     icon: 'user',
     label: 'user'
   },
 
   {
     title: 'Sujetos',
-    href: '/dashboard/profile',
+    href: '/dashboard/sujetos',
     icon: 'profile',
     label: 'profile'
   },
