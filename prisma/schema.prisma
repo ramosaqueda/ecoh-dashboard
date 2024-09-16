@@ -17,28 +17,24 @@ datasource db {
 model Causa {
   id                      Int          @id @default(autoincrement())
   denominacionCausa       String
-  ruc                     String
+  ruc                     String?
   fechaDelHecho           DateTime
-  rit                     String
-  fechaIta                DateTime
-  numeroIta               String
-  fechaPpp                DateTime
-  numeroPpp               String
-  terminoDePlazoProcesalPenal String
-  victima                 String
-  rut                     String
-  observacion             String
-  foliobw                 String
-  fechaVencimientoInvestigacion DateTime
-  diasterminoplazo        String
+  rit                     String?
+  fechaIta                DateTime?
+  numeroIta               String?
+  fechaPpp                DateTime?
+  numeroPpp               String?
+  victima                 String?
+  rut                     String?
+  observacion             String?
+  foliobw                 String?
   causaEcoh               Boolean
-  causaLegada             Boolean
-  comuna                  String
-  ubicacionSsCoordenadas  String
-  ubicacionSsNombre       String
-  homicidioConsumado      Boolean
-  constituyeSs            Boolean
-  sinLlamadoEcoh          Boolean
+  causaLegada             Boolean?
+  comuna                  String?
+  coordenadasSs            String?
+  homicidioConsumado      Boolean?
+  constituyeSs            Boolean?
+  sinLlamadoEcoh          Boolean?
   fechaHoraTomaConocimiento DateTime
   analista                Analista?    @relation(fields: [analistaId], references: [id])
   analistaId              Int?

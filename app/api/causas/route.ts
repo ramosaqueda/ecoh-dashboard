@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
     const causas: Causa[] = await prisma.causa.findMany();
     return NextResponse.json(causas);
   } catch (error) {
+    console.log(error);
     return NextResponse.json(
       { error: 'Error fetching causas' },
       { status: 500 }
@@ -18,11 +19,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
+    console.log(data);
     const newCausa: Causa = await prisma.causa.create({
       data
     });
+
     return NextResponse.json(newCausa, { status: 201 });
   } catch (error) {
+    console.log(error);
     return NextResponse.json(
       { error: 'Error creating causa' },
       { status: 500 }
