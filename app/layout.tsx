@@ -4,7 +4,12 @@ import type { Metadata } from 'next';
 //import NextTopLoader from 'nextjs-toploader';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { ClerkProvider } from '@clerk/nextjs';
+import {
+  ClerkProvider,
+  SignInButton,
+  SignedIn,
+  SignedOut
+} from '@clerk/nextjs';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -13,7 +18,7 @@ export const metadata: Metadata = {
   description: 'Set de herramientas ECOH'
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children
 }: {
   children: React.ReactNode;
@@ -21,11 +26,11 @@ export default async function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body
-          className={`${inter.className} overflow-hidden `}
-          suppressHydrationWarning={true}
-        >
-          <Toaster />
+        <body>
+          <SignedOut>
+            <SignInButton />
+          </SignedOut>
+          <SignedIn></SignedIn>
           {children}
         </body>
       </html>

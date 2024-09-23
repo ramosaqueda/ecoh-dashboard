@@ -1,14 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, Causa } from '@prisma/client';
+import { countCausas } from '@/lib/dbUtils';
 
 const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
   try {
-    const causas: Causa[] = await prisma.causa.findMany();
-    return NextResponse.json(causas);
+    const { searchParams } = new URL(req.url);
+    const count = searchParams.get('count');
+    const causaEcoh = searchParams.get('causaEcoh');
+    const causaLegada = searchParams.get('causaLegada');
+
+    let whereClause: any = {};
+
+    // Aplicar filtros si están presentes
+    if (causaEcoh !== null) {
+      whereClause.causaEcoh = causaEcoh === 'true';
+    }
+
+    if (causaLegada !== null) {
+      whereClause.causaLegada = causaLegada === 'true';
+    }
+
+    if (count === 'true') {
+      const totalCausas = await prisma.causa.count({
+        where: whereClause
+      });
+      return NextResponse.json({ count: totalCausas });
+    } else {
+      const causas = await prisma.causa.findMany({
+        where: whereClause
+      });
+      return NextResponse.json(causas);
+    }
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
       { error: 'Error fetching causas' },
       { status: 500 }

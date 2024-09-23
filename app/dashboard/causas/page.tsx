@@ -19,7 +19,6 @@ import {
 import CauseFormContainer from '@/components/CauseFormContainer';
 
 async function getCausas(): Promise<Causa[]> {
-  // Aquí deberías hacer la llamada a tu API real
   const res = await fetch('http://localhost:3000/api/causas', {
     cache: 'no-store'
   });
