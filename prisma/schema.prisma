@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Causa {
+  id                      Int          @id @default(autoincrement())
+  denominacionCausa       String
+  ruc                     String?
+  fechaDelHecho           Date?
+  rit                     String?
+  fechaIta                Date?
+  numeroIta               String?
+  fechaPpp                Date?
+  numeroPpp               String?
+  observacion             String?
+  foliobw                 String?
+  causaEcoh               Boolean
+  causaLegada             Boolean?
+  coordenadasSs           String?
+  homicidioConsumado      Boolean?
+  constituyeSs            Boolean?
+  sinLlamadoEcoh          Boolean?
+  fechaHoraTomaConocimiento DateTime
+  comuna                  Comuna?      @relation(fields: [comunaId], references: [id])
+  comunaId                Int?
+  analista                Analista?    @relation(fields: [analistaId], references: [id])
+  analistaId              Int?
+  fiscal                  Fiscal?      @relation(fields: [fiscalId], references: [id])
+  fiscalId                Int?
+  foco                    Foco?        @relation(fields: [focoId], references: [id])
+  focoId                  Int?
+  delito                  Delito?      @relation(fields: [delitoId], references: [id])
+  delitoId                Int?
+  
+  abogado                 Abogado?     @relation(fields: [abogadoId], references: [id])
+  abogadoId               Int?
+  tribunal                Tribunal?    @relation(fields: [tribunalId], references: [id])
+  tribunalId              Int?
+  nacionalidadVictima     Nacionalidad? @relation(fields: [nacionalidadVictimaId], references: [id])
+  nacionalidadVictimaId   Int?
+  imputados               CausasImputados[]
+  victimas                CausasVictimas[]
+}
+
+model Victima {
+  id              Int          @id @default(autoincrement())
+  nombreVictima   String
+  docId           String
+  nacionalidad    Nacionalidad? @relation(fields: [nacionalidadId], references: [id])
+  nacionalidadId  Int?
+  causas          CausasVictimas[]
+}
+
+model Imputado {
+  id              Int          @id @default(autoincrement())
+  nombreSujeto    String
+  docId           String
+  nacionalidad    Nacionalidad? @relation(fields: [nacionalidadId], references: [id])
+  nacionalidadId  Int?
+  causas          CausasImputados[]
+}
+
+model Nacionalidad {
+  id        Int        @id @default(autoincrement())
+  nombre    String
+  imputados Imputado[]
+  causas    Causa[]
+  victimas  Victima[]
+}
+
+model Analista {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  causas Causa[]
+}
+
+model Fiscal {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  causas Causa[]
+}
+
+model Foco {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  causas Causa[]
+}
+
+model Delito {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  causas Causa[]
+}
+
+model Abogado {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  causas Causa[]
+}
+
+model Tribunal {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  causas Causa[]
+}
+
+model CausasImputados {
+  causaId    Int
+  imputadoId Int
+  causa      Causa    @relation(fields: [causaId], references: [id])
+  imputado   Imputado @relation(fields: [imputadoId], references: [id])
+  @@id([causaId, imputadoId])
+}
+
+model CausasVictimas {
+  causaId    Int
+  victimaId  Int
+  causa      Causa    @relation(fields: [causaId], references: [id])
+  victima    Victima  @relation(fields: [victimaId], references: [id])
+  @@id([causaId, victimaId])
+}
+
+model Comuna {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  causas Causa[]
+}
