@@ -1,7 +1,7 @@
-// app/api/Imputado/route.ts
+// app/api/imputado/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Imputado } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -11,12 +11,21 @@ export async function GET(request: NextRequest) {
 
   try {
     if (id) {
-      // Obtener un Imputado específico
-      const Imputado = await prisma.Imputado.findUnique({
-        where: { id: Number(id) }
+      // Obtener un imputado específico con sus relaciones
+      const imputado = await prisma.imputado.findUnique({
+        where: { id: Number(id) },
+        include: {
+          nacionalidad: true,
+          causas: {
+            include: {
+              causa: true
+            }
+          }
+        }
       });
-      if (Imputado) {
-        return NextResponse.json(Imputado);
+
+      if (imputado) {
+        return NextResponse.json(imputado);
       } else {
         return NextResponse.json(
           { message: 'Imputado no encontrado' },
@@ -24,13 +33,23 @@ export async function GET(request: NextRequest) {
         );
       }
     } else {
-      // Obtener todos los Imputados
-      const Imputados = await prisma.Imputado.findMany();
-      return NextResponse.json(Imputados);
+      // Obtener todos los imputados con sus relaciones
+      const imputados = await prisma.imputado.findMany({
+        include: {
+          nacionalidad: true,
+          causas: {
+            include: {
+              causa: true
+            }
+          }
+        }
+      });
+      return NextResponse.json(imputados);
     }
   } catch (error) {
+    console.error('Error en GET imputados:', error);
     return NextResponse.json(
-      { message: 'Error al obtener Imputado(s)', error },
+      { message: 'Error al obtener imputado(s)', error },
       { status: 500 }
     );
   }
@@ -38,14 +57,41 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { nombre } = await request.json();
-    const Imputado = await prisma.Imputado.create({
-      data: { nombre }
+    const body = await request.json();
+    const { nombreSujeto, docId, nacionalidadId, causaIds } = body;
+
+    // Crear el imputado
+    const imputado = await prisma.imputado.create({
+      data: {
+        nombreSujeto,
+        docId,
+        nacionalidadId: nacionalidadId ? Number(nacionalidadId) : null,
+        // Si se proporcionan causaIds, crear las relaciones
+        causas: causaIds
+          ? {
+              create: causaIds.map((causaId: number) => ({
+                causa: {
+                  connect: { id: causaId }
+                }
+              }))
+            }
+          : undefined
+      },
+      include: {
+        nacionalidad: true,
+        causas: {
+          include: {
+            causa: true
+          }
+        }
+      }
     });
-    return NextResponse.json(Imputado, { status: 201 });
+
+    return NextResponse.json(imputado, { status: 201 });
   } catch (error) {
+    console.error('Error en POST imputado:', error);
     return NextResponse.json(
-      { message: 'Error al crear Imputado', error },
+      { message: 'Error al crear imputado', error },
       { status: 500 }
     );
   }
@@ -63,15 +109,49 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    const { nombre } = await request.json();
-    const Imputado = await prisma.Imputado.update({
+    const body = await request.json();
+    const { nombreSujeto, docId, nacionalidadId, causaIds } = body;
+
+    // Primero, eliminar todas las relaciones existentes si se proporcionan nuevas
+    if (causaIds) {
+      await prisma.causasImputados.deleteMany({
+        where: { imputadoId: Number(id) }
+      });
+    }
+
+    // Actualizar el imputado y sus relaciones
+    const imputado = await prisma.imputado.update({
       where: { id: Number(id) },
-      data: { nombre }
+      data: {
+        nombreSujeto,
+        docId,
+        nacionalidadId: nacionalidadId ? Number(nacionalidadId) : null,
+        // Si se proporcionan causaIds, crear las nuevas relaciones
+        causas: causaIds
+          ? {
+              create: causaIds.map((causaId: number) => ({
+                causa: {
+                  connect: { id: causaId }
+                }
+              }))
+            }
+          : undefined
+      },
+      include: {
+        nacionalidad: true,
+        causas: {
+          include: {
+            causa: true
+          }
+        }
+      }
     });
-    return NextResponse.json(Imputado);
+
+    return NextResponse.json(imputado);
   } catch (error) {
+    console.error('Error en PUT imputado:', error);
     return NextResponse.json(
-      { message: 'Error al actualizar Imputado', error },
+      { message: 'Error al actualizar imputado', error },
       { status: 500 }
     );
   }
@@ -89,13 +169,21 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.Imputado.delete({
+    // Primero eliminar las relaciones en CausasImputados
+    await prisma.causasImputados.deleteMany({
+      where: { imputadoId: Number(id) }
+    });
+
+    // Luego eliminar el imputado
+    await prisma.imputado.delete({
       where: { id: Number(id) }
     });
+
     return new NextResponse(null, { status: 204 });
   } catch (error) {
+    console.error('Error en DELETE imputado:', error);
     return NextResponse.json(
-      { message: 'Error al eliminar Imputado', error },
+      { message: 'Error al eliminar imputado', error },
       { status: 500 }
     );
   }

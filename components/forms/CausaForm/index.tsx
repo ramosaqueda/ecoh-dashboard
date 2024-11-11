@@ -1,14 +1,13 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2 } from 'lucide-react';
 
 import FormField from './FormField';
 import SwitchField from './SwitchField';
@@ -26,83 +25,91 @@ interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
   onSubmit: (data: CausaFormData) => Promise<void>;
   isSubmitting: boolean;
+  isEditing?: boolean;
 }
 
 const CausaForm: React.FC<CausaFormProps> = ({
   initialValues = {},
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  isEditing = false
 }) => {
   const form = useForm<CausaFormData>({
     resolver: zodResolver(causaSchema),
-    defaultValues: initialValues
+    defaultValues: {
+      // Valores por defecto para campos booleanos
+      causaEcoh: false,
+      causaLegada: false,
+      constituyeSs: false,
+      // Sobrescribir con los valores iniciales si existen
+      ...initialValues
+    }
   });
 
   const handleSubmit = async (data: CausaFormData) => {
     try {
-      console.log('Datos originales:', data);
+      await onSubmit(data);
 
-      const transformedData = {
-        // Campos booleanos
-        causaEcoh: data.causaEcoh,
-        causaLegada: data.causaLegada,
-        constituyeSs: data.constituyeSs,
-
-        // Campos de texto
-        denominacionCausa: data.denominacionCausa,
-        ruc: data.ruc,
-        foliobw: data.foliobw,
-        coordenadasSs: data.coordenadasSs,
-        rit: data.rit,
-        numeroIta: data.numeroIta,
-        numeroPpp: data.numeroPpp,
-        observacion: data.observacion,
-
-        // Fechas
-        fechaHoraTomaConocimiento: new Date(
-          data.fechaHoraTomaConocimiento
-        ).toISOString(),
-        fechaDelHecho: new Date(
-          `${data.fechaDelHecho}T00:00:00.000Z`
-        ).toISOString(),
-        fechaIta: data.fechaIta
-          ? new Date(`${data.fechaIta}T00:00:00.000Z`).toISOString()
-          : null,
-        fechaPpp: data.fechaPpp
-          ? new Date(`${data.fechaPpp}T00:00:00.000Z`).toISOString()
-          : null,
-
-        // Relaciones
-        delitoId: parseInt(data.delito.toString()),
-        focoId: data.foco ? parseInt(data.foco.toString()) : null,
-        tribunalId: data.tribunal ? parseInt(data.tribunal.toString()) : null,
-        fiscalId: data.fiscalACargo
-          ? parseInt(data.fiscalACargo.toString())
-          : null,
-        abogadoId: data.abogado ? parseInt(data.abogado.toString()) : null,
-        analistaId: data.analista ? parseInt(data.analista.toString()) : null
-      };
-
-      console.log('Datos transformados:', transformedData);
-
-      await onSubmit(transformedData);
-      toast.success('Causa guardada exitosamente');
-      form.reset();
+      if (!isEditing) {
+        form.reset();
+      }
     } catch (error) {
-      console.error('Error detallado:', error);
-      toast.error(
-        'Error al guardar la causa: ' +
-          (error instanceof Error ? error.message : 'Error desconocido')
-      );
+      console.error('Error en el formulario:', error);
     }
   };
+
+  React.useEffect(() => {
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      console.log('VALORES INICIALES:', initialValues);
+      // Asegurarse de que los IDs sean strings para los selects
+      const formattedValues = {
+        ...initialValues,
+        abogado: initialValues.abogado?.toString(),
+        analista: initialValues.analista?.toString(),
+        fiscalACargo: initialValues.fiscalACargo?.toString(),
+        tribunal: initialValues.tribunal?.toString(),
+        delito: initialValues.delito?.toString(),
+        foco: initialValues.foco?.toString(),
+        // Asegurarse de que las fechas estén en el formato correcto
+        fechaHoraTomaConocimiento: initialValues.fechaHoraTomaConocimiento
+          ? new Date(initialValues.fechaHoraTomaConocimiento)
+              .toISOString()
+              .slice(0, 16)
+          : '',
+        fechaDelHecho: initialValues.fechaDelHecho
+          ? new Date(initialValues.fechaDelHecho).toISOString().slice(0, 10)
+          : '',
+        fechaIta: initialValues.fechaIta
+          ? new Date(initialValues.fechaIta).toISOString().slice(0, 10)
+          : '',
+        fechaPpp: initialValues.fechaPpp
+          ? new Date(initialValues.fechaPpp).toISOString().slice(0, 10)
+          : ''
+      };
+
+      // Actualizar todos los campos con los valores formateados
+      Object.entries(formattedValues).forEach(([key, value]) => {
+        if (value !== undefined) {
+          form.setValue(key as keyof CausaFormData, value);
+        }
+      });
+    } else {
+      console.log('No initialValues provided');
+    }
+  }, [initialValues, form]);
+
+  const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
 
   return (
     <Card className="mx-auto w-full max-w-[1200px]">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Registro de Causa</CardTitle>
+        <CardTitle className="text-2xl font-bold">
+          {isEditing ? 'Editar Causa' : 'Registro de Causa'}
+        </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Ingrese los datos de la nueva causa
+          {isEditing
+            ? 'Modifique los datos de la causa existente'
+            : 'Ingrese los datos de la nueva causa'}
         </p>
       </CardHeader>
       <Separator className="mb-4" />
@@ -317,20 +324,31 @@ const CausaForm: React.FC<CausaFormProps> = ({
 
             {/* Botones de Acción */}
             <div className="sticky bottom-0 flex justify-end space-x-4 bg-white py-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => form.reset()}
-                disabled={isSubmitting}
-              >
-                Limpiar
-              </Button>
+              {!isEditing && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => form.reset()}
+                  disabled={isSubmitting || !isFormDirty}
+                >
+                  Limpiar
+                </Button>
+              )}
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || (!isFormDirty && !isEditing)}
                 className="min-w-[150px]"
               >
-                {isSubmitting ? 'Guardando...' : 'Guardar Causa'}
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {isEditing ? 'Actualizando...' : 'Guardando...'}
+                  </span>
+                ) : isEditing ? (
+                  'Actualizar Causa'
+                ) : (
+                  'Guardar Causa'
+                )}
               </Button>
             </div>
           </form>

@@ -1,127 +1,175 @@
-'use client';
-
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import CauseForm from '@/components/CausaForm';
-import type { CausaFormData } from '@/types/causa';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import CausaForm from '@/components/forms/CausaForm/';
+
+import { toast } from 'sonner';
+import { causaService, ApiError } from '@/lib/services/causaService';
+import type { CausaFormData, Causa } from '@/types/causa';
+import { Loader2 } from 'lucide-react';
 
 interface CauseFormContainerProps {
-  isOpen?: boolean;
-  onClose?: () => void;
-  onSuccess?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  initialData?: Partial<Causa> | null;
+  isEditing?: boolean;
 }
 
 const CauseFormContainer: React.FC<CauseFormContainerProps> = ({
-  isOpen = true,
+  isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  initialData,
+  isEditing = false
 }) => {
-  const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [formData, setFormData] = React.useState<Partial<CausaFormData>>({});
 
-  // Manejar el cierre del modal
+  // Cargar datos iniciales si estamos editando
+  React.useEffect(() => {
+    const loadInitialData = async () => {
+      if (isEditing && initialData?.id) {
+        try {
+          setIsLoading(true);
+          setError(null);
+          const causa = await causaService.getById(initialData.id);
+          const transformedData = causaService.transformInitialData(causa);
+          setFormData(transformedData);
+        } catch (err) {
+          const message =
+            err instanceof ApiError
+              ? err.message
+              : 'Error al cargar los datos de la causa';
+          setError(message);
+          toast.error(message);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setFormData({});
+      }
+    };
+
+    if (isOpen) {
+      loadInitialData();
+    }
+  }, [isOpen, isEditing, initialData]);
+
   const handleClose = () => {
     if (!isSubmitting) {
-      onClose?.();
+      setError(null);
+      setFormData({});
+      onClose();
     }
   };
 
-  const handleSubmit = async (formData: CausaFormData) => {
-    setIsSubmitting(true);
-    const toastId = toast.loading('Guardando causa...');
-
+  const handleSubmit = async (data: CausaFormData) => {
     try {
-      const response = await fetch('/api/causas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
+      setIsSubmitting(true);
+      setError(null);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Error al guardar la causa');
+      if (isEditing && initialData?.id) {
+        await causaService.update(initialData.id, data);
+        toast.success('Causa actualizada exitosamente');
+      } else {
+        await causaService.create(data);
+        toast.success('Causa creada exitosamente');
       }
 
-      const data = await response.json();
-      console.log('Causa creada:', data);
-
-      toast.success('Causa guardada exitosamente', {
-        id: toastId,
-        duration: 3000
-      });
-
-      // Ejecutar callback de éxito
-      onSuccess?.();
-
-      // Cerrar el modal
+      onSuccess();
       handleClose();
-
-      // Refrescar los datos
-      router.refresh();
-    } catch (error) {
-      console.error('Error al guardar causa:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Error al guardar la causa',
-        { id: toastId }
-      );
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : `Error al ${isEditing ? 'actualizar' : 'crear'} la causa`;
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Renderizar estados de carga y error
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex h-48 items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Cargando datos...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex h-48 flex-col items-center justify-center gap-4">
+          <p className="text-sm text-destructive">{error}</p>
+          <Button onClick={handleClose} variant="outline">
+            Cerrar
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">
+            {isEditing ? 'Editar Causa' : 'Nueva Causa'}
+          </DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? 'Modifique los datos de la causa existente'
+              : 'Complete el formulario para crear una nueva causa'}
+          </DialogDescription>
+        </DialogHeader>
+        <Separator className="my-4" />
+        <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-1">
+          <CausaForm
+            initialValues={formData}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            isEditing={isEditing}
+          />
+        </div>
+      </>
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent
-        className="max-h-[90vh] max-w-[1200px] overflow-y-auto p-0"
+        className="max-h-[90vh] max-w-6xl overflow-hidden p-6"
         onInteractOutside={(e) => {
-          // Prevenir cierre si está enviando
+          // Prevenir cierre al hacer clic fuera si está enviando
+          if (isSubmitting) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          // Prevenir cierre con ESC si está enviando
           if (isSubmitting) {
             e.preventDefault();
           }
         }}
       >
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle>Nueva Causa</DialogTitle>
-          <DialogDescription>
-            Complete los datos para registrar una nueva causa
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="p-6 pt-0">
-          <CauseForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
-
-          <div className="mt-6 flex justify-end gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </div>
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );
 };
 
 export default CauseFormContainer;
-
-// Componente de loading para usar mientras se carga el formulario
-const LoadingState = () => (
-  <div className="flex min-h-[400px] items-center justify-center">
-    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900" />
-  </div>
-);

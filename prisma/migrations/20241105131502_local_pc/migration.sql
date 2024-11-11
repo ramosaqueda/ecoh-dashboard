@@ -2,29 +2,23 @@
 CREATE TABLE "Causa" (
     "id" SERIAL NOT NULL,
     "denominacionCausa" TEXT NOT NULL,
-    "ruc" TEXT NOT NULL,
-    "fechaDelHecho" TIMESTAMP(3) NOT NULL,
-    "rit" TEXT NOT NULL,
-    "fechaIta" TIMESTAMP(3) NOT NULL,
-    "numeroIta" TEXT NOT NULL,
-    "fechaPpp" TIMESTAMP(3) NOT NULL,
-    "numeroPpp" TEXT NOT NULL,
-    "terminoDePlazoProcesalPenal" TEXT NOT NULL,
-    "victima" TEXT NOT NULL,
-    "rut" TEXT NOT NULL,
-    "observacion" TEXT NOT NULL,
-    "foliobw" TEXT NOT NULL,
-    "fechaVencimientoInvestigacion" TIMESTAMP(3) NOT NULL,
-    "diasterminoplazo" TEXT NOT NULL,
+    "ruc" TEXT,
+    "fechaDelHecho" TIMESTAMP(3),
+    "rit" TEXT,
+    "fechaIta" TIMESTAMP(3),
+    "numeroIta" TEXT,
+    "fechaPpp" TIMESTAMP(3),
+    "numeroPpp" TEXT,
+    "observacion" TEXT,
+    "foliobw" TEXT,
     "causaEcoh" BOOLEAN NOT NULL,
-    "causaLegada" BOOLEAN NOT NULL,
-    "comuna" TEXT NOT NULL,
-    "ubicacionSsCoordenadas" TEXT NOT NULL,
-    "ubicacionSsNombre" TEXT NOT NULL,
-    "homicidioConsumado" BOOLEAN NOT NULL,
-    "constituyeSs" BOOLEAN NOT NULL,
-    "sinLlamadoEcoh" BOOLEAN NOT NULL,
+    "causaLegada" BOOLEAN,
+    "coordenadasSs" TEXT,
+    "homicidioConsumado" BOOLEAN,
+    "constituyeSs" BOOLEAN,
+    "sinLlamadoEcoh" BOOLEAN,
     "fechaHoraTomaConocimiento" TIMESTAMP(3) NOT NULL,
+    "comunaId" INTEGER,
     "analistaId" INTEGER,
     "fiscalId" INTEGER,
     "focoId" INTEGER,
@@ -34,6 +28,16 @@ CREATE TABLE "Causa" (
     "nacionalidadVictimaId" INTEGER,
 
     CONSTRAINT "Causa_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Victima" (
+    "id" SERIAL NOT NULL,
+    "nombreVictima" TEXT NOT NULL,
+    "docId" TEXT NOT NULL,
+    "nacionalidadId" INTEGER,
+
+    CONSTRAINT "Victima_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -110,6 +114,25 @@ CREATE TABLE "CausasImputados" (
     CONSTRAINT "CausasImputados_pkey" PRIMARY KEY ("causaId","imputadoId")
 );
 
+-- CreateTable
+CREATE TABLE "CausasVictimas" (
+    "causaId" INTEGER NOT NULL,
+    "victimaId" INTEGER NOT NULL,
+
+    CONSTRAINT "CausasVictimas_pkey" PRIMARY KEY ("causaId","victimaId")
+);
+
+-- CreateTable
+CREATE TABLE "Comuna" (
+    "id" SERIAL NOT NULL,
+    "nombre" TEXT NOT NULL,
+
+    CONSTRAINT "Comuna_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "Causa" ADD CONSTRAINT "Causa_comunaId_fkey" FOREIGN KEY ("comunaId") REFERENCES "Comuna"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
 -- AddForeignKey
 ALTER TABLE "Causa" ADD CONSTRAINT "Causa_analistaId_fkey" FOREIGN KEY ("analistaId") REFERENCES "Analista"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -132,6 +155,9 @@ ALTER TABLE "Causa" ADD CONSTRAINT "Causa_tribunalId_fkey" FOREIGN KEY ("tribuna
 ALTER TABLE "Causa" ADD CONSTRAINT "Causa_nacionalidadVictimaId_fkey" FOREIGN KEY ("nacionalidadVictimaId") REFERENCES "Nacionalidad"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Victima" ADD CONSTRAINT "Victima_nacionalidadId_fkey" FOREIGN KEY ("nacionalidadId") REFERENCES "Nacionalidad"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Imputado" ADD CONSTRAINT "Imputado_nacionalidadId_fkey" FOREIGN KEY ("nacionalidadId") REFERENCES "Nacionalidad"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -139,3 +165,9 @@ ALTER TABLE "CausasImputados" ADD CONSTRAINT "CausasImputados_causaId_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "CausasImputados" ADD CONSTRAINT "CausasImputados_imputadoId_fkey" FOREIGN KEY ("imputadoId") REFERENCES "Imputado"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CausasVictimas" ADD CONSTRAINT "CausasVictimas_causaId_fkey" FOREIGN KEY ("causaId") REFERENCES "Causa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CausasVictimas" ADD CONSTRAINT "CausasVictimas_victimaId_fkey" FOREIGN KEY ("victimaId") REFERENCES "Victima"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

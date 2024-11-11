@@ -14,7 +14,7 @@ interface Analista {
 }
 
 interface AnalistaSelectProps {
-  selectedId?: number;
+  value?: string;
   onValueChange?: (value: string) => void;
   className?: string;
   error?: string;
@@ -22,19 +22,17 @@ interface AnalistaSelectProps {
 }
 
 export default function AnalistaSelect({
-  selectedId,
+  value,
   onValueChange,
   className = 'w-full',
   error,
   disabled = false
 }: AnalistaSelectProps) {
-  const [analistas, setAnalistas] = useState<Analista[]>([]);
+  const [Analistas, setAnalistas] = useState<Analista[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [selectedAnalista, setSelectedAnalista] = useState<string>(
-    selectedId ? selectedId.toString() : ''
-  );
 
+  // Cargar los Analistas cuando el componente se monta
   useEffect(() => {
     const fetchAnalistas = async () => {
       setIsLoading(true);
@@ -42,16 +40,16 @@ export default function AnalistaSelect({
       try {
         const response = await fetch('http://localhost:3000/api/analista');
         if (!response.ok) {
-          throw new Error('Error al cargar los analistas');
+          throw new Error('Error al cargar los Analistas');
         }
         const data = await response.json();
         setAnalistas(Array.isArray(data) ? data : [data]);
       } catch (error) {
-        console.error('Error fetching analistas:', error);
+        console.error('Error fetching Analistas:', error);
         setFetchError(
           error instanceof Error
             ? error.message
-            : 'Error al cargar los analistas'
+            : 'Error al cargar los Analistas'
         );
       } finally {
         setIsLoading(false);
@@ -61,24 +59,11 @@ export default function AnalistaSelect({
     fetchAnalistas();
   }, []);
 
-  useEffect(() => {
-    if (selectedId) {
-      setSelectedAnalista(selectedId.toString());
-    }
-  }, [selectedId]);
-
-  const handleValueChange = (value: string) => {
-    setSelectedAnalista(value);
-    if (onValueChange) {
-      onValueChange(value);
-    }
-  };
-
   return (
     <div className="relative">
       <Select
-        onValueChange={handleValueChange}
-        value={selectedAnalista}
+        value={value ? value.toString() : undefined}
+        onValueChange={onValueChange}
         disabled={disabled || isLoading}
       >
         <SelectTrigger
@@ -92,25 +77,25 @@ export default function AnalistaSelect({
               <span>Cargando...</span>
             </div>
           ) : (
-            <SelectValue placeholder="Selecciona un analista" />
+            <SelectValue placeholder="Selecciona un Analista" />
           )}
         </SelectTrigger>
         <SelectContent>
           {isLoading ? (
             <div className="flex items-center justify-center p-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="ml-2">Cargando analistas...</span>
+              <span className="ml-2">Cargando Analistas...</span>
             </div>
           ) : fetchError ? (
             <div className="p-2 text-sm text-red-500">{fetchError}</div>
-          ) : analistas.length === 0 ? (
+          ) : Analistas.length === 0 ? (
             <div className="p-2 text-sm text-muted-foreground">
-              No hay analistas disponibles
+              No hay Analistas disponibles
             </div>
           ) : (
-            analistas.map((analista) => (
-              <SelectItem key={analista.id} value={analista.id.toString()}>
-                {analista.nombre}
+            Analistas.map((Analista) => (
+              <SelectItem key={Analista.id} value={Analista.id.toString()}>
+                {Analista.nombre}
               </SelectItem>
             ))
           )}

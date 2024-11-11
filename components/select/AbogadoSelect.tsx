@@ -14,7 +14,7 @@ interface Abogado {
 }
 
 interface AbogadoSelectProps {
-  selectedId?: number;
+  value?: string;
   onValueChange?: (value: string) => void;
   className?: string;
   error?: string;
@@ -22,7 +22,7 @@ interface AbogadoSelectProps {
 }
 
 export default function AbogadoSelect({
-  selectedId,
+  value,
   onValueChange,
   className = 'w-full',
   error,
@@ -31,10 +31,8 @@ export default function AbogadoSelect({
   const [abogados, setAbogados] = useState<Abogado[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [selectedAbogado, setSelectedAbogado] = useState<string>(
-    selectedId ? selectedId.toString() : ''
-  );
 
+  // Cargar los abogados cuando el componente se monta
   useEffect(() => {
     const fetchAbogados = async () => {
       setIsLoading(true);
@@ -61,24 +59,11 @@ export default function AbogadoSelect({
     fetchAbogados();
   }, []);
 
-  useEffect(() => {
-    if (selectedId) {
-      setSelectedAbogado(selectedId.toString());
-    }
-  }, [selectedId]);
-
-  const handleValueChange = (value: string) => {
-    setSelectedAbogado(value);
-    if (onValueChange) {
-      onValueChange(value);
-    }
-  };
-
   return (
     <div className="relative">
       <Select
-        onValueChange={handleValueChange}
-        value={selectedAbogado}
+        value={value ? value.toString() : undefined}
+        onValueChange={onValueChange}
         disabled={disabled || isLoading}
       >
         <SelectTrigger

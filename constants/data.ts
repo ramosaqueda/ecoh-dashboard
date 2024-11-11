@@ -722,8 +722,8 @@ export const navItems: NavItem[] = [
   },
 
   {
-    title: 'Sujetos',
-    href: '/dashboard/sujetos',
+    title: 'Imputados o Sujetos de interés',
+    href: '/dashboard/imputado',
     icon: 'profile',
     label: 'profile'
   },

@@ -86,34 +86,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-export async function PUT(req: NextRequest) {
-  try {
-    const { id, ...data } = await req.json();
-    const updatedCausa: Causa = await prisma.causa.update({
-      where: { id: Number(id) },
-      data
-    });
-    return NextResponse.json(updatedCausa);
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Error updating causa' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const { id: deleteId } = await req.json();
-    await prisma.causa.delete({
-      where: { id: Number(deleteId) }
-    });
-    return NextResponse.json({}, { status: 204 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Error deleting causa' },
-      { status: 500 }
-    );
-  }
-}

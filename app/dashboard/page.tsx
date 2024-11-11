@@ -53,14 +53,12 @@ export default async function page() {
               </div>
               <Card className="col-span-4 md:col-span-3">
                 <CardHeader>
-                  <CardTitle>Recent Sales</CardTitle>
+                  <CardTitle>Causas Recientes ingresadas</CardTitle>
                   <CardDescription>
-                    You made 265 sales this month.
+                    Han ingrsado X Causas en nov.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <RecentSales />
-                </CardContent>
+                <CardContent>Causas...</CardContent>
               </Card>
               <div className="col-span-4">
                 <AreaGraph />

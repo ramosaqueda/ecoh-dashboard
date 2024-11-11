@@ -1,17 +1,16 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-
 import { ArrowUpDown, Edit, Trash2 } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export type Causa = {
   id: string;
   denominacionCausa: string;
   ruc: string;
   rit: string;
-  victima: string;
   rut: string;
   observacion: string;
   foliobw: string;
@@ -45,15 +44,17 @@ export const columns: ColumnDef<Causa>[] = [
     header: 'RIT'
   },
   {
-    accessorKey: 'victima',
-    header: 'Víctima'
+    accessorKey: 'rut',
+    header: 'RUT'
   },
-
+  {
+    accessorKey: 'fiscalId',
+    header: 'Fiscal ID'
+  },
   {
     accessorKey: 'foliobw',
     header: 'Folio BW'
   },
-
   {
     accessorKey: 'sinLlamadoEcoh',
     header: 'Sin Llamado ECOH',
@@ -61,43 +62,44 @@ export const columns: ColumnDef<Causa>[] = [
   },
   {
     accessorKey: 'fechaHoraTomaConocimiento',
-    header: 'Fecha y Hora Toma Conocimiento'
+    header: 'Fecha y Hora Toma Conocimiento',
+    cell: ({ row }) => {
+      const fecha = row.getValue('fechaHoraTomaConocimiento') as string;
+      return fecha
+        ? format(new Date(fecha), 'dd/MM/yyyy HH:mm', { locale: es })
+        : '-';
+    }
   },
-
   {
     accessorKey: 'observacion',
     header: 'Observación'
   },
-
   {
     id: 'actions',
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const causa = row.original;
+      const { onEdit, onDelete } = table.options.meta || {};
 
       return (
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(causa)}>
-            <Edit className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onEdit?.(causa)}
+            title="Editar"
+          >
+            <Edit className="h-4 w-4 text-blue-600" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => handleDelete(causa.id)}
+            onClick={() => onDelete?.(causa.id)}
+            title="Eliminar"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4 text-red-600" />
           </Button>
         </div>
       );
     }
   }
 ];
-
-function handleEdit(causa: Causa) {
-  // Implementa la lógica de edición aquí
-  console.log('Editar causa:', causa);
-}
-
-function handleDelete(id: string) {
-  // Implementa la lógica de eliminación aquí
-  console.log('Eliminar causa con ID:', id);
-}

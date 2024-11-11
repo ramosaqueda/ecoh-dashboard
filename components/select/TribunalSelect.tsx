@@ -7,7 +7,6 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import { useSelectData } from '@/hooks/useSelectData';
 
 interface Tribunal {
   id: number;
@@ -15,66 +14,62 @@ interface Tribunal {
 }
 
 interface TribunalSelectProps {
-  selectedId?: number;
+  value?: string;
   onValueChange?: (value: string) => void;
   className?: string;
   error?: string;
   disabled?: boolean;
-  required?: boolean;
 }
 
 export default function TribunalSelect({
-  selectedId,
+  value,
   onValueChange,
   className = 'w-full',
   error,
-  disabled = false,
-  required = false
+  disabled = false
 }: TribunalSelectProps) {
-  // Usando el hook personalizado
-  const {
-    data: tribunales,
-    isLoading,
-    error: fetchError,
-    refetch
-  } = useSelectData<Tribunal>({
-    endpoint: 'tribunal',
-    errorMessage: 'Error al cargar tribunales'
-  });
+  const [Tribunals, setTribunals] = useState<Tribunal[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const [selected, setSelected] = useState<string>(
-    selectedId ? selectedId.toString() : ''
-  );
-
+  // Cargar los Tribunals cuando el componente se monta
   useEffect(() => {
-    if (selectedId) {
-      setSelected(selectedId.toString());
-    }
-  }, [selectedId]);
+    const fetchTribunals = async () => {
+      setIsLoading(true);
+      setFetchError(null);
+      try {
+        const response = await fetch('http://localhost:3000/api/tribunal');
+        if (!response.ok) {
+          throw new Error('Error al cargar los Tribunals');
+        }
+        const data = await response.json();
+        setTribunals(Array.isArray(data) ? data : [data]);
+      } catch (error) {
+        console.error('Error fetching Tribunals:', error);
+        setFetchError(
+          error instanceof Error
+            ? error.message
+            : 'Error al cargar los Tribunals'
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleValueChange = (value: string) => {
-    setSelected(value);
-    onValueChange?.(value);
-  };
-
-  // Si hay un error, mostrar un botón para reintentar
-  const handleRetry = () => {
-    refetch();
-  };
+    fetchTribunals();
+  }, []);
 
   return (
     <div className="relative">
       <Select
-        value={selected}
-        onValueChange={handleValueChange}
+        value={value ? value.toString() : undefined}
+        onValueChange={onValueChange}
         disabled={disabled || isLoading}
       >
         <SelectTrigger
-          className={`
-            ${className} 
-            ${error || fetchError ? 'border-red-500' : ''} 
-            ${isLoading ? 'opacity-50' : ''}
-          `}
+          className={`${className} ${error ? 'border-red-500' : ''} ${
+            isLoading ? 'opacity-50' : ''
+          }`}
         >
           {isLoading ? (
             <div className="flex items-center gap-2">
@@ -82,39 +77,25 @@ export default function TribunalSelect({
               <span>Cargando...</span>
             </div>
           ) : (
-            <SelectValue
-              placeholder={`${required ? '* ' : ''}Selecciona un tribunal`}
-            />
+            <SelectValue placeholder="Selecciona un Tribunal" />
           )}
         </SelectTrigger>
         <SelectContent>
           {isLoading ? (
             <div className="flex items-center justify-center p-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="ml-2">Cargando tribunales...</span>
+              <span className="ml-2">Cargando Tribunals...</span>
             </div>
           ) : fetchError ? (
-            <div className="flex flex-col items-center p-2">
-              <span className="mb-2 text-sm text-red-500">{fetchError}</span>
-              <button
-                onClick={handleRetry}
-                className="rounded-md bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600"
-              >
-                Reintentar
-              </button>
-            </div>
-          ) : tribunales.length === 0 ? (
+            <div className="p-2 text-sm text-red-500">{fetchError}</div>
+          ) : Tribunals.length === 0 ? (
             <div className="p-2 text-sm text-muted-foreground">
-              No hay tribunales disponibles
+              No hay Tribunals disponibles
             </div>
           ) : (
-            tribunales.map((tribunal) => (
-              <SelectItem
-                key={tribunal.id}
-                value={tribunal.id.toString()}
-                className="cursor-pointer hover:bg-gray-100"
-              >
-                {tribunal.nombre}
+            Tribunals.map((Tribunal) => (
+              <SelectItem key={Tribunal.id} value={Tribunal.id.toString()}>
+                {Tribunal.nombre}
               </SelectItem>
             ))
           )}

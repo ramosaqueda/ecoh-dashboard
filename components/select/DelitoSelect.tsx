@@ -7,7 +7,6 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import { useSelectData } from '@/hooks/useSelectData';
 
 interface Delito {
   id: number;
@@ -15,12 +14,11 @@ interface Delito {
 }
 
 interface DelitoSelectProps {
-  value?: string | number;
+  value?: string;
   onValueChange?: (value: string) => void;
   className?: string;
   error?: string;
   disabled?: boolean;
-  required?: boolean;
 }
 
 export default function DelitoSelect({
@@ -28,39 +26,48 @@ export default function DelitoSelect({
   onValueChange,
   className = 'w-full',
   error,
-  disabled = false,
-  required = false
+  disabled = false
 }: DelitoSelectProps) {
-  const {
-    data: delitos,
-    isLoading,
-    error: fetchError,
-    refetch
-  } = useSelectData<Delito>({
-    endpoint: 'delito',
-    errorMessage: 'Error al cargar delitos'
-  });
+  const [Delitos, setDelitos] = useState<Delito[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Convertir el valor a string si existe
-  const selectedValue = value ? String(value) : undefined;
+  // Cargar los Delitos cuando el componente se monta
+  useEffect(() => {
+    const fetchDelitos = async () => {
+      setIsLoading(true);
+      setFetchError(null);
+      try {
+        const response = await fetch('http://localhost:3000/api/delito');
+        if (!response.ok) {
+          throw new Error('Error al cargar los Delitos');
+        }
+        const data = await response.json();
+        setDelitos(Array.isArray(data) ? data : [data]);
+      } catch (error) {
+        console.error('Error fetching Delitos:', error);
+        setFetchError(
+          error instanceof Error ? error.message : 'Error al cargar los Delitos'
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleValueChange = (newValue: string) => {
-    onValueChange?.(newValue);
-  };
+    fetchDelitos();
+  }, []);
 
   return (
     <div className="relative">
       <Select
-        value={selectedValue}
-        onValueChange={handleValueChange}
+        value={value ? value.toString() : undefined}
+        onValueChange={onValueChange}
         disabled={disabled || isLoading}
       >
         <SelectTrigger
-          className={`
-            ${className} 
-            ${error || fetchError ? 'border-red-500' : ''} 
-            ${isLoading ? 'opacity-50' : ''}
-          `}
+          className={`${className} ${error ? 'border-red-500' : ''} ${
+            isLoading ? 'opacity-50' : ''
+          }`}
         >
           {isLoading ? (
             <div className="flex items-center gap-2">
@@ -68,39 +75,25 @@ export default function DelitoSelect({
               <span>Cargando...</span>
             </div>
           ) : (
-            <SelectValue
-              placeholder={`${required ? '* ' : ''}Selecciona un delito`}
-            />
+            <SelectValue placeholder="Selecciona un Delito" />
           )}
         </SelectTrigger>
         <SelectContent>
           {isLoading ? (
             <div className="flex items-center justify-center p-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="ml-2">Cargando delitos...</span>
+              <span className="ml-2">Cargando Delitos...</span>
             </div>
           ) : fetchError ? (
-            <div className="flex flex-col items-center p-2">
-              <span className="mb-2 text-sm text-red-500">{fetchError}</span>
-              <button
-                onClick={refetch}
-                className="rounded-md bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600"
-              >
-                Reintentar
-              </button>
-            </div>
-          ) : delitos.length === 0 ? (
+            <div className="p-2 text-sm text-red-500">{fetchError}</div>
+          ) : Delitos.length === 0 ? (
             <div className="p-2 text-sm text-muted-foreground">
-              No hay delitos disponibles
+              No hay Delitos disponibles
             </div>
           ) : (
-            delitos.map((delito) => (
-              <SelectItem
-                key={delito.id}
-                value={delito.id.toString()}
-                className="cursor-pointer hover:bg-gray-100"
-              >
-                {delito.nombre}
+            Delitos.map((Delito) => (
+              <SelectItem key={Delito.id} value={Delito.id.toString()}>
+                {Delito.nombre}
               </SelectItem>
             ))
           )}
