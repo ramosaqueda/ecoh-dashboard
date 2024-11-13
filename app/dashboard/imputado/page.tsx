@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  imputado,
-  columns
-} from '@/components/tables/imputados-tables/columns';
-import { imputadosDataTable } from '@/components/tables/imputados-tables/imputados-table';
+import {Imputado,columns} from '@/components/tables/imputados-tables/columns';
+
+import { ImputadosDataTable } from '@/components/tables/imputados-tables/imputados-table';
 import ImputadoFormContainer from '@/components/ImputadoFormContainer';
 import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
 
-async function getimputados(): Promise<imputado[]> {
+async function getimputados(): Promise<Imputado[]> {
   const res = await fetch('/api/imputado', {
     cache: 'no-store'
   });
@@ -22,7 +20,7 @@ async function getimputados(): Promise<imputado[]> {
 }
 
 export default function imputadosPage() {
-  const [imputados, setimputados] = useState<imputado[]>([]);
+  const [imputados, setImputados] = useState<Imputado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +33,8 @@ export default function imputadosPage() {
       setIsLoading(true);
       setError(null);
       const data = await getimputados();
-      setimputados(data);
+
+      setImputados(data);
     } catch (error) {
       setError(
         error instanceof Error ? error.message : 'Error al cargar los imputados'
@@ -65,7 +64,7 @@ export default function imputadosPage() {
         throw new Error('Error al eliminar el imputado');
       }
 
-      setimputados(imputados.filter((imputado) => imputado.id !== id));
+      setImputados(imputados.filter((imputado) => imputado.id !== id));
       toast.success('imputado eliminado exitosamente');
     } catch (error) {
       console.error('Error:', error);
@@ -136,7 +135,7 @@ export default function imputadosPage() {
           </Button>
         </div>
       ) : (
-        <imputadosDataTable
+        <ImputadosDataTable
           columns={columns}
           data={imputados}
           onEdit={handleEdit}

@@ -20,7 +20,7 @@ interface ImputadoFormContainerProps {
 }
 
 interface ImputadoFormData {
-  nombre: string;
+  nombreSujeto: string;
   docId: string;
   nacionalidadId: string;
 }

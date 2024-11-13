@@ -48,7 +48,7 @@ export const columns: ColumnDef<Causa>[] = [
     header: 'RUT'
   },
   {
-    accessorKey: 'fiscalId',
+    accessorKey: 'fiscal.nombre',
     header: 'Fiscal ID'
   },
   {

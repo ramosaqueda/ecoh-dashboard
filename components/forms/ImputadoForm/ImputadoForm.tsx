@@ -54,7 +54,7 @@ export default function ImputadoForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          nameSujeto="nameSujeto"
+          name="nombreSujeto"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Nombre</FormLabel>
@@ -94,7 +94,7 @@ export default function ImputadoForm({
               <FormControl>
                 <NacionalidadSelect
                   value={field.value}
-                  onValueChange={field.onChange}
+                  onValueChange={field.onChange} 
                 />
               </FormControl>
               <FormMessage />

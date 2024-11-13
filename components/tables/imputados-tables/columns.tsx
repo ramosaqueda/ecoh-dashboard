@@ -14,14 +14,14 @@ export type Imputado = {
 export const columns: ColumnDef<Imputado>[] = [
   // nombreImputado
   {
-    accessorKey: 'nombreImputado',
+    accessorKey: 'nombreSujeto',
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          nombreImputado
+          Nombre
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -44,7 +44,7 @@ export const columns: ColumnDef<Imputado>[] = [
   },
   // Nacionalidad ID
   {
-    accessorKey: 'nacionalidadId',
+    accessorKey: 'nacionalidad.nombre',
     header: ({ column }) => {
       return (
         <Button

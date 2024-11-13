@@ -32,12 +32,15 @@ interface DataTableProps<TData, TValue> {
   onDelete: (id: string) => void;
 }
 
-const ImputadosDataTable = <TData, TValue>({
+
+ 
+export function ImputadosDataTable<TData, TValue>({
   columns,
   data,
   onEdit,
   onDelete
-}: DataTableProps<TData, TValue>) => {
+}: DataTableProps<TData, TValue>) {
+ 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -154,5 +157,4 @@ const ImputadosDataTable = <TData, TValue>({
   );
 };
 
-// Agregamos esta línea para exportar el componente como default
-export { ImputadosDataTable };
+
