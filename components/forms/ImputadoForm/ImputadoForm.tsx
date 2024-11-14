@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import NacionalidadSelect from '@/components/select/NacionalidadSelect';
-
+import CausaImputadoForm from '../CausaImputadoForm';
 const ImputadoFormSchema = z.object({
   nombreSujeto: z.string().min(1, 'El nombre es requerido'),
   docId: z.string().min(1, 'El documento de identidad es requerido'),
@@ -130,5 +130,5 @@ export default function ImputadoForm({
         </div>
       </form>
     </Form>
-  );
+    )
 }

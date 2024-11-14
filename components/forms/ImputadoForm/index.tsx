@@ -9,7 +9,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import ImputadoForm from '@/components/forms/ImputadoForm/ImputadoForm';
-
+import CausaImputadoForm from '@/components/forms/CausaImputadoForm';
 
 import type { Imputado } from '@/components/tables/imputados-tables/columns';
 
@@ -17,12 +17,12 @@ interface ImputadoFormContainerProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  initialData?: imputado | null;
+  initialData?: Imputado | null;
   isEditing?: boolean;
 }
 
 interface ImputadoFormData {
-  nombreSujeto: string;  // Cambiado de 'nombre' a 'nombreSujeto'
+  nombreSujeto: string;
   docId: string;
   nacionalidadId: string;
 }
@@ -35,6 +35,8 @@ export default function ImputadoFormContainer({
   isEditing = false
 }: ImputadoFormContainerProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdImputadoId, setCreatedImputadoId] = useState<string | null>(null);
+  const [showCausaForm, setShowCausaForm] = useState(false);
 
   const handleSubmit = async (data: ImputadoFormData) => {
     try {
@@ -56,13 +58,20 @@ export default function ImputadoFormContainer({
         throw new Error('Error al guardar el imputado');
       }
 
+      const result = await response.json();
+
       toast.success(
         isEditing
           ? 'Imputado actualizado exitosamente'
           : 'Imputado creado exitosamente'
       );
 
-      onSuccess();
+      if (!isEditing) {
+        setCreatedImputadoId(result.id);
+        setShowCausaForm(true);
+      } else {
+        onSuccess();
+      }
     } catch (error) {
       console.error('Error:', error);
       toast.error(
@@ -75,21 +84,52 @@ export default function ImputadoFormContainer({
     }
   };
 
+  const handleCausaSuccess = () => {
+    setShowCausaForm(false);
+    onSuccess();
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[1000px]">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Editar imputado' : 'Crear Nuevo imputado'}
-          </DialogTitle>
-        </DialogHeader>
-        <ImputadoForm
-          initialValues={initialData || undefined}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          isEditing={isEditing}
-        />
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-[1000px]">
+          <DialogHeader>
+            <DialogTitle>
+              {isEditing ? 'Editar imputado' : 'Crear Nuevo imputado'}
+            </DialogTitle>
+          </DialogHeader>
+          <ImputadoForm
+            initialValues={initialData || undefined}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            isEditing={isEditing}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para asociar causa después de crear imputado */}
+      <Dialog open={showCausaForm} onOpenChange={(open) => {
+        if (!open) {
+          setShowCausaForm(false);
+          onSuccess();
+          onClose();
+        }
+      }}>
+        <DialogContent className="max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>
+              Asociar a Causa
+            </DialogTitle>
+          </DialogHeader>
+          {createdImputadoId && (
+            <CausaImputadoForm
+              imputadoId={createdImputadoId}
+              onSuccess={handleCausaSuccess}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

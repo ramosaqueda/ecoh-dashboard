@@ -112,10 +112,16 @@ model Tribunal {
 }
 
 model CausasImputados {
-  causaId    Int
-  imputadoId Int
-  causa      Causa    @relation(fields: [causaId], references: [id])
-  imputado   Imputado @relation(fields: [imputadoId], references: [id])
+  causaId           Int
+  imputadoId        Int
+  principalImputado Boolean        @default(false)
+  formalizado       Boolean        @default(false)
+  fechaFormalizacion DateTime?
+  causa             Causa          @relation(fields: [causaId], references: [id])
+  imputado          Imputado       @relation(fields: [imputadoId], references: [id])
+  cautelar          Cautelar?      @relation(fields: [cautelarId], references: [id])
+  cautelarId        Int?
+
   @@id([causaId, imputadoId])
 }
 
@@ -131,4 +137,10 @@ model Comuna {
   id     Int     @id @default(autoincrement())
   nombre String
   causas Causa[]
+}
+
+model Cautelar {
+  id              Int              @id @default(autoincrement())
+  nombre          String
+  causasImputados CausasImputados[]
 }
