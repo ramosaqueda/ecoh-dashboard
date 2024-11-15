@@ -1,3 +1,6 @@
+
+
+// components/forms/CausaImputadoForm/CausaImputadoContainer.tsx
 'use client';
 
 import { useState } from 'react';
@@ -11,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import CausaImputadoForm from './index';
+import CausaImputadoForm, { CausaImputadoFormValues } from './index';
 
 interface CausaImputadoContainerProps {
   imputadoId: string;
@@ -25,7 +28,7 @@ export default function CausaImputadoContainer({
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: CausaImputadoFormValues) => {
     try {
       setIsSubmitting(true);
       const response = await fetch('/api/causas-imputados', {
@@ -70,10 +73,6 @@ export default function CausaImputadoContainer({
           imputadoId={imputadoId}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
-          onSuccess={() => {
-            setIsOpen(false);
-            onSuccess?.();
-          }}
         />
       </DialogContent>
     </Dialog>

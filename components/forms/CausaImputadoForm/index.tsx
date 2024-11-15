@@ -1,6 +1,7 @@
+// components/forms/CausaImputadoForm/index.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,13 +14,6 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
@@ -37,7 +31,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, UserPlus, Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Causa {
@@ -47,7 +41,8 @@ interface Causa {
 
 interface CausaImputadoFormProps {
   imputadoId: string;
-  onSuccess?: () => void;
+  onSubmit: (data: CausaImputadoFormValues) => Promise<void>;
+  isSubmitting: boolean;
 }
 
 const CausaImputadoSchema = z.object({
@@ -58,14 +53,13 @@ const CausaImputadoSchema = z.object({
   cautelarId: z.string().optional()
 });
 
-type CausaImputadoFormValues = z.infer<typeof CausaImputadoSchema>;
+export type CausaImputadoFormValues = z.infer<typeof CausaImputadoSchema>;
 
 export default function CausaImputadoForm({
   imputadoId,
-  onSuccess
+  onSubmit,
+  isSubmitting
 }: CausaImputadoFormProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [causas, setCausas] = useState<Causa[]>([]);
   const [isLoadingCausas, setIsLoadingCausas] = useState(false);
 
@@ -98,65 +92,21 @@ export default function CausaImputadoForm({
       }
     };
 
-    if (isOpen) {
-      fetchCausas();
-    }
-  }, [isOpen]);
-
-  const handleSubmit = async (data: CausaImputadoFormValues) => {
-    try {
-      setIsSubmitting(true);
-      const response = await fetch('/api/causas-imputados', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...data,
-          imputadoId
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al asociar la causa');
-      }
-
-      toast.success('Causa asociada exitosamente');
-      setIsOpen(false);
-      onSuccess?.();
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al asociar la causa');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    fetchCausas();
+  }, []);
 
   const watchFormalizado = form.watch('formalizado');
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4" />
-          Asociar a Causa
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Asociar Imputado a Causa</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-6"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">
-                  Información de la Causa
-                </CardTitle>
-              </CardHeader>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Información de la Causa
+            </CardTitle>
+          </CardHeader>
+          
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
@@ -270,34 +220,25 @@ export default function CausaImputadoForm({
                   />
                 )}
               </CardContent>
-            </Card>
+        </Card>
 
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsOpen(false)}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !form.watch('causaId')}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Guardando...
-                  </>
-                ) : (
-                  'Guardar'
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        <div className="flex justify-end gap-4">
+          <Button
+            type="submit"
+            disabled={isSubmitting || !form.watch('causaId')}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar'
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }
+ 
