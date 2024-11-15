@@ -1,4 +1,3 @@
-// components/forms/CausaImputadoForm/index.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -35,7 +34,7 @@ import { CalendarIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Causa {
-  id: string;
+  id: number;
   ruc: string;
 }
 
@@ -49,7 +48,7 @@ const CausaImputadoSchema = z.object({
   causaId: z.string().min(1, 'Debe seleccionar una causa'),
   principalImputado: z.boolean().default(false),
   formalizado: z.boolean().default(false),
-  fechaFormalizacion: z.date().nullable(),
+  fechaFormalizacion: z.date().nullable().optional(),
   cautelarId: z.string().optional()
 });
 
@@ -106,120 +105,126 @@ export default function CausaImputadoForm({
               Información de la Causa
             </CardTitle>
           </CardHeader>
-          
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="causaId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>RUC</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isLoadingCausas}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Seleccione un RUC" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {causas.map((causa) => (
-                            <SelectItem
-                              key={causa.id}
-                              value={causa.id}
-                              className="cursor-pointer"
-                            >
-                              {causa.ruc}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="causaId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>RUC</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={isLoadingCausas}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Seleccione un RUC">
+                          {field.value ? causas.find(c => c.id.toString() === field.value)?.ruc : "Seleccione un RUC"}
+                        </SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {causas.map((causa) => (
+                        <SelectItem 
+                          key={causa.id} 
+                          value={causa.id.toString()}
+                        >
+                          {causa.ruc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                <FormField
-                  control={form.control}
-                  name="principalImputado"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal">
-                        Imputado Principal
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={form.control}
+              name="principalImputado"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">
+                    Imputado Principal
+                  </FormLabel>
+                </FormItem>
+              )}
+            />
 
-                <FormField
-                  control={form.control}
-                  name="formalizado"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal">Formalizado</FormLabel>
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={form.control}
+              name="formalizado"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">Formalizado</FormLabel>
+                </FormItem>
+              )}
+            />
 
-                {watchFormalizado && (
-                  <FormField
-                    control={form.control}
-                    name="fechaFormalizacion"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Fecha de Formalización</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  'w-full pl-3 text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, 'PPP')
-                                ) : (
-                                  <span>Seleccione una fecha</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) =>
-                                date > new Date() ||
-                                date < new Date('1900-01-01')
-                              }
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </CardContent>
+{watchFormalizado && (
+  <FormField
+    control={form.control}
+    name="fechaFormalizacion"
+    render={({ field }) => (
+      <FormItem className="flex flex-col">
+        <FormLabel>Fecha de Formalización</FormLabel>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(
+                "w-full pl-3 text-left font-normal",
+                !field.value && "text-muted-foreground"
+              )}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              {field.value ? (
+                format(field.value, "dd/MM/yyyy")
+              ) : (
+                <span>Seleccione una fecha</span>
+              )}
+              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="flex w-auto flex-col space-y-2 p-2">
+            <Calendar
+              initialFocus
+              mode="single"
+              defaultMonth={field.value || undefined}
+              selected={field.value || undefined}
+              onSelect={(date) => {
+                field.onChange(date);
+              }}
+              numberOfMonths={1}
+              disabled={(date) =>
+                date > new Date() || date < new Date("1900-01-01")
+              }
+            />
+          </PopoverContent>
+        </Popover>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+)}
+          </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4">
@@ -241,4 +246,3 @@ export default function CausaImputadoForm({
     </Form>
   );
 }
- 
