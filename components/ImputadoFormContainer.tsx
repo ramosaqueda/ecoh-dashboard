@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import ImputadoForm from '@/components/forms/ImputadoForm/ImputadoForm';
+import ImputadoForm from '@/components/forms/ImputadoForm/';
 import type { imputado } from '@/components/tables/imputados-tables/columns';
 
 interface ImputadoFormContainerProps {
@@ -85,7 +85,9 @@ export default function ImputadoFormContainer({
           initialValues={initialData || undefined}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
-          isEditing={isEditing}
+          isEditing={isEditing} // Necesitas asegurarte de que esta prop se está pasando
+          imputadoId={initialData?.id?.toString()}
+          onSuccess={onSuccess}
         />
       </DialogContent>
     </Dialog>

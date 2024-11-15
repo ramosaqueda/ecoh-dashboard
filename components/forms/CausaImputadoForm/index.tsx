@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,37 +20,59 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  PopoverTrigger
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon, UserPlus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface Causa {
+  id: string;
+  ruc: string;
+}
+
+interface CausaImputadoFormProps {
+  imputadoId: string;
+  onSuccess?: () => void;
+}
 
 const CausaImputadoSchema = z.object({
+  causaId: z.string().min(1, 'Debe seleccionar una causa'),
   principalImputado: z.boolean().default(false),
   formalizado: z.boolean().default(false),
   fechaFormalizacion: z.date().nullable(),
   cautelarId: z.string().optional()
 });
 
-export default function CausaImputadoForm({ imputadoId, onSuccess }) {
+type CausaImputadoFormValues = z.infer<typeof CausaImputadoSchema>;
+
+export default function CausaImputadoForm({
+  imputadoId,
+  onSuccess
+}: CausaImputadoFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [causas, setCausas] = useState<Causa[]>([]);
+  const [isLoadingCausas, setIsLoadingCausas] = useState(false);
 
-  const form = useForm({
+  const form = useForm<CausaImputadoFormValues>({
     resolver: zodResolver(CausaImputadoSchema),
     defaultValues: {
+      causaId: '',
       principalImputado: false,
       formalizado: false,
       fechaFormalizacion: null,
@@ -56,11 +80,33 @@ export default function CausaImputadoForm({ imputadoId, onSuccess }) {
     }
   });
 
-  const handleSubmit = async (data) => {
+  useEffect(() => {
+    const fetchCausas = async () => {
+      setIsLoadingCausas(true);
+      try {
+        const response = await fetch('/api/causas');
+        if (!response.ok) {
+          throw new Error('Error al cargar las causas');
+        }
+        const data = await response.json();
+        setCausas(data);
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Error al cargar las causas');
+      } finally {
+        setIsLoadingCausas(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchCausas();
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (data: CausaImputadoFormValues) => {
     try {
       setIsSubmitting(true);
-      // Aquí iría la lógica para guardar la relación
-      await fetch('/api/causas-imputados', {
+      const response = await fetch('/api/causas-imputados', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -70,11 +116,17 @@ export default function CausaImputadoForm({ imputadoId, onSuccess }) {
           imputadoId
         })
       });
-      
+
+      if (!response.ok) {
+        throw new Error('Error al asociar la causa');
+      }
+
+      toast.success('Causa asociada exitosamente');
       setIsOpen(false);
       onSuccess?.();
     } catch (error) {
       console.error('Error:', error);
+      toast.error('Error al asociar la causa');
     } finally {
       setIsSubmitting(false);
     }
@@ -95,7 +147,10 @@ export default function CausaImputadoForm({ imputadoId, onSuccess }) {
           <DialogTitle>Asociar Imputado a Causa</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-6"
+          >
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium">
@@ -103,6 +158,39 @@ export default function CausaImputadoForm({ imputadoId, onSuccess }) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="causaId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>RUC</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isLoadingCausas}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Seleccione un RUC" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {causas.map((causa) => (
+                            <SelectItem
+                              key={causa.id}
+                              value={causa.id}
+                              className="cursor-pointer"
+                            >
+                              {causa.ruc}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="principalImputado"
@@ -132,9 +220,7 @@ export default function CausaImputadoForm({ imputadoId, onSuccess }) {
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <FormLabel className="font-normal">
-                        Formalizado
-                      </FormLabel>
+                      <FormLabel className="font-normal">Formalizado</FormLabel>
                     </FormItem>
                   )}
                 />
@@ -152,12 +238,12 @@ export default function CausaImputadoForm({ imputadoId, onSuccess }) {
                               <Button
                                 variant="outline"
                                 className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
+                                  'w-full pl-3 text-left font-normal',
+                                  !field.value && 'text-muted-foreground'
                                 )}
                               >
                                 {field.value ? (
-                                  format(field.value, "PPP")
+                                  format(field.value, 'PPP')
                                 ) : (
                                   <span>Seleccione una fecha</span>
                                 )}
@@ -171,7 +257,8 @@ export default function CausaImputadoForm({ imputadoId, onSuccess }) {
                               selected={field.value}
                               onSelect={field.onChange}
                               disabled={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
+                                date > new Date() ||
+                                date < new Date('1900-01-01')
                               }
                               initialFocus
                             />
@@ -194,7 +281,10 @@ export default function CausaImputadoForm({ imputadoId, onSuccess }) {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !form.watch('causaId')}
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1,135 +1,143 @@
 'use client';
 
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
-import ImputadoForm from '@/components/forms/ImputadoForm/ImputadoForm';
-import CausaImputadoForm from '@/components/forms/CausaImputadoForm';
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-react';
+import NacionalidadSelect from '@/components/select/NacionalidadSelect';
+import CausaImputadoContainer from '@/components/forms/CausaImputadoForm/CausaImputadoContainer';
 
-import type { Imputado } from '@/components/tables/imputados-tables/columns';
+const ImputadoFormSchema = z.object({
+  nombreSujeto: z.string().min(1, 'El nombre es requerido'),
+  docId: z.string().min(1, 'El documento de identidad es requerido'),
+  nacionalidadId: z.string().min(1, 'La nacionalidad es requerida')
+});
 
-interface ImputadoFormContainerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  initialData?: Imputado | null;
-  isEditing?: boolean;
+export type ImputadoFormValues = z.infer<typeof ImputadoFormSchema>;
+
+export interface ImputadoFormProps {
+  initialValues?: Partial<ImputadoFormValues>;
+  onSubmit: (data: ImputadoFormValues) => Promise<void>;
+  isSubmitting: boolean;
+  isEditing: boolean;
+  imputadoId?: string;
+  onSuccess?: () => void;
 }
 
-interface ImputadoFormData {
-  nombreSujeto: string;
-  docId: string;
-  nacionalidadId: string;
-}
-
-export default function ImputadoFormContainer({
-  isOpen,
-  onClose,
-  onSuccess,
-  initialData,
-  isEditing = false
-}: ImputadoFormContainerProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [createdImputadoId, setCreatedImputadoId] = useState<string | null>(null);
-  const [showCausaForm, setShowCausaForm] = useState(false);
-
-  const handleSubmit = async (data: ImputadoFormData) => {
-    try {
-      setIsSubmitting(true);
-
-      const url = isEditing
-        ? `/api/imputado/${initialData?.id}`
-        : '/api/imputado';
-
-      const response = await fetch(url, {
-        method: isEditing ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al guardar el imputado');
-      }
-
-      const result = await response.json();
-
-      toast.success(
-        isEditing
-          ? 'Imputado actualizado exitosamente'
-          : 'Imputado creado exitosamente'
-      );
-
-      if (!isEditing) {
-        setCreatedImputadoId(result.id);
-        setShowCausaForm(true);
-      } else {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error(
-        isEditing
-          ? 'Error al actualizar el imputado'
-          : 'Error al crear el imputado'
-      );
-    } finally {
-      setIsSubmitting(false);
+const ImputadoForm = ({
+  initialValues,
+  onSubmit,
+  isSubmitting,
+  isEditing,
+  imputadoId,
+  onSuccess
+}: ImputadoFormProps) => {
+  const form = useForm<ImputadoFormValues>({
+    resolver: zodResolver(ImputadoFormSchema),
+    defaultValues: {
+      nombreSujeto: '',
+      docId: '',
+      nacionalidadId: '',
+      ...initialValues
     }
-  };
+  });
 
-  const handleCausaSuccess = () => {
-    setShowCausaForm(false);
-    onSuccess();
-    onClose();
-  };
+  const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-[1000px]">
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing ? 'Editar imputado' : 'Crear Nuevo imputado'}
-            </DialogTitle>
-          </DialogHeader>
-          <ImputadoForm
-            initialValues={initialData || undefined}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            isEditing={isEditing}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal para asociar causa después de crear imputado */}
-      <Dialog open={showCausaForm} onOpenChange={(open) => {
-        if (!open) {
-          setShowCausaForm(false);
-          onSuccess();
-          onClose();
-        }
-      }}>
-        <DialogContent className="max-w-[800px]">
-          <DialogHeader>
-            <DialogTitle>
-              Asociar a Causa
-            </DialogTitle>
-          </DialogHeader>
-          {createdImputadoId && (
-            <CausaImputadoForm
-              imputadoId={createdImputadoId}
-              onSuccess={handleCausaSuccess}
-            />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="nombreSujeto"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nombre</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Ingrese el nombre completo" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </DialogContent>
-      </Dialog>
-    </>
+        />
+
+        <FormField
+          control={form.control}
+          name="docId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Documento de Identidad</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="Ingrese el documento de identidad"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="nacionalidadId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nacionalidad</FormLabel>
+              <FormControl>
+                <NacionalidadSelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  error={form.formState.errors.nacionalidadId?.message}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {isEditing && imputadoId && (
+          <div className="mt-4">
+            <CausaImputadoContainer
+              imputadoId={imputadoId}
+              onSuccess={onSuccess}
+            />
+          </div>
+        )}
+
+        <div className="flex justify-end gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => form.reset()}
+            disabled={isSubmitting || !isFormDirty}
+          >
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar'
+            )}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
-}
+};
+
+export default ImputadoForm;
