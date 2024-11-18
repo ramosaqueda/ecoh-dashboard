@@ -1,15 +1,10 @@
+// columns.tsx
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Edit, Trash2 } from 'lucide-react';
+import { ArrowUpDown, Edit, Trash2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-export type Imputado = {
-  id: string;
-  nombreImputado: string;
-  docId: string;
-  nacionalidadId: string;
-};
+import { type Imputado } from '@/types/causaimputado';
 
 export const columns: ColumnDef<Imputado>[] = [
   // nombreImputado
@@ -57,11 +52,35 @@ export const columns: ColumnDef<Imputado>[] = [
       );
     }
   },
+  // Causas
+  {
+    id: 'causas',
+    header: 'Causas',
+    cell: ({ row, table }) => {
+      const imputado = row.original;
+      const { onViewCausas } = table.options.meta || {};
+      const causasCount = imputado.causas?.length || 0;
+
+      return causasCount > 0 ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onViewCausas?.(imputado)}
+          className="flex items-center gap-2"
+        >
+          <FileText className="h-4 w-4" />
+          <span>{causasCount} causa(s)</span>
+        </Button>
+      ) : (
+        <span className="text-sm text-muted-foreground">Sin causas</span>
+      );
+    }
+  },
   // Acciones
   {
     id: 'actions',
     cell: ({ row, table }) => {
-      const Imputado = row.original;
+      const imputado = row.original;
       const { onEdit, onDelete } = table.options.meta || {};
 
       return (
@@ -69,7 +88,7 @@ export const columns: ColumnDef<Imputado>[] = [
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onEdit?.(Imputado)}
+            onClick={() => onEdit?.(imputado)}
             title="Editar"
           >
             <Edit className="h-4 w-4 text-blue-600" />
@@ -77,7 +96,7 @@ export const columns: ColumnDef<Imputado>[] = [
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete?.(Imputado.id)}
+            onClick={() => onDelete?.(imputado.id)}
             title="Eliminar"
           >
             <Trash2 className="h-4 w-4 text-red-600" />

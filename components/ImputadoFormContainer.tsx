@@ -75,20 +75,22 @@ export default function ImputadoFormContainer({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[1000px]">
-        <DialogHeader>
+      <DialogContent className="h-[800px] max-w-[1200px] overflow-hidden p-0">
+        <DialogHeader className="p-6 pb-4">
           <DialogTitle>
-            {isEditing ? 'Editar imputado' : 'Crear Nuevo imputado'}
+            {isEditing ? 'Editar Imputado' : 'Crear Nuevo Imputado'}
           </DialogTitle>
         </DialogHeader>
-        <ImputadoForm
-          initialValues={initialData || undefined}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          isEditing={isEditing} // Necesitas asegurarte de que esta prop se está pasando
-          imputadoId={initialData?.id?.toString()}
-          onSuccess={onSuccess}
-        />
+        <div className="flex-1 overflow-auto px-6 pb-6">
+          <ImputadoForm
+            initialValues={initialData || undefined}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            isEditing={isEditing}
+            imputadoId={initialData?.id?.toString()}
+            onSuccess={onSuccess}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

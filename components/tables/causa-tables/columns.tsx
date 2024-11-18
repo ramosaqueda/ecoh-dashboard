@@ -1,10 +1,20 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Edit, Trash2 } from 'lucide-react';
+import {
+  ArrowUpDown,
+  Edit,
+  Trash2,
+  Users,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useState } from 'react';
+import ImputadosDrawer from '@/components/drawer/imputados-drawer';
+import { useToast } from '@/components/ui/use-toast';
 
 export type Causa = {
   id: string;
@@ -18,6 +28,71 @@ export type Causa = {
   sinLlamadoEcoh: boolean;
   fiscalId: string;
   delitoId: string;
+  _count?: {
+    imputados: number;
+  };
+};
+
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return '-';
+  try {
+    return format(parseISO(dateString), 'dd/MM/yyyy HH:mm', { locale: es });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString;
+  }
+};
+
+const ImputadosCell = ({ causa }: { causa: Causa }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [imputados, setImputados] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleClick = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/causas-imputados?causaId=${causa.id}`);
+      if (!response.ok) throw new Error('Error al cargar los imputados');
+      const data = await response.json();
+      setImputados(data);
+      setIsOpen(true);
+    } catch (error) {
+      console.error('Error loading imputados:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          'No se pudieron cargar los imputados. Por favor, intente nuevamente.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="flex items-center gap-1"
+        onClick={handleClick}
+        disabled={isLoading}
+      >
+        <Users className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+        <span>{causa._count?.imputados || 0} </span>
+      </Button>
+
+      <ImputadosDrawer
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        imputados={imputados}
+        causaRuc={causa.ruc}
+      />
+    </>
+  );
 };
 
 export const columns: ColumnDef<Causa>[] = [
@@ -43,13 +118,10 @@ export const columns: ColumnDef<Causa>[] = [
     accessorKey: 'rit',
     header: 'RIT'
   },
-  {
-    accessorKey: 'rut',
-    header: 'RUT'
-  },
+
   {
     accessorKey: 'fiscal.nombre',
-    header: 'Fiscal ID'
+    header: 'Fiscal'
   },
   {
     accessorKey: 'foliobw',
@@ -59,6 +131,11 @@ export const columns: ColumnDef<Causa>[] = [
     accessorKey: 'sinLlamadoEcoh',
     header: 'Sin Llamado ECOH',
     cell: ({ row }) => (row.getValue('sinLlamadoEcoh') ? 'Sí' : 'No')
+  },
+  {
+    id: 'imputados',
+    header: 'Imputados',
+    cell: ({ row }) => <ImputadosCell causa={row.original} />
   },
   {
     accessorKey: 'fechaHoraTomaConocimiento',

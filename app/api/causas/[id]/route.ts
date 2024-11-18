@@ -87,11 +87,21 @@ export async function PUT(
       },
       include: {
         delito: true,
-        fiscal: true,
+
         abogado: true,
         analista: true,
         tribunal: true,
-        foco: true
+        foco: true,
+        fiscal: {
+          select: {
+            nombre: true
+          }
+        },
+        _count: {
+          select: {
+            imputados: true // Esto incluirá el conteo de imputados
+          }
+        }
       }
     });
 

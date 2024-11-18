@@ -1,7 +1,7 @@
+// app/layout.tsx
 import { Toaster } from '@/components/ui/toaster';
 import '@uploadthing/react/styles.css';
 import type { Metadata } from 'next';
-//import NextTopLoader from 'nextjs-toploader';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import {
@@ -10,6 +10,9 @@ import {
   SignedIn,
   SignedOut
 } from '@clerk/nextjs';
+
+import { Providers } from '@/app/providers/providers';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -24,16 +27,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body>
-          <SignedOut>
-            <SignInButton />
-          </SignedOut>
-          <SignedIn></SignedIn>
-          {children}
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ClerkProvider>
+            <Providers>
+              <SignedOut>
+                <SignInButton />
+              </SignedOut>
+              <SignedIn>{children}</SignedIn>
+              <Toaster />
+            </Providers>
+          </ClerkProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
           nacionalidad: true,
           causas: {
             include: {
-              causa: true
+              causa: true,
+              cautelar: true
             }
           }
         }
@@ -39,7 +40,8 @@ export async function GET(request: NextRequest) {
           nacionalidad: true,
           causas: {
             include: {
-              causa: true
+              causa: true,
+              cautelar: true
             }
           }
         }

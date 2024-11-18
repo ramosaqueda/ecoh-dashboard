@@ -29,12 +29,64 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ count: totalCausas });
     } else {
       const causas = await prisma.causa.findMany({
-        where: whereClause
+        where: whereClause,
+        include: {
+          fiscal: {
+            select: {
+              id: true,
+              nombre: true
+            }
+          },
+          delito: {
+            select: {
+              id: true,
+              nombre: true
+            }
+          },
+          abogado: {
+            select: {
+              id: true,
+              nombre: true
+            }
+          },
+          analista: {
+            select: {
+              id: true,
+              nombre: true
+            }
+          },
+          _count: {
+            select: {
+              imputados: true // Esto añadirá el conteo de imputados
+            }
+          }
+        }
       });
-      return NextResponse.json(causas);
+
+      // Formateamos la respuesta para asegurarnos que todos los campos necesarios estén presentes
+      const formattedCausas = causas.map((causa) => ({
+        ...causa,
+        fiscal: causa.fiscal
+          ? {
+              id: causa.fiscal.id,
+              nombre: causa.fiscal.nombre
+            }
+          : null,
+        delito: causa.delito
+          ? {
+              id: causa.delito.id,
+              nombre: causa.delito.nombre
+            }
+          : null,
+        _count: {
+          imputados: causa._count?.imputados || 0
+        }
+      }));
+
+      return NextResponse.json(formattedCausas);
     }
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching causas:', error);
     return NextResponse.json(
       { error: 'Error fetching causas' },
       { status: 500 }
@@ -48,22 +100,14 @@ export async function POST(req: NextRequest) {
     console.log(data);
     const transformedData = {
       ...data,
-      // Convertir el ID del delito a número y estructurarlo correctamente
       delitoId: parseInt(data.delito),
-      // Eliminar el campo delito ya que usaremos delitoId
       delito: undefined,
-
-      // Hacer lo mismo con otras relaciones si las hay
       fiscalId: data.fiscalACargo ? parseInt(data.fiscalACargo) : null,
       fiscalACargo: undefined,
-
       abogadoId: data.abogado ? parseInt(data.abogado) : null,
       abogado: undefined,
-
       analistaId: data.analista ? parseInt(data.analista) : null,
       analista: undefined
-
-      // ... otras transformaciones necesarias
     };
 
     const newCausa = await prisma.causa.create({
@@ -72,8 +116,12 @@ export async function POST(req: NextRequest) {
         delito: true,
         fiscal: true,
         abogado: true,
-        analista: true
-        // ... otras relaciones que quieras incluir
+        analista: true,
+        _count: {
+          select: {
+            imputados: true
+          }
+        }
       }
     });
 

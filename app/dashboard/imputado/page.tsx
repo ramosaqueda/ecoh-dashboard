@@ -1,15 +1,19 @@
+// app/Dashboard/imputado/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {Imputado,columns} from '@/components/tables/imputados-tables/columns';
-
+import {
+  Imputado,
+  columns
+} from '@/components/tables/imputados-tables/columns';
 import { ImputadosDataTable } from '@/components/tables/imputados-tables/imputados-table';
 import ImputadoFormContainer from '@/components/ImputadoFormContainer';
 import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-async function getimputados(): Promise<Imputado[]> {
+async function getImputados(): Promise<Imputado[]> {
   const res = await fetch('/api/imputado', {
     cache: 'no-store'
   });
@@ -19,38 +23,25 @@ async function getimputados(): Promise<Imputado[]> {
   return res.json();
 }
 
-export default function imputadosPage() {
-  const [imputados, setImputados] = useState<Imputado[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function ImputadosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedimputado, setSelectedimputado] = useState<imputado | null>(
+  const [selectedImputado, setSelectedImputado] = useState<Imputado | null>(
     null
   );
+  const queryClient = useQueryClient();
 
-  const loadimputados = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await getimputados();
+  // Query para obtener imputados
+  const {
+    data: imputados = [],
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['imputados'],
+    queryFn: getImputados
+  });
 
-      setImputados(data);
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : 'Error al cargar los imputados'
-      );
-      toast.error('Error al cargar los imputados');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadimputados();
-  }, []);
-
-  const handleEdit = async (imputado: imputado) => {
-    setSelectedimputado(imputado);
+  const handleEdit = async (imputado: Imputado) => {
+    setSelectedImputado(imputado);
     setIsModalOpen(true);
   };
 
@@ -64,8 +55,9 @@ export default function imputadosPage() {
         throw new Error('Error al eliminar el imputado');
       }
 
-      setImputados(imputados.filter((imputado) => imputado.id !== id));
-      toast.success('imputado eliminado exitosamente');
+      // Invalidar la cache después de eliminar
+      queryClient.invalidateQueries({ queryKey: ['imputados'] });
+      toast.success('Imputado eliminado exitosamente');
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al eliminar el imputado');
@@ -74,12 +66,13 @@ export default function imputadosPage() {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
-    setSelectedimputado(null);
+    setSelectedImputado(null);
   };
 
   const handleFormSuccess = () => {
     handleModalClose();
-    loadimputados();
+    // Invalidar la cache después de crear/editar
+    queryClient.invalidateQueries({ queryKey: ['imputados'] });
   };
 
   if (isLoading) {
@@ -96,8 +89,18 @@ export default function imputadosPage() {
   if (error) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4">
-        <p className="text-destructive">{error}</p>
-        <Button onClick={loadimputados}>Reintentar</Button>
+        <p className="text-destructive">
+          {error instanceof Error
+            ? error.message
+            : 'Error al cargar los imputados'}
+        </p>
+        <Button
+          onClick={() =>
+            queryClient.invalidateQueries({ queryKey: ['imputados'] })
+          }
+        >
+          Reintentar
+        </Button>
       </div>
     );
   }
@@ -123,8 +126,8 @@ export default function imputadosPage() {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSuccess={handleFormSuccess}
-        initialData={selectedimputado}
-        isEditing={!!selectedimputado}
+        initialData={selectedImputado}
+        isEditing={!!selectedImputado}
       />
 
       {imputados.length === 0 ? (
@@ -140,6 +143,9 @@ export default function imputadosPage() {
           data={imputados}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onDataChange={() =>
+            queryClient.invalidateQueries({ queryKey: ['imputados'] })
+          }
         />
       )}
     </div>
