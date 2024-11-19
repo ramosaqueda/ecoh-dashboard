@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CausasEcohCard from '@/components/cards/CausasEcohCard';
 import CausasCard from '@/components/cards/CausasCard';
 import CausasLegadaCard from '@/components/cards/CausasLegadaCard';
+import NationalityDistribution from '@/components/charts/NationalityDistribution';
 
 export default async function page() {
   const user = await currentUser();
@@ -65,6 +66,9 @@ export default async function page() {
               </div>
               <div className="col-span-4 md:col-span-3">
                 <PieGraph />
+              </div>
+              <div className="col-span-4 md:col-span-3">
+                <NationalityDistribution />
               </div>
             </div>
           </TabsContent>

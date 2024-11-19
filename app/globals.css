@@ -67,3 +67,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Ajustes globales de z-index */
+.leaflet-container {
+  z-index: 10;
+}
+
+.select-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
+.leaflet-popup {
+  z-index: 1000;
+}
+
+/* Asegurar que los elementos de shadcn/ui aparezcan sobre el mapa */
+.select-content {
+  z-index: 1100 !important;
+}

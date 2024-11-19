@@ -1,9 +1,5 @@
 import { NavItem } from '@/types';
 
- 
-
-
-
 export const navItems: NavItem[] = [
   {
     title: 'Dashboard',
@@ -24,7 +20,12 @@ export const navItems: NavItem[] = [
     icon: 'profile',
     label: 'profile'
   },
-
+  {
+    title: 'Maps',
+    href: '/dashboard/geo',
+    icon: 'map',
+    label: 'Geo'
+  },
   {
     title: 'Comparativa Rostros',
     href: '/dashboard/compare',

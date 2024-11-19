@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,6 +14,7 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
@@ -25,12 +26,21 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
-import { Loader2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
+
+import { cn } from '@/lib/utils';
 
 interface Causa {
   id: number;
   ruc: string;
+  denominacionCausa: string;
 }
 
 interface Cautelar {
@@ -53,21 +63,124 @@ const CausaImputadoSchema = z
     essujetoInteres: z.boolean().default(false),
     formalizado: z.boolean().default(false),
     fechaFormalizacion: z.date().nullable().optional(),
-    cautelarId: z.string().optional().nullable()
+    cautelarId: z.string().optional().nullable(),
+    plazo: z.number().nullable().default(0)
   })
-  .refine(
-    (data) => {
-      // Al menos uno debe ser verdadero
-      return data.esImputado || data.essujetoInteres;
-    },
-    {
-      message:
-        'Debe seleccionar al menos una calidad (Imputado o Sujeto de Interés)',
-      path: ['esImputado'] // Este campo mostrará el error
-    }
-  );
+  .refine((data) => data.esImputado || data.essujetoInteres, {
+    message:
+      'Debe seleccionar al menos una calidad (Imputado o Sujeto de Interés)',
+    path: ['esImputado']
+  });
 
 export type CausaImputadoFormValues = z.infer<typeof CausaImputadoSchema>;
+
+function CausaSelector({
+  causas,
+  isLoading,
+  isEdit,
+  field,
+  form
+}: {
+  causas: Causa[];
+  isLoading: boolean;
+  isEdit: boolean;
+  field: any;
+  form: any;
+}) {
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredCausas = useMemo(() => {
+    if (!Array.isArray(causas)) return [];
+
+    if (!searchQuery) return causas;
+
+    const query = searchQuery.toLowerCase();
+    return causas.filter(
+      (causa) =>
+        causa.ruc.toLowerCase().includes(query) ||
+        causa.denominacionCausa.toLowerCase().includes(query)
+    );
+  }, [causas, searchQuery]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+          disabled={isLoading || isEdit}
+        >
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Cargando...
+            </span>
+          ) : (
+            <span>
+              {field.value
+                ? causas?.find((c) => c.id.toString() === field.value)?.ruc
+                : 'Seleccione un RUC'}
+            </span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[400px] p-0" align="start" side="bottom">
+        <div className="flex flex-col">
+          <div className="flex items-center border-b p-2">
+            <Input
+              placeholder="Buscar por RUC o denominación..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border-0 focus:ring-0"
+            />
+          </div>
+          <div className="max-h-[300px] overflow-y-auto">
+            {filteredCausas.length === 0 ? (
+              <div className="p-2 text-center text-sm text-muted-foreground">
+                No se encontraron resultados
+              </div>
+            ) : (
+              filteredCausas.map((causa) => (
+                <div
+                  key={causa.id}
+                  className={cn(
+                    'flex cursor-pointer items-start gap-2 p-2 hover:bg-muted',
+                    field.value === causa.id.toString() && 'bg-muted'
+                  )}
+                  onClick={() => {
+                    form.setValue('causaId', causa.id.toString(), {
+                      shouldValidate: true
+                    });
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      'h-4 w-4 shrink-0',
+                      field.value === causa.id.toString()
+                        ? 'opacity-100'
+                        : 'opacity-0'
+                    )}
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-medium">{causa.ruc}</span>
+                    <span className="line-clamp-2 text-sm text-muted-foreground">
+                      {causa.denominacionCausa}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function CausaImputadoForm({
   imputadoId,
@@ -78,8 +191,8 @@ export default function CausaImputadoForm({
 }: CausaImputadoFormProps) {
   const [causas, setCausas] = useState<Causa[]>([]);
   const [cautelares, setCautelares] = useState<Cautelar[]>([]);
-  const [isLoadingCausas, setIsLoadingCausas] = useState(false);
-  const [isLoadingCautelares, setIsLoadingCautelares] = useState(false);
+  const [isLoadingCausas, setIsLoadingCausas] = useState(true);
+  const [isLoadingCautelares, setIsLoadingCautelares] = useState(true);
 
   const form = useForm<CausaImputadoFormValues>({
     resolver: zodResolver(CausaImputadoSchema),
@@ -93,7 +206,8 @@ export default function CausaImputadoForm({
         : null,
       cautelarId: initialData?.cautelarId
         ? initialData.cautelarId.toString()
-        : undefined
+        : undefined,
+      plazo: initialData?.plazo || 0
     }
   });
 
@@ -114,11 +228,13 @@ export default function CausaImputadoForm({
         const causasData = await causasResponse.json();
         const cautelaresData = await cautelaresResponse.json();
 
-        setCausas(causasData);
-        setCautelares(cautelaresData);
+        setCausas(Array.isArray(causasData) ? causasData : []);
+        setCautelares(Array.isArray(cautelaresData) ? cautelaresData : []);
       } catch (error) {
         console.error('Error:', error);
         toast.error('Error al cargar los datos');
+        setCausas([]);
+        setCautelares([]);
       } finally {
         setIsLoadingCausas(false);
         setIsLoadingCautelares(false);
@@ -145,32 +261,15 @@ export default function CausaImputadoForm({
               control={form.control}
               name="causaId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>RUC</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isLoadingCausas || isEdit}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seleccione un RUC">
-                          {field.value
-                            ? causas.find(
-                                (c) => c.id.toString() === field.value
-                              )?.ruc
-                            : 'Seleccione un RUC'}
-                        </SelectValue>
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {causas.map((causa) => (
-                        <SelectItem key={causa.id} value={causa.id.toString()}>
-                          {causa.ruc}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CausaSelector
+                    causas={causas}
+                    isLoading={isLoadingCausas}
+                    isEdit={isEdit}
+                    field={field}
+                    form={form}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

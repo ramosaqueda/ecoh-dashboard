@@ -88,16 +88,6 @@ export default function ImputadosDrawer({
                   </div>
 
                   <div className="mt-2 space-y-2 divide-y text-sm text-muted-foreground">
-                    <div className="flex justify-between pb-2">
-                      <span>Calidad:</span>
-                      <span className="font-medium text-foreground">
-                        {registro.esImputado
-                          ? 'Imputado'
-                          : registro.essujetoInteres
-                          ? 'Sujeto de Interés'
-                          : 'No especificado'}
-                      </span>
-                    </div>
                     <div className="flex justify-between py-2">
                       <span>Formalizado:</span>
                       <span className="font-medium text-foreground">

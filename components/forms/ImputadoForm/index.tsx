@@ -17,6 +17,8 @@ import { Loader2, Plus } from 'lucide-react';
 import NacionalidadSelect from '@/components/select/NacionalidadSelect';
 import CausaImputadoContainer from '@/components/forms/CausaImputadoForm/CausaImputadoContainer';
 
+import { useRunValidation } from '@/hooks/useRunValidation';
+
 import { Separator } from '@/components/ui/separator';
 import { CausaImputado } from '@/types/causaimputado';
 
@@ -26,7 +28,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const ImputadoFormSchema = z.object({
   nombreSujeto: z.string().min(1, 'El nombre es requerido'),
-  docId: z.string().min(1, 'El documento de identidad es requerido'),
+  docId: z
+    .string()
+    .min(1, 'El documento de identidad es requerido')
+    .refine((val) => validateRun(val), {
+      message: 'RUN inválido'
+    }),
   nacionalidadId: z.string().min(1, 'La nacionalidad es requerida')
 });
 
@@ -91,6 +98,14 @@ const ImputadoForm = ({
     onSuccess?.();
   };
 
+  const { isValid, error, formatRun, validateRun } = useRunValidation();
+
+  const handleRunChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedRun = formatRun(e.target.value);
+    form.setValue('docId', formattedRun);
+    validateRun(formattedRun);
+  };
+
   return (
     <div className="space-y-6">
       <Form {...form}>
@@ -114,13 +129,17 @@ const ImputadoForm = ({
             name="docId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Documento de Identidad</FormLabel>
+                <FormLabel>RUN</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    placeholder="Ingrese el documento de identidad"
+                    onChange={handleRunChange}
+                    placeholder="12.345.678-9"
                   />
                 </FormControl>
+                {error && (
+                  <span className="text-sm text-destructive">{error}</span>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -184,7 +203,7 @@ const ImputadoForm = ({
                 }
               />
             </div>
-            <CausasGrid causas={causasAsociadas} />
+            <CausasGrid causas={causasAsociadas} imputadoId={imputadoId} />
           </div>
         </>
       )}

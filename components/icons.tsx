@@ -24,10 +24,11 @@ import {
   Settings,
   SunMedium,
   Trash,
-  Twitter,
+  MapIcon,
   User,
   User2Icon,
   UserX2Icon,
+  Twitter,
   X,
   DramaIcon,
   BriefcaseBusiness,
@@ -66,6 +67,7 @@ export const Icons = {
   drama: DramaIcon,
   briefcase: BriefcaseBusiness,
   pencil: PencilIcon,
+  map: MapIcon,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"

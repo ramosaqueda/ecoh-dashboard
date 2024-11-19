@@ -10,7 +10,7 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { UserPlus, Pencil } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/use-toast';
 import CausaImputadoForm, { CausaImputadoFormValues } from './index';
 import { type CausaImputado } from '@/types/causaimputado';
 
@@ -31,6 +31,7 @@ export default function CausaImputadoContainer({
 }: CausaImputadoContainerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast(); // Movido dentro del componente
 
   const handleSubmit = async (data: CausaImputadoFormValues) => {
     try {
@@ -39,39 +40,41 @@ export default function CausaImputadoContainer({
         ...data,
         imputadoId,
         fechaFormalizacion: data.formalizado ? data.fechaFormalizacion : null,
-        cautelarId: data.cautelarId || null
+        cautelarId: data.cautelarId || null,
+        plazo: data.plazo || 0
       };
 
       const response = await fetch(
         '/api/causas-imputados' + (isEdit ? `/${initialData?.causaId}` : ''),
         {
           method: isEdit ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
         }
       );
 
+      const responseData = await response.json();
+      console.log(responseData);
       if (!response.ok) {
-        const errorData = await response.json();
         throw new Error(
-          errorData.error ||
+          responseData.error ||
             `Error al ${isEdit ? 'actualizar' : 'asociar'} la causa`
         );
       }
 
-      toast.success(
-        `Causa ${isEdit ? 'actualizada' : 'asociada'} exitosamente`
-      );
+      toast({
+        title: 'Éxito',
+        description: `Causa ${isEdit ? 'actualizada' : 'asociada'} exitosamente`
+      });
+
       setIsOpen(false);
       onSuccess?.();
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error(
-        error.message ||
-          `Error al ${isEdit ? 'actualizar' : 'asociar'} la causa`
-      );
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message
+      });
     } finally {
       setIsSubmitting(false);
     }
