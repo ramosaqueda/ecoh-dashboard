@@ -1,9 +1,10 @@
-import { AreaGraph } from '@/components/charts/area-graph';
-import { BarGraph } from '@/components/charts/bar-graph';
-import { PieGraph } from '@/components/charts/pie-graph';
+import CaseTimelineChart from '@/components/charts/CaseTimelineChart';
 import { CalendarDateRangePicker } from '@/components/date-range-picker';
 import PageContainer from '@/components/layout/page-container';
-import { RecentSales } from '@/components/recent-sales';
+import AbogadoAnalistaChart from '@/components/charts/AbogadoAnalistaChart';
+import { CasesHeatmap } from '@/components/charts/CasesHeatmap';
+import { DelitosDistribution } from '@/components/charts/DelitosDistribution';
+import { ImputadosFlow } from '@/components/charts/ImputadosFlow';
 import { Button } from '@/components/ui/button';
 import { currentUser } from '@clerk/nextjs/server';
 import {
@@ -18,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CausasEcohCard from '@/components/cards/CausasEcohCard';
 import CausasCard from '@/components/cards/CausasCard';
 import CausasLegadaCard from '@/components/cards/CausasLegadaCard';
+import { EsclarecimientoCard } from '@/components/cards/EsclarecimientoCard';
 import NationalityDistribution from '@/components/charts/NationalityDistribution';
 
 export default async function page() {
@@ -47,28 +49,28 @@ export default async function page() {
               <CausasCard />
               <CausasEcohCard />
               <CausasLegadaCard />
+              <EsclarecimientoCard />
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <div className="col-span-4">
-                <BarGraph />
-              </div>
-              <Card className="col-span-4 md:col-span-3">
-                <CardHeader>
-                  <CardTitle>Causas Recientes ingresadas</CardTitle>
-                  <CardDescription>
-                    Han ingrsado X Causas en nov.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>Causas...</CardContent>
-              </Card>
-              <div className="col-span-4">
-                <AreaGraph />
+              <div className="col-span-4 md:col-span-3">
+                <CaseTimelineChart />
               </div>
               <div className="col-span-4 md:col-span-3">
-                <PieGraph />
+                <DelitosDistribution />
+              </div>
+              <div className="col-span-4 md:col-span-3">
+                <AbogadoAnalistaChart />
               </div>
               <div className="col-span-4 md:col-span-3">
                 <NationalityDistribution />
+              </div>
+
+              <div className="col-span-4 md:col-span-3">
+                <ImputadosFlow />
+              </div>
+
+              <div className="col-span-6">
+                <CasesHeatmap />
               </div>
             </div>
           </TabsContent>

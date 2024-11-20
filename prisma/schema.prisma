@@ -56,14 +56,15 @@ model Victima {
 }
 
 model Imputado {
-  id             Int               @id @default(autoincrement())
+  id             Int                    @id @default(autoincrement())
   nombreSujeto   String
   docId          String
   nacionalidadId Int?
-  createdAt      DateTime?          @default(now())
-  updatedAt      DateTime?          @updatedAt
+  createdAt      DateTime?              @default(now())
+  updatedAt      DateTime?              @updatedAt
   causas         CausasImputados[]
-  nacionalidad   Nacionalidad?     @relation(fields: [nacionalidadId], references: [id])
+  nacionalidad   Nacionalidad?          @relation(fields: [nacionalidadId], references: [id])
+  organizaciones MiembrosOrganizacion[]
 }
 
 model Nacionalidad {
@@ -145,4 +146,42 @@ model Cautelar {
   id              Int               @id @default(autoincrement())
   nombre          String
   causasImputados CausasImputados[]
+}
+
+model TipoOrganizacion {
+  id             Int                     @id @default(autoincrement())
+  nombre         String
+  descripcion    String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  organizaciones OrganizacionDelictual[]
+}
+
+model OrganizacionDelictual {
+  id                  Int                    @id @default(autoincrement())
+  nombre              String
+  descripcion         String?
+  fechaIdentificacion DateTime
+  activa              Boolean                @default(true)
+  tipoOrganizacionId  Int
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  miembros            MiembrosOrganizacion[]
+  tipoOrganizacion    TipoOrganizacion       @relation(fields: [tipoOrganizacionId], references: [id])
+}
+
+model MiembrosOrganizacion {
+  id             Int                   @id @default(autoincrement())
+  organizacionId Int
+  imputadoId     Int
+  rol            String?
+  fechaIngreso   DateTime
+  fechaSalida    DateTime?
+  activo         Boolean               @default(true)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  imputado       Imputado              @relation(fields: [imputadoId], references: [id])
+  organizacion   OrganizacionDelictual @relation(fields: [organizacionId], references: [id])
+
+  @@unique([organizacionId, imputadoId])
 }
