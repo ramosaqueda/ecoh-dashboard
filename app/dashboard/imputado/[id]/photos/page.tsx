@@ -12,13 +12,7 @@ import ImputadoFormContainer from '@/components/ImputadoFormContainer';
 import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Breadcrumbs } from '@/components/breadcrumbs';
-import PageContainer from '@/components/layout/page-container';
 
-const breadcrumbItems = [
-  { title: 'Dashboard', link: '/dashboard' },
-  { title: 'Imputados', link: '/dashboard/imputados' }
-];
 async function getImputados(): Promise<Imputado[]> {
   const res = await fetch('/api/imputado', {
     cache: 'no-store'
@@ -112,54 +106,48 @@ export default function ImputadosPage() {
   }
 
   return (
-    <PageContainer scrollable={true}>
-      <div className="container mx-auto space-y-6 py-10">
-        <Breadcrumbs items={breadcrumbItems} />
+    <div className="container mx-auto space-y-6 py-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Gestión de imputados
+          </h1>
+          <p className="text-muted-foreground">
+            Administre los imputados del sistema
+          </p>
+        </div>
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Nuevo imputado
+        </Button>
+      </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Gestión de imputados
-            </h1>
-            <p className="text-muted-foreground">
-              Administre los imputados del sistema
-            </p>
-          </div>
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo imputado
+      <ImputadoFormContainer
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleFormSuccess}
+        initialData={selectedImputado}
+        isEditing={!!selectedImputado}
+      />
+
+      {imputados.length === 0 ? (
+        <div className="py-10 text-center">
+          <p className="text-muted-foreground">No hay imputados registrados</p>
+          <Button className="mt-4" onClick={() => setIsModalOpen(true)}>
+            Crear primer imputado
           </Button>
         </div>
-
-        <ImputadoFormContainer
-          isOpen={isModalOpen}
-          onClose={handleModalClose}
-          onSuccess={handleFormSuccess}
-          initialData={selectedImputado}
-          isEditing={!!selectedImputado}
+      ) : (
+        <ImputadosDataTable
+          columns={columns}
+          data={imputados}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onDataChange={() =>
+            queryClient.invalidateQueries({ queryKey: ['imputados'] })
+          }
         />
-
-        {imputados.length === 0 ? (
-          <div className="py-10 text-center">
-            <p className="text-muted-foreground">
-              No hay imputados registrados
-            </p>
-            <Button className="mt-4" onClick={() => setIsModalOpen(true)}>
-              Crear primer imputado
-            </Button>
-          </div>
-        ) : (
-          <ImputadosDataTable
-            columns={columns}
-            data={imputados}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onDataChange={() =>
-              queryClient.invalidateQueries({ queryKey: ['imputados'] })
-            }
-          />
-        )}
-      </div>
-    </PageContainer>
+      )}
+    </div>
   );
 }

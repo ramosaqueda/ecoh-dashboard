@@ -86,3 +86,96 @@
 .select-content {
   z-index: 1100 !important;
 }
+
+/* Agregar al final de tu globals.css */
+.rdp {
+  --rdp-cell-size: 40px !important;
+  --rdp-accent-color: hsl(var(--primary)) !important;
+  --rdp-background-color: hsl(var(--primary)) !important;
+  margin: 0 !important;
+}
+
+/* Asegurar que el calendario aparezca sobre otros elementos */
+div[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+/* Al final de tu globals.css */
+.calendar-wrapper {
+  position: relative;
+  z-index: 9999;
+}
+
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+.dialog-overlay {
+  z-index: 999;
+}
+
+.dialog-content {
+  z-index: 1000;
+}
+
+/* Agrega esto a tu globals.css */
+.react-datepicker {
+  @apply rounded-lg border border-border bg-background shadow-lg;
+  font-family: inherit;
+}
+
+.react-datepicker__header {
+  @apply rounded-t-lg border-border bg-muted;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  @apply text-foreground;
+}
+
+.react-datepicker__day-name {
+  @apply text-muted-foreground;
+}
+
+.react-datepicker__day {
+  @apply rounded text-foreground hover:bg-accent hover:text-accent-foreground;
+}
+
+.react-datepicker__day--selected {
+  @apply bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground;
+}
+
+.react-datepicker__day--keyboard-selected {
+  @apply bg-accent text-accent-foreground;
+}
+
+.react-datepicker__day--outside-month {
+  @apply text-muted-foreground;
+}
+
+.react-datepicker__navigation {
+  @apply top-2;
+}
+
+.react-datepicker__navigation-icon::before {
+  @apply border-muted-foreground;
+}
+
+.react-datepicker__year-dropdown,
+.react-datepicker__month-dropdown {
+  @apply rounded-md border border-border bg-background;
+}
+
+.react-datepicker__year-option,
+.react-datepicker__month-option {
+  @apply text-foreground hover:bg-accent hover:text-accent-foreground;
+}
+
+.react-datepicker__input-container input {
+  @apply w-full;
+}
+
+.react-datepicker-popper {
+  @apply z-[9999] !important;
+}

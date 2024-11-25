@@ -2,7 +2,8 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Edit, Trash2, FileText } from 'lucide-react';
+import { ArrowUpDown, Edit, Trash2, FileText, Eye } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { type Imputado } from '@/types/causaimputado';
 
@@ -81,10 +82,18 @@ export const columns: ColumnDef<Imputado>[] = [
     id: 'actions',
     cell: ({ row, table }) => {
       const imputado = row.original;
-      const { onEdit, onDelete } = table.options.meta || {};
+      const { onEdit, onDelete, onView } = table.options.meta || {};
 
       return (
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onView?.(imputado)}
+            title="Ver detalles"
+          >
+            <Eye className="h-4 w-4 text-gray-600" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"

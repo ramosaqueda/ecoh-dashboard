@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
 import {
   ColumnDef,
   flexRender,
@@ -45,6 +47,7 @@ export function ImputadosDataTable<TData extends Imputado, TValue>({
   onDelete,
   onDataChange
 }: DataTableProps<TData, TValue>) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -131,7 +134,9 @@ export function ImputadosDataTable<TData extends Imputado, TValue>({
     meta: {
       onEdit,
       onDelete,
-      onViewCausas: (imputado: Imputado) => setSelectedImputado(imputado)
+      onViewCausas: (imputado: Imputado) => setSelectedImputado(imputado),
+      onView: (imputado: Imputado) =>
+        router.push(`/dashboard/imputado/${imputado.id}`)
     }
   });
 

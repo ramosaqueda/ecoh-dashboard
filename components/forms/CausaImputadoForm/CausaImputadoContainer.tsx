@@ -94,19 +94,21 @@ export default function CausaImputadoContainer({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
-      <DialogContent className="max-w-[500px]">
+      <DialogContent className="dialog-content max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? 'Editar Causa Asociada' : 'Asociar Imputado a Causa'}
           </DialogTitle>
         </DialogHeader>
-        <CausaImputadoForm
-          imputadoId={imputadoId}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          isEdit={isEdit}
-          initialData={initialData}
-        />
+        <div className="relative">
+          <CausaImputadoForm
+            imputadoId={imputadoId}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            isEdit={isEdit}
+            initialData={initialData}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

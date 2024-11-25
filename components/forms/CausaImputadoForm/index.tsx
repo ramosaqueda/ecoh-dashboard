@@ -14,6 +14,8 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form';
+import ReactDatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -26,7 +28,12 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
-import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import {
+  Check,
+  ChevronsUpDown,
+  Loader2,
+  Calendar as CalendarIcon
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -34,6 +41,8 @@ import {
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover';
+
+import { es } from 'date-fns/locale';
 
 import { cn } from '@/lib/utils';
 
@@ -59,17 +68,17 @@ interface CausaImputadoFormProps {
 const CausaImputadoSchema = z
   .object({
     causaId: z.string().min(1, 'Debe seleccionar una causa'),
-    esImputado: z.boolean().default(false),
+    esimputado: z.boolean().default(false),
     essujetoInteres: z.boolean().default(false),
     formalizado: z.boolean().default(false),
     fechaFormalizacion: z.date().nullable().optional(),
     cautelarId: z.string().optional().nullable(),
     plazo: z.number().nullable().default(0)
   })
-  .refine((data) => data.esImputado || data.essujetoInteres, {
+  .refine((data) => data.esimputado || data.essujetoInteres, {
     message:
       'Debe seleccionar al menos una calidad (Imputado o Sujeto de Interés)',
-    path: ['esImputado']
+    path: ['esimputado']
   });
 
 export type CausaImputadoFormValues = z.infer<typeof CausaImputadoSchema>;
@@ -198,7 +207,7 @@ export default function CausaImputadoForm({
     resolver: zodResolver(CausaImputadoSchema),
     defaultValues: {
       causaId: initialData ? initialData.causaId.toString() : '',
-      esImputado: initialData?.esImputado || false,
+      esimputado: initialData?.esimputado || false,
       essujetoInteres: initialData?.essujetoInteres || false,
       formalizado: initialData?.formalizado || false,
       fechaFormalizacion: initialData?.fechaFormalizacion
@@ -245,11 +254,21 @@ export default function CausaImputadoForm({
   }, []);
 
   const watchFormalizado = form.watch('formalizado');
-  const watchEsImputado = form.watch('esImputado');
+  const watchEsImputado = form.watch('esimputado');
+
+  const handleSubmit = async (data: CausaImputadoFormValues) => {
+    const formattedData = {
+      ...data,
+      fechaFormalizacion: data.fechaFormalizacion
+        ? format(new Date(data.fechaFormalizacion), 'yyyy-MM-dd')
+        : null
+    };
+    await onSubmit(formattedData);
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">
@@ -278,7 +297,7 @@ export default function CausaImputadoForm({
             <div className="space-y-4 border-t pt-4">
               <FormField
                 control={form.control}
-                name="esImputado"
+                name="esimputado"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                     <FormControl>
@@ -336,21 +355,25 @@ export default function CausaImputadoForm({
                       control={form.control}
                       name="fechaFormalizacion"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Fecha de Formalización</FormLabel>
                           <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              value={
-                                field.value
-                                  ? format(field.value, 'yyyy-MM-dd')
-                                  : ''
+                            <ReactDatePicker
+                              selected={field.value}
+                              onChange={(date: Date) => field.onChange(date)}
+                              dateFormat="dd/MM/yyyy"
+                              locale={es}
+                              placeholderText="Seleccione una fecha"
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              maxDate={new Date()}
+                              minDate={new Date('1900-01-01')}
+                              isClearable
+                              showMonthDropdown
+                              showYearDropdown
+                              dropdownMode="select"
+                              customInput={
+                                <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" />
                               }
-                              onChange={(e) => {
-                                const date = e.target.valueAsDate;
-                                field.onChange(date);
-                              }}
                             />
                           </FormControl>
                           <FormMessage />

@@ -1,4 +1,3 @@
-// app/providers/providers.tsx
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -13,7 +12,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 60 * 1000, // 1 minuto
             refetchOnWindowFocus: false,
-            retry: 1
+            retry: 1,
+            // Añadir opciones adicionales recomendadas
+            refetchOnMount: true,
+            refetchOnReconnect: true,
+            gcTime: 5 * 60 * 1000 // 5 minutos
+          },
+          mutations: {
+            // Configuración por defecto para mutaciones
+            retry: 1,
+            onError: (error: unknown) => {
+              // Manejo global de errores de mutación
+              console.error('Error en mutación:', error);
+            }
           }
         }
       })
@@ -22,7 +33,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {process.env.NODE_ENV === 'development' && (
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          position="bottom-right"
+          buttonPosition="bottom-right"
+        />
+      )}
     </QueryClientProvider>
   );
 }

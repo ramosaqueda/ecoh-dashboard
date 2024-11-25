@@ -19,10 +19,31 @@ export async function GET(
     const imputado = await prisma.imputado.findUnique({
       where: { id },
       include: {
-        nacionalidad: true,
+        nacionalidad: {
+          select: {
+            id: true,
+            nombre: true
+          }
+        },
+        fotografias: {
+          select: {
+            id: true,
+            url: true,
+            filename: true,
+            esPrincipal: true,
+            createdAt: true
+          },
+          orderBy: [{ esPrincipal: 'desc' }, { createdAt: 'desc' }]
+        },
         causas: {
           include: {
-            causa: true
+            causa: {
+              include: {
+                delito: true,
+                tribunal: true
+              }
+            },
+            cautelar: true
           }
         }
       }
@@ -88,7 +109,6 @@ export async function PUT(
         nombreSujeto,
         docId,
         nacionalidadId: nacionalidadId ? Number(nacionalidadId) : null,
-        // Crear nuevas relaciones con causas si se proporcionan
         causas: causaIds
           ? {
               create: causaIds.map((causaId: number) => ({
@@ -100,10 +120,31 @@ export async function PUT(
           : undefined
       },
       include: {
-        nacionalidad: true,
+        nacionalidad: {
+          select: {
+            id: true,
+            nombre: true
+          }
+        },
+        fotografias: {
+          select: {
+            id: true,
+            url: true,
+            filename: true,
+            esPrincipal: true,
+            createdAt: true
+          },
+          orderBy: [{ esPrincipal: 'desc' }, { createdAt: 'desc' }]
+        },
         causas: {
           include: {
-            causa: true
+            causa: {
+              include: {
+                delito: true,
+                tribunal: true
+              }
+            },
+            cautelar: true
           }
         }
       }
@@ -142,12 +183,18 @@ export async function DELETE(
       );
     }
 
-    // Primero eliminar las relaciones en CausasImputados
+    // Eliminar en orden para mantener la integridad referencial
+    // 1. Eliminar fotografías
+    await prisma.fotografia.deleteMany({
+      where: { imputadoId: id }
+    });
+
+    // 2. Eliminar relaciones en CausasImputados
     await prisma.causasImputados.deleteMany({
       where: { imputadoId: id }
     });
 
-    // Luego eliminar el imputado
+    // 3. Finalmente eliminar el imputado
     await prisma.imputado.delete({
       where: { id }
     });

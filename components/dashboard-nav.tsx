@@ -1,19 +1,134 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
 import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { NavItem } from '@/types';
 import { Dispatch, SetStateAction } from 'react';
 import { useSidebar } from '@/hooks/useSidebar';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
 } from './ui/tooltip';
+import { Button } from './ui/button';
+
+interface NavItemProps {
+  item: NavItem;
+  isMinimized: boolean;
+  depth?: number;
+  onOpenChange?: () => void;
+}
+
+const NavItemComponent = ({
+  item,
+  isMinimized,
+  depth = 0,
+  onOpenChange
+}: NavItemProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const pathname = usePathname();
+  const hasSubItems = item.subItems && item.subItems.length > 0;
+  const IconComponent = item.icon && Icons[item.icon];
+  const Icon = IconComponent || Icons.arrowRight;
+  const isActive = item.href ? pathname === item.href : false;
+  const isSubItemActive = item.subItems?.some(
+    (subItem) => subItem.href === pathname
+  );
+
+  const handleClick = () => {
+    if (hasSubItems) {
+      setIsExpanded(!isExpanded);
+    } else if (onOpenChange) {
+      onOpenChange();
+    }
+  };
+
+  const navContent = (
+    <>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <Icon className="h-5 w-5 flex-shrink-0" />
+        {(!isMinimized || depth > 0) && (
+          <span className="flex-1 truncate text-sm">{item.title}</span>
+        )}
+        {hasSubItems && !isMinimized && (
+          <div className="ml-auto">
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  const renderContent = () => {
+    if (item.href && !hasSubItems) {
+      return (
+        <Link
+          href={item.disabled ? '#' : item.href}
+          className={cn(
+            'flex w-full items-center rounded-md px-3 py-2 hover:bg-accent hover:text-accent-foreground',
+            isActive && 'bg-accent text-accent-foreground',
+            item.disabled && 'pointer-events-none opacity-60',
+            depth > 0 && 'ml-4'
+          )}
+          onClick={onOpenChange}
+        >
+          {navContent}
+        </Link>
+      );
+    }
+
+    return (
+      <Button
+        variant="ghost"
+        className={cn(
+          'w-full justify-start rounded-md px-3 py-2 hover:bg-accent hover:text-accent-foreground',
+          (isActive || isSubItemActive) && 'bg-accent text-accent-foreground',
+          depth > 0 && 'ml-4'
+        )}
+        onClick={handleClick}
+      >
+        {navContent}
+      </Button>
+    );
+  };
+
+  return (
+    <div>
+      <Tooltip>
+        <TooltipTrigger asChild>{renderContent()}</TooltipTrigger>
+        {isMinimized && depth === 0 && (
+          <TooltipContent side="right" className="flex items-center gap-4">
+            {item.title}
+            {hasSubItems && <ChevronRight className="h-4 w-4" />}
+          </TooltipContent>
+        )}
+      </Tooltip>
+
+      {hasSubItems && isExpanded && !isMinimized && (
+        <div className="mt-1 space-y-1">
+          {item.subItems.map((subItem, index) => (
+            <NavItemComponent
+              key={subItem.href || index}
+              item={subItem}
+              depth={depth + 1}
+              isMinimized={isMinimized}
+              onOpenChange={onOpenChange}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface DashboardNavProps {
   items: NavItem[];
@@ -26,56 +141,23 @@ export function DashboardNav({
   setOpen,
   isMobileNav = false
 }: DashboardNavProps) {
-  const path = usePathname();
   const { isMinimized } = useSidebar();
 
   if (!items?.length) {
     return null;
   }
 
-  console.log('isActive', isMobileNav, isMinimized);
-
   return (
     <nav className="grid items-start gap-2">
       <TooltipProvider>
-        {items.map((item, index) => {
-          const Icon = Icons[item.icon || 'arrowRight'];
-          return (
-            item.href && (
-              <Tooltip key={index}>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={item.disabled ? '/' : item.href}
-                    className={cn(
-                      'flex items-center gap-2 overflow-hidden rounded-md py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
-                      path === item.href ? 'bg-accent' : 'transparent',
-                      item.disabled && 'cursor-not-allowed opacity-80'
-                    )}
-                    onClick={() => {
-                      if (setOpen) setOpen(false);
-                    }}
-                  >
-                    <Icon className={`ml-3 size-5 flex-none`} />
-
-                    {isMobileNav || (!isMinimized && !isMobileNav) ? (
-                      <span className="mr-2 truncate">{item.title}</span>
-                    ) : (
-                      ''
-                    )}
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent
-                  align="center"
-                  side="right"
-                  sideOffset={8}
-                  className={!isMinimized ? 'hidden' : 'inline-block'}
-                >
-                  {item.title}
-                </TooltipContent>
-              </Tooltip>
-            )
-          );
-        })}
+        {items.map((item, index) => (
+          <NavItemComponent
+            key={item.href || index}
+            item={item}
+            isMinimized={!isMobileNav && isMinimized}
+            onOpenChange={() => setOpen?.(false)}
+          />
+        ))}
       </TooltipProvider>
     </nav>
   );

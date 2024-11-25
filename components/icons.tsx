@@ -32,7 +32,10 @@ import {
   X,
   DramaIcon,
   BriefcaseBusiness,
-  PencilIcon
+  PencilIcon,
+  NetworkIcon,
+  Share2Icon,
+  VenetianMask
 } from 'lucide-react';
 
 export type Icon = LucideIcon;
@@ -68,6 +71,9 @@ export const Icons = {
   briefcase: BriefcaseBusiness,
   pencil: PencilIcon,
   map: MapIcon,
+  Net: NetworkIcon,
+  Share: Share2Icon,
+  Mask: VenetianMask,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"

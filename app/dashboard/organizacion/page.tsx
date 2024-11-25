@@ -1,5 +1,5 @@
 import React from 'react';
-import OrganizacionForm from '@/components/formorganizacion/OrganizacionForm';
+import OrganizacionForm from '@/components/forms/organizacion/OrganizacionForm';
 const page = () => {
   return (
     <div>

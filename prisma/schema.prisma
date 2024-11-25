@@ -63,10 +63,22 @@ model Imputado {
   createdAt      DateTime?              @default(now())
   updatedAt      DateTime?              @updatedAt
   causas         CausasImputados[]
+  fotoPrincipal String?
+  fotografias   Fotografia[]
   nacionalidad   Nacionalidad?          @relation(fields: [nacionalidadId], references: [id])
   organizaciones MiembrosOrganizacion[]
 }
 
+model Fotografia {
+  id          Int      @id @default(autoincrement())
+  url         String?
+  filename    String
+  esPrincipal Boolean  @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  imputado    Imputado @relation(fields: [imputadoId], references: [id])
+  imputadoId  Int
+}
 model Nacionalidad {
   id        Int        @id @default(autoincrement())
   nombre    String
