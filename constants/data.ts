@@ -42,7 +42,12 @@ export const navItems: NavItem[] = [
       }
     ]
   },
-
+  {
+    title: 'Telefonos',
+    href: '/dashboard/telefonos',
+    icon: 'Smartphone',
+    label: 'login'
+  },
   {
     title: 'Login',
     href: '/',

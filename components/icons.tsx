@@ -35,7 +35,8 @@ import {
   PencilIcon,
   NetworkIcon,
   Share2Icon,
-  VenetianMask
+  VenetianMask,
+  Smartphone
 } from 'lucide-react';
 
 export type Icon = LucideIcon;
@@ -74,6 +75,7 @@ export const Icons = {
   Net: NetworkIcon,
   Share: Share2Icon,
   Mask: VenetianMask,
+  Smartphone: Smartphone,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"

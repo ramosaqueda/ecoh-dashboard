@@ -1,20 +1,15 @@
+// components/tables/causa-tables/columns.tsx
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import {
-  ArrowUpDown,
-  Edit,
-  Trash2,
-  Users,
-  ChevronDown,
-  ChevronUp
-} from 'lucide-react';
+import { ArrowUpDown, Edit, Trash2, Users, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState } from 'react';
 import ImputadosDrawer from '@/components/drawer/imputados-drawer';
 import { useToast } from '@/components/ui/use-toast';
+import Link from 'next/link';
 
 export type Causa = {
   id: string;
@@ -25,7 +20,7 @@ export type Causa = {
   observacion: string;
   foliobw: string;
   fechaHoraTomaConocimiento: string;
-  sinLlamadoEcoh: boolean;
+  causaEcoh: boolean;
   fiscalId: string;
   delitoId: string;
   _count?: {
@@ -118,7 +113,6 @@ export const columns: ColumnDef<Causa>[] = [
     accessorKey: 'rit',
     header: 'RIT'
   },
-
   {
     accessorKey: 'fiscal.nombre',
     header: 'Fiscal'
@@ -128,18 +122,13 @@ export const columns: ColumnDef<Causa>[] = [
     header: 'Folio BW'
   },
   {
-    accessorKey: 'sinLlamadoEcoh',
-    header: 'Sin Llamado ECOH',
-    cell: ({ row }) => (row.getValue('sinLlamadoEcoh') ? 'Sí' : 'No')
-  },
-  {
-    id: 'imputados',
-    header: 'Imputados',
-    cell: ({ row }) => <ImputadosCell causa={row.original} />
+    accessorKey: 'causaEcoh',
+    header: 'Causa ECOH',
+    cell: ({ row }) => (row.getValue('causaEcoh') ? 'Sí' : 'No')
   },
   {
     accessorKey: 'fechaHoraTomaConocimiento',
-    header: 'Fecha y Hora Toma Conocimiento',
+    header: 'Fecha Toma Conocimiento',
     cell: ({ row }) => {
       const fecha = row.getValue('fechaHoraTomaConocimiento') as string;
       return fecha
@@ -152,6 +141,19 @@ export const columns: ColumnDef<Causa>[] = [
     header: 'Observación'
   },
   {
+    accessorKey: 'abogado.nombre',
+    header: 'Abogado'
+  },
+  {
+    accessorKey: 'analista.nombre',
+    header: 'Analista'
+  },
+  {
+    id: 'imputados',
+    header: 'Imputados',
+    cell: ({ row }) => <ImputadosCell causa={row.original} />
+  },
+  {
     id: 'actions',
     cell: ({ row, table }) => {
       const causa = row.original;
@@ -159,6 +161,11 @@ export const columns: ColumnDef<Causa>[] = [
 
       return (
         <div className="flex items-center gap-2">
+          <Link href={`/dashboard/causas/view/${causa.id}`} passHref>
+            <Button variant="ghost" size="icon" title="Ver detalles">
+              <Eye className="h-4 w-4 text-primary" />
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="icon"

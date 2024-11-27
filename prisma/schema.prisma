@@ -44,6 +44,8 @@ model Causa {
   tribunal                  Tribunal?         @relation(fields: [tribunalId], references: [id])
   imputados                 CausasImputados[]
   victimas                  CausasVictimas[]
+  telefonos                 TelefonoCausa[]   // Nueva relación agregada
+
 }
 
 model Victima {
@@ -182,6 +184,7 @@ model OrganizacionDelictual {
   tipoOrganizacion    TipoOrganizacion       @relation(fields: [tipoOrganizacionId], references: [id])
 }
 
+
 model MiembrosOrganizacion {
   id             Int                   @id @default(autoincrement())
   organizacionId Int
@@ -196,4 +199,37 @@ model MiembrosOrganizacion {
   organizacion   OrganizacionDelictual @relation(fields: [organizacionId], references: [id])
 
   @@unique([organizacionId, imputadoId])
+}
+
+model Telefono {
+  id                  Int            @id @default(autoincrement())
+  numeroTelefonico    Int
+  proveedorServicio   Proveedor     @relation(fields: [idProveedorServicio], references: [id])
+  idProveedorServicio Int
+  imei                String
+  abonado             String
+  solicitaTrafico     Boolean
+  solicitaImei        Boolean
+  observacion         String?
+  telefonosCausa      TelefonoCausa[]
+
+  @@map("telefonos")
+}
+
+model Proveedor {
+  id        Int        @id @default(autoincrement())
+  nombre    String
+  telefonos Telefono[]
+
+  @@map("proveedores")
+}
+
+model TelefonoCausa {
+  id         Int      @id @default(autoincrement())
+  telefono   Telefono @relation(fields: [idTelefono], references: [id])
+  causa      Causa    @relation(fields: [idCausa], references: [id])
+  idTelefono Int
+  idCausa    Int
+
+  @@map("telefonos_causa")
 }

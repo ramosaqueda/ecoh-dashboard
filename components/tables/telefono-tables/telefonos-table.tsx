@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+// components/tables/telefono-tables/telefonos-table.tsx
+'use client';
+
+import React, { useState } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -32,21 +35,8 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-interface Professional {
-  id: number;
-  nombre: string;
-}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -55,7 +45,7 @@ interface DataTableProps<TData, TValue> {
   onDelete: (id: string) => void;
 }
 
-export function CausasDataTable<TData, TValue>({
+export function TelefonosDataTable<TData, TValue>({
   columns,
   data,
   onEdit,
@@ -64,54 +54,10 @@ export function CausasDataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
-  const [abogados, setAbogados] = useState<Professional[]>([]);
-  const [analistas, setAnalistas] = useState<Professional[]>([]);
-  const [selectedAbogado, setSelectedAbogado] = useState<string>('all');
-  const [selectedAnalista, setSelectedAnalista] = useState<string>('all');
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    rit: false,
-    observacion: false,
-    foliobw: false
-  });
-
-  // Fetch abogados and analistas
-  useEffect(() => {
-    const fetchProfessionals = async () => {
-      try {
-        const [abogadosRes, analistasRes] = await Promise.all([
-          fetch('http://localhost:3000/api/abogado'),
-          fetch('http://localhost:3000/api/analista')
-        ]);
-
-        if (abogadosRes.ok && analistasRes.ok) {
-          const abogadosData = await abogadosRes.json();
-          const analistasData = await analistasRes.json();
-          setAbogados(abogadosData);
-          setAnalistas(analistasData);
-        }
-      } catch (error) {
-        console.error('Error fetching professionals:', error);
-      }
-    };
-
-    fetchProfessionals();
-  }, []);
-
-  // Filter the data based on selected professionals
-  const filteredData = useMemo(() => {
-    return (data as any[]).filter((item) => {
-      const abogadoMatch =
-        selectedAbogado === 'all' ||
-        item.abogado?.id.toString() === selectedAbogado;
-      const analistaMatch =
-        selectedAnalista === 'all' ||
-        item.analista?.id.toString() === selectedAnalista;
-      return abogadoMatch && analistaMatch;
-    });
-  }, [data, selectedAbogado, selectedAnalista]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
   const table = useReactTable({
-    data: filteredData,
+    data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -119,7 +65,6 @@ export function CausasDataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     state: {
       sorting,
@@ -135,36 +80,20 @@ export function CausasDataTable<TData, TValue>({
 
   const exportToExcel = () => {
     try {
-      // Obtener los datos filtrados y formateados
       const exportData = table.getFilteredRowModel().rows.map((row) => {
         const rowData: any = {};
         columns.forEach((column: any) => {
           if (column.accessorKey && !column.id?.includes('actions')) {
-            // Manejar nested properties (e.g., 'abogado.nombre')
             const keys = column.accessorKey.split('.');
             let value = row.original;
             for (const key of keys) {
               value = value?.[key];
             }
 
-            // Formatear fechas si es necesario
-            if (column.accessorKey === 'fechaHoraTomaConocimiento' && value) {
-              try {
-                value = format(new Date(value), 'dd/MM/yyyy HH:mm', {
-                  locale: es
-                });
-              } catch (error) {
-                console.error('Error formatting date:', error);
-                value = value || '';
-              }
-            }
-
-            // Formatear booleanos
             if (typeof value === 'boolean') {
               value = value ? 'Sí' : 'No';
             }
 
-            // Usar el header como nombre de columna en el Excel
             const headerValue =
               typeof column.header === 'string'
                 ? column.header
@@ -176,22 +105,15 @@ export function CausasDataTable<TData, TValue>({
         return rowData;
       });
 
-      // Crear el libro de Excel
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(exportData);
-
-      // Ajustar el ancho de las columnas
       const columnsWidth = Object.keys(exportData[0] || {}).map(() => ({
         wch: 20
       }));
       ws['!cols'] = columnsWidth;
-
-      // Agregar la hoja al libro
-      XLSX.utils.book_append_sheet(wb, ws, 'Causas');
-
-      // Generar el archivo y descargarlo
+      XLSX.utils.book_append_sheet(wb, ws, 'Teléfonos');
       const fecha = format(new Date(), 'dd-MM-yyyy', { locale: es });
-      XLSX.writeFile(wb, `Causas_${fecha}.xlsx`);
+      XLSX.writeFile(wb, `Telefonos_${fecha}.xlsx`);
     } catch (error) {
       console.error('Error exporting to Excel:', error);
     }
@@ -207,32 +129,6 @@ export function CausasDataTable<TData, TValue>({
             onChange={(event) => setGlobalFilter(String(event.target.value))}
             className="max-w-sm"
           />
-          <Select value={selectedAbogado} onValueChange={setSelectedAbogado}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filtrar por abogado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los abogados</SelectItem>
-              {abogados.map((abogado) => (
-                <SelectItem key={abogado.id} value={abogado.id.toString()}>
-                  {abogado.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectedAnalista} onValueChange={setSelectedAnalista}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filtrar por analista" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los analistas</SelectItem>
-              {analistas.map((analista) => (
-                <SelectItem key={analista.id} value={analista.id.toString()}>
-                  {analista.nombre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -259,9 +155,7 @@ export function CausasDataTable<TData, TValue>({
                         column.toggleVisibility(!!value)
                       }
                     >
-                      {column.id === 'fechaHoraTomaConocimiento'
-                        ? 'Fecha Toma Conocimiento'
-                        : column.id.replace(/([A-Z])/g, ' $1').trim()}
+                      {column.id.replace(/([A-Z])/g, ' $1').trim()}
                     </DropdownMenuCheckboxItem>
                   );
                 })}
@@ -274,6 +168,7 @@ export function CausasDataTable<TData, TValue>({
           </Button>
         </div>
       </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -322,6 +217,7 @@ export function CausasDataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
+
       <div className="flex items-center justify-between">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredRowModel().rows.length} resultados encontrados
