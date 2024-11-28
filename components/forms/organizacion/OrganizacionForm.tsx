@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { CalendarIcon, Loader2, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -33,6 +33,15 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useQuery } from '@tanstack/react-query';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
 
 const organizacionSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),
@@ -70,6 +79,7 @@ export default function OrganizacionForm({
   const [selectedMiembros, setSelectedMiembros] = useState<any[]>(
     initialData?.miembros || []
   );
+  const [currentTab, setCurrentTab] = useState('general');
 
   const { data: tiposOrganizacion = [] } = useQuery({
     queryKey: ['tipos-organizacion'],
@@ -139,192 +149,309 @@ export default function OrganizacionForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Información de la Organización</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="nombre"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <Tabs
+          defaultValue="general"
+          className="w-full"
+          value={currentTab}
+          onValueChange={setCurrentTab}
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="general">Información General</TabsTrigger>
+            <TabsTrigger value="miembros" className="relative">
+              Miembros
+              {selectedMiembros.length > 0 && (
+                <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                  {selectedMiembros.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-              <FormField
-                control={form.control}
-                name="descripcion"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descripción</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="fechaIdentificacion"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Fecha de Identificación</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={'outline'}
-                            className={cn(
-                              'w-[240px] pl-3 text-left font-normal',
-                              !field.value && 'text-muted-foreground'
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, 'PPP')
-                            ) : (
-                              <span>Seleccione una fecha</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date('1900-01-01')
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tipoOrganizacionId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Organización</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+          <TabsContent value="general">
+            <Card>
+              <CardContent className="space-y-4 pt-4">
+                <FormField
+                  control={form.control}
+                  name="nombre"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nombre</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione un tipo" />
-                        </SelectTrigger>
+                        <Input {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {tiposOrganizacion.map((tipo: any) => (
-                          <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                            {tipo.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Miembros</CardTitle>
-              <Button type="button" onClick={addMiembro} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar Miembro
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {selectedMiembros.map((miembro, index) => (
-                  <div key={index} className="flex items-start gap-4">
-                    <div className="flex-1 space-y-4">
+                <FormField
+                  control={form.control}
+                  name="descripcion"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descripción</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fechaIdentificacion"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Fecha de Identificación</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={'outline'}
+                              className={cn(
+                                'w-[240px] pl-3 text-left font-normal',
+                                !field.value && 'text-muted-foreground'
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, 'PPP')
+                              ) : (
+                                <span>Seleccione una fecha</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date('1900-01-01')
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="tipoOrganizacionId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Organización</FormLabel>
                       <Select
-                        value={miembro.imputadoId.toString()}
-                        onValueChange={(value) =>
-                          updateMiembro(index, 'imputadoId', value)
-                        }
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione un imputado" />
-                        </SelectTrigger>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione un tipo" />
+                          </SelectTrigger>
+                        </FormControl>
                         <SelectContent>
-                          {imputados.map((imp: any) => (
-                            <SelectItem key={imp.id} value={imp.id.toString()}>
-                              {imp.nombreSujeto}
+                          {tiposOrganizacion.map((tipo: any) => (
+                            <SelectItem
+                              key={tipo.id}
+                              value={tipo.id.toString()}
+                            >
+                              {tipo.nombre}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                      <Input
-                        placeholder="Rol"
-                        value={miembro.rol}
-                        onChange={(e) =>
-                          updateMiembro(index, 'rol', e.target.value)
-                        }
-                      />
+          <TabsContent value="miembros">
+            <Card>
+              <CardContent className="pt-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Lista de Miembros</h3>
+                  <Button onClick={addMiembro} type="button">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Agregar Miembro
+                  </Button>
+                </div>
 
-                      <Input
-                        type="number"
-                        placeholder="Orden jerárquico"
-                        value={miembro.orden}
-                        onChange={(e) =>
-                          updateMiembro(
-                            index,
-                            'orden',
-                            parseInt(e.target.value)
-                          )
-                        }
-                        min="0"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeMiembro(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                <div className="space-y-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Imputado</TableHead>
+                        <TableHead>Rol</TableHead>
+                        <TableHead>Orden</TableHead>
+                        <TableHead>Fecha Ingreso</TableHead>
+                        <TableHead>Fecha Salida</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedMiembros.map((miembro, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Select
+                              value={miembro.imputadoId.toString()}
+                              onValueChange={(value) =>
+                                updateMiembro(index, 'imputadoId', value)
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccione un imputado" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {imputados.map((imp: any) => (
+                                  <SelectItem
+                                    key={imp.id}
+                                    value={imp.id.toString()}
+                                  >
+                                    {imp.nombreSujeto}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              placeholder="Rol"
+                              value={miembro.rol}
+                              onChange={(e) =>
+                                updateMiembro(index, 'rol', e.target.value)
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              placeholder="Orden"
+                              value={miembro.orden}
+                              onChange={(e) =>
+                                updateMiembro(
+                                  index,
+                                  'orden',
+                                  parseInt(e.target.value)
+                                )
+                              }
+                              min="0"
+                              className="w-20"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    'w-[180px] justify-start text-left font-normal',
+                                    !miembro.fechaIngreso &&
+                                      'text-muted-foreground'
+                                  )}
+                                >
+                                  {miembro.fechaIngreso ? (
+                                    format(new Date(miembro.fechaIngreso), 'PP')
+                                  ) : (
+                                    <span>Seleccione fecha</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={new Date(miembro.fechaIngreso)}
+                                  onSelect={(date) =>
+                                    updateMiembro(index, 'fechaIngreso', date)
+                                  }
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </TableCell>
+                          <TableCell>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    'w-[180px] justify-start text-left font-normal',
+                                    !miembro.fechaSalida &&
+                                      'text-muted-foreground'
+                                  )}
+                                >
+                                  {miembro.fechaSalida ? (
+                                    format(new Date(miembro.fechaSalida), 'PP')
+                                  ) : (
+                                    <span>Sin fecha de salida</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={
+                                    miembro.fechaSalida
+                                      ? new Date(miembro.fechaSalida)
+                                      : undefined
+                                  }
+                                  onSelect={(date) =>
+                                    updateMiembro(index, 'fechaSalida', date)
+                                  }
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeMiembro(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {selectedMiembros.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center">
+                            No hay miembros agregados
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
-          <div className="flex justify-end gap-4">
-            <Button disabled={isSubmitting} type="submit">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Guardando...
-                </>
-              ) : (
-                'Guardar'
-              )}
-            </Button>
-          </div>
+        <div className="flex justify-end gap-4 pt-6">
+          <Button disabled={isSubmitting} type="submit">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar'
+            )}
+          </Button>
         </div>
       </form>
     </Form>
