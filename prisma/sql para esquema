@@ -1,0 +1,44 @@
+
+model Usuario {
+  id            Int       @id @default(autoincrement())
+  clerkId       String    @unique
+  email         String    @unique
+  nombre        String
+  cargo         String?
+  rolId         Int       @default(3)  // 3 podría ser el ID para READ
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  rol           Rol       @relation(fields: [rolId], references: [id])
+  tareas        Tarea[]
+
+  @@map("usuarios")
+}
+
+model Rol {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique
+  descripcion String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  usuarios    Usuario[]
+
+  @@map("roles")
+}
+
+model Tarea {
+  id          Int       @id @default(autoincrement())
+  titulo      String
+  descripcion String?
+  estado      String    // Por ejemplo: "pendiente", "en_progreso", "completada"
+  fechaLimite DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relación con Usuario
+  usuarioId   Int
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+
+  @@map("tareas")
+}

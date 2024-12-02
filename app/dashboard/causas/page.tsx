@@ -7,6 +7,7 @@ import { CausasDataTable } from '@/components/tables/causa-tables/causas-table';
 import CauseFormContainer from '@/components/CauseFormContainer';
 import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 async function getCausas(): Promise<Causa[]> {
   const res = await fetch('http://localhost:3000/api/causas', {
@@ -24,6 +25,7 @@ export default function CausasPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCausa, setSelectedCausa] = useState<Causa | null>(null);
+  const { canCreate } = useUserPermissions();
 
   // Cargar causas
   const loadCausas = async () => {
@@ -113,10 +115,12 @@ export default function CausasPage() {
             Administre las causas del sistema
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nueva Causa
-        </Button>
+        {canCreate && (
+          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nueva Causa
+          </Button>
+        )}
       </div>
 
       {/* Modal de Formulario */}

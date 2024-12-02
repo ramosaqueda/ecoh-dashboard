@@ -1,16 +1,22 @@
 'use client';
 
 import React from 'react';
+
+import { useUser } from '@clerk/nextjs';
+import { useState, useEffect } from 'react';
+
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { DashboardNav } from '@/components/dashboard-nav';
-import Logo from '@/components/ui/logo';
 import { navItems } from '@/constants/data';
 import { cn } from '@/lib/utils';
 import { Menu, ChevronLeft } from 'lucide-react';
 import { useSidebar } from '@/hooks/useSidebar';
-import Link from 'next/link';
+
+import { Role, hasPermission } from '@/utils/roles';
+import { Users } from 'lucide-react'; // Agregar esta importación
+import Link from 'next/link'; // También asegúrate de importar Link
 
 type SidebarProps = {
   className?: string;
@@ -18,6 +24,25 @@ type SidebarProps = {
 
 const Sidebar = ({ className }: SidebarProps) => {
   const { isMinimized, toggle } = useSidebar();
+
+  const { user } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user?.id) {
+        try {
+          const response = await fetch('/api/usuarios/me');
+          const userData = await response.json();
+          setIsAdmin(hasPermission(userData.rol as Role, Role.ADMIN));
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+        }
+      }
+    };
+
+    checkAdminStatus();
+  }, [user]);
 
   return (
     <>
@@ -32,7 +57,7 @@ const Sidebar = ({ className }: SidebarProps) => {
           <ScrollArea className="h-full px-2">
             <div className="p-5 pt-8">
               <Link href="#">
-                <Logo />
+                <h1>Sidebar</h1>
               </Link>
             </div>
             <DashboardNav items={navItems} />
@@ -68,11 +93,7 @@ const Sidebar = ({ className }: SidebarProps) => {
               'w-full transition-all duration-300 ease-in-out',
               isMinimized ? 'opacity-0' : 'opacity-100'
             )}
-          >
-            <Link href="#">
-              <Logo />
-            </Link>
-          </div>
+          ></div>
         </div>
 
         {/* Navigation */}
@@ -88,6 +109,21 @@ const Sidebar = ({ className }: SidebarProps) => {
             />
           </nav>
         </ScrollArea>
+
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+            Administración
+          </h2>
+          <div className="space-y-1">
+            <Link
+              href="/admin/users/sync"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-gray-600 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
+            >
+              <Users className="h-4 w-4" />
+              Sincronizar Usuarios
+            </Link>
+          </div>
+        </div>
 
         {/* User Profile Section */}
         <div

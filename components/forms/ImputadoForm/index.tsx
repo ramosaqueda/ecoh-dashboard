@@ -27,6 +27,7 @@ import { CausasGrid } from '@/components/forms/ImputadoForm/CausasGrid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import ImputadoPhotos from '@/components/forms/ImputadoForm/ImputadoPhotos'; // Asegúrate de ajustar la ruta según tu estructura
+import { formatRun, validateRun } from '@/utils/runValidator';
 
 const ImputadoFormSchema = z.object({
   nombreSujeto: z.string().min(1, 'El nombre es requerido'),

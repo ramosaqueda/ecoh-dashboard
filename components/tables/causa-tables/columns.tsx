@@ -1,5 +1,6 @@
 // components/tables/causa-tables/columns.tsx
 'use client';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, Edit, Trash2, Users, Eye } from 'lucide-react';
@@ -158,6 +159,7 @@ export const columns: ColumnDef<Causa>[] = [
     cell: ({ row, table }) => {
       const causa = row.original;
       const { onEdit, onDelete } = table.options.meta || {};
+      const { canEdit, canDelete } = useUserPermissions();
 
       return (
         <div className="flex items-center gap-2">
@@ -166,22 +168,26 @@ export const columns: ColumnDef<Causa>[] = [
               <Eye className="h-4 w-4 text-primary" />
             </Button>
           </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onEdit?.(causa)}
-            title="Editar"
-          >
-            <Edit className="h-4 w-4 text-blue-600" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete?.(causa.id)}
-            title="Eliminar"
-          >
-            <Trash2 className="h-4 w-4 text-red-600" />
-          </Button>
+          {canEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit?.(causa)}
+              title="Editar"
+            >
+              <Edit className="h-4 w-4 text-blue-600" />
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete?.(causa.id)}
+              title="Eliminar"
+            >
+              <Trash2 className="h-4 w-4 text-red-600" />
+            </Button>
+          )}
         </div>
       );
     }
