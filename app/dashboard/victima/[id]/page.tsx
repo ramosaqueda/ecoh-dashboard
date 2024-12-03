@@ -131,20 +131,6 @@ export default function VictimaDetailPage({
               label="Nacionalidad"
               value={victima.nacionalidad?.nombre}
             />
-            <DetailRow
-              label="Fecha de registro"
-              value={
-                imputado.createdAt
-                  ? format(
-                      new Date(imputado.createdAt),
-                      "d 'de' MMMM 'de' yyyy",
-                      {
-                        locale: es
-                      }
-                    )
-                  : null
-              }
-            />
           </dl>
         </div>
 
@@ -155,7 +141,7 @@ export default function VictimaDetailPage({
           <dl className="space-y-2">
             <DetailRow
               label="Total de causas"
-              value={imputado.causas?.length || 0}
+              value={victima.causas?.length || 0}
             />
             <DetailRow
               label="Causas formalizadas"
