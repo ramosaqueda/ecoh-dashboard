@@ -18,6 +18,8 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import pdfMake from 'pdfmake';
+import  {vfsFonts} from '../../../../../fonts/vfs_fonts';
 
 interface MedidaCautelar {
   id: string;
@@ -142,8 +144,23 @@ export default function CausaViewPage() {
   }
 
   const exportToPdf = () => {
+    pdfMake.vfs = vfsFonts.pdfmake.vfs;
+
+    if (typeof window != 'undefined') {
+      const pdfContent = {
+        content: [
+          {text: 'Detalles de la Causa'},
+  
+        ],
+      };
+  
+      pdfMake.createPdf(pdfContent).download('Causa',causa.ruc,'.pdf');
+    } else {
+      console.log('La generación de pdf no se ejecuta en el servidor');
+    }
     
   }
+
   return (
     <div className="container w-full mx-auto space-y-6 py-12">
       <div className="flex items-center justify-between">
