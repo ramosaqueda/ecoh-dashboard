@@ -85,8 +85,8 @@ export default function CausasPage() {
   // Renderizar estados de carga y error
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
+      <div className="flex h-screen items-right justify-center">
+        <div className="text-right">
           <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
           <p className="text-muted-foreground">Cargando causas...</p>
         </div>

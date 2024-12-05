@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Download } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -141,8 +141,11 @@ export default function CausaViewPage() {
     );
   }
 
+  const exportToPdf = () => {
+    
+  }
   return (
-    <div className="container mx-auto space-y-6 py-10">
+    <div className="container w-full mx-auto space-y-6 py-12">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/causas">
@@ -154,6 +157,12 @@ export default function CausaViewPage() {
             <h1 className="text-2xl font-bold">Detalles de la Causa</h1>
             <p className="text-muted-foreground">RUC: {causa.ruc}</p>
           </div>
+        </div >
+        <div className="hidden items-center space-x-2 md:flex ml-10">
+              <Button variant="outline" size="default" onClick={exportToPdf}>   
+              <Download className="h-4 w-4" />
+              Descargar Informe
+              </Button>
         </div>
       </div>
 
