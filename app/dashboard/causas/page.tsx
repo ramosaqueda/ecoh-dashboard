@@ -9,14 +9,29 @@ import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+console.log(API_BASE_URL);
 async function getCausas(): Promise<Causa[]> {
-  const res = await fetch('http://localhost:3000/api/causas', {
-    cache: 'no-store'
-  });
-  if (!res.ok) {
-    throw new Error('Error al cargar las causas');
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/causas`, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data) throw new Error('No data received');
+
+    return data;
+  } catch (error) {
+    console.error('Fetch error details:', error);
+    throw error;
   }
-  return res.json();
 }
 
 export default function CausasPage() {
@@ -56,7 +71,7 @@ export default function CausasPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/causas/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/causas/${id}`, {
         method: 'DELETE'
       });
 
@@ -79,10 +94,9 @@ export default function CausasPage() {
 
   const handleFormSuccess = () => {
     handleModalClose();
-    loadCausas(); // Recargar la lista después de crear/editar
+    loadCausas();
   };
 
-  // Renderizar estados de carga y error
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -105,7 +119,6 @@ export default function CausasPage() {
 
   return (
     <div className="container mx-auto space-y-6 py-10">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -123,7 +136,6 @@ export default function CausasPage() {
         )}
       </div>
 
-      {/* Modal de Formulario */}
       <CauseFormContainer
         isOpen={isModalOpen}
         onClose={handleModalClose}
@@ -132,7 +144,6 @@ export default function CausasPage() {
         isEditing={!!selectedCausa}
       />
 
-      {/* Tabla de Causas */}
       {causas.length === 0 ? (
         <div className="py-10 text-center">
           <p className="text-muted-foreground">No hay causas registradas</p>

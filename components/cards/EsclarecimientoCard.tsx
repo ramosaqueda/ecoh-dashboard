@@ -51,6 +51,7 @@ export function EsclarecimientoCard() {
         setData(data);
       } catch (error) {
         console.error('Error:', error);
+        setData(null);
       } finally {
         setIsLoading(false);
       }
@@ -75,7 +76,16 @@ export function EsclarecimientoCard() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center gap-2 py-10">
+          <AlertCircle className="h-8 w-8 text-red-500" />
+          <p className="text-sm text-muted-foreground">Error al cargar datos</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -112,7 +122,7 @@ export function EsclarecimientoCard() {
               <span className="text-sm text-muted-foreground">
                 {data.causasEsclarecidas} de {data.totalCausas} causas
               </span>
-              <span className="font-bold">{data.porcentaje.toFixed(1)}%</span>
+              <span className="font-bold">{data.porcentaje?.toFixed(1)}%</span>
             </div>
             <Progress
               value={data.porcentaje}

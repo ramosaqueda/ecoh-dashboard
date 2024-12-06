@@ -156,6 +156,7 @@ export const columns: ColumnDef<Causa>[] = [
   },
   {
     id: 'actions',
+
     cell: ({ row, table }) => {
       const causa = row.original;
       const { onEdit, onDelete } = table.options.meta || {};

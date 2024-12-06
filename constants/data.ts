@@ -20,6 +20,14 @@ export const navItems: NavItem[] = [
     icon: 'Mask',
     label: 'profile'
   },
+
+  {
+    title: 'Victimas',
+    href: '/dashboard/victima',
+    icon: 'UserRound',
+    label: 'victima'
+  },
+
   {
     title: 'Mapas Delitos',
     href: '/dashboard/geo',

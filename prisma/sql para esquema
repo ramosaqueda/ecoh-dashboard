@@ -1,44 +1,109 @@
+-- Crear el tipo enum para estado de actividad
+CREATE TYPE "EstadoActividad" AS ENUM ('inicio', 'en_proceso', 'terminado');
 
-model Usuario {
-  id            Int       @id @default(autoincrement())
-  clerkId       String    @unique
-  email         String    @unique
-  nombre        String
-  cargo         String?
-  rolId         Int       @default(3)  // 3 podría ser el ID para READ
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  rol           Rol       @relation(fields: [rolId], references: [id])
-  tareas        Tarea[]
+-- Crear tabla para tipos de actividad
+CREATE TABLE "TipoActividad" (
+    "id" SERIAL NOT NULL,
+    "nombre" VARCHAR(100) NOT NULL,
+    "descripcion" VARCHAR(500),
+    "activo" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-  @@map("usuarios")
-}
+    CONSTRAINT "TipoActividad_pkey" PRIMARY KEY ("id")
+);
 
-model Rol {
-  id          Int       @id @default(autoincrement())
-  nombre      String    @unique
-  descripcion String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  usuarios    Usuario[]
+-- Crear índice único para el nombre del tipo de actividad
+CREATE UNIQUE INDEX "TipoActividad_nombre_key" ON "TipoActividad"("nombre");
 
-  @@map("roles")
-}
+-- Crear tabla de actividades
+CREATE TABLE "Actividad" (
+    "id" SERIAL NOT NULL,
+    "causaId" INTEGER NOT NULL,
+    "tipoActividadId" INTEGER NOT NULL,
+    "fechaInicio" TIMESTAMP(3) NOT NULL,
+    "fechaTermino" TIMESTAMP(3) NOT NULL,
+    "estado" "EstadoActividad" NOT NULL DEFAULT 'inicio',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-model Tarea {
-  id          Int       @id @default(autoincrement())
-  titulo      String
-  descripcion String?
-  estado      String    // Por ejemplo: "pendiente", "en_progreso", "completada"
-  fechaLimite DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // Relación con Usuario
-  usuarioId   Int
-  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+    CONSTRAINT "Actividad_pkey" PRIMARY KEY ("id")
+);
 
-  @@map("tareas")
-}
+-- Crear índices para mejorar el rendimiento
+CREATE INDEX "Actividad_causaId_idx" ON "Actividad"("causaId");
+CREATE INDEX "Actividad_tipoActividadId_idx" ON "Actividad"("tipoActividadId");
+
+-- Agregar las restricciones de clave foránea
+ALTER TABLE "Actividad" ADD CONSTRAINT "Actividad_causaId_fkey" 
+    FOREIGN KEY ("causaId") REFERENCES "Causa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE "Actividad" ADD CONSTRAINT "Actividad_tipoActividadId_fkey" 
+    FOREIGN KEY ("tipoActividadId") REFERENCES "TipoActividad"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Crear función para actualizar automáticamente updatedAt
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."updatedAt" = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Crear triggers para mantener actualizados los campos updatedAt
+CREATE TRIGGER update_tipoactividad_updated_at
+    BEFORE UPDATE ON "TipoActividad"
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_actividad_updated_at
+    BEFORE UPDATE ON "Actividad"
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+
+    -- Crear tabla Area
+CREATE TABLE "Area" (
+    "id" SERIAL PRIMARY KEY,
+    "nombre" VARCHAR(255) NOT NULL UNIQUE,
+    "descripcion" TEXT,
+    "activo" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL
+);
+
+-- Crear índice para búsquedas por nombre
+CREATE INDEX "Area_nombre_idx" ON "Area"("nombre");
+
+-- Agregar columna areaId a TipoActividad
+ALTER TABLE "TipoActividad"
+ADD COLUMN "areaId" INTEGER NOT NULL;
+
+-- Agregar foreign key
+ALTER TABLE "TipoActividad"
+ADD CONSTRAINT "TipoActividad_areaId_fkey"
+FOREIGN KEY ("areaId") REFERENCES "Area"(id)
+ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Crear índice para la relación
+CREATE INDEX "TipoActividad_areaId_idx" ON "TipoActividad"("areaId");
+
+-- Insertar áreas iniciales
+INSERT INTO "Area" (nombre, descripcion, "updatedAt") VALUES
+('Análisis', 'Área de análisis de información', CURRENT_TIMESTAMP),
+('Jurídica', 'Área jurídica y legal', CURRENT_TIMESTAMP),
+('Proteccional', 'Área de protección', CURRENT_TIMESTAMP);
+
+
+-- Agregar columna usuarioId a la tabla Actividad
+ALTER TABLE "Actividad" 
+ADD COLUMN "usuarioId" INTEGER NOT NULL;
+
+-- Agregar la foreign key
+ALTER TABLE "Actividad"
+ADD CONSTRAINT "Actividad_usuarioId_fkey"
+FOREIGN KEY ("usuarioId") REFERENCES "usuarios"(id)
+ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Crear índice para la relación
+CREATE INDEX "Actividad_usuarioId_idx" ON "Actividad"("usuarioId");

@@ -43,8 +43,6 @@ model Causa {
   nacionalidadVictima       Nacionalidad?     @relation(fields: [nacionalidadVictimaId], references: [id])
   tribunal                  Tribunal?         @relation(fields: [tribunalId], references: [id])
   imputados                 CausasImputados[]
-  actividades              Actividad[]        // Relación con Actividad
-
   victimas                  CausasVictimas[]
   telefonos                 TelefonoCausa[]   // Nueva relación agregada
 
@@ -245,9 +243,9 @@ model Usuario {
   rolId         Int       @default(3)  // 3 podría ser el ID para READ
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  actividades   Actividad[]  // Nueva relación
+  
   rol           Rol       @relation(fields: [rolId], references: [id])
- 
+  tareas        Tarea[]
 
   @@map("usuarios")
 }
@@ -264,56 +262,18 @@ model Rol {
   @@map("roles")
 }
 
-// Mantener las definiciones existentes y agregar las nuevas entidades en sintaxis Prisma
+model Tarea {
+  id          Int       @id @default(autoincrement())
+  titulo      String
+  descripcion String?
+  estado      String    // Por ejemplo: "pendiente", "en_progreso", "completada"
+  fechaLimite DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relación con Usuario
+  usuarioId   Int
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
 
-enum EstadoActividad {
-  inicio
-  en_proceso
-  terminado
-}
-
-model Area {
-  id            Int             @id @default(autoincrement())
-  nombre        String          @unique
-  descripcion   String?
-  activo        Boolean         @default(true)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  tiposActividad TipoActividad[]
-}
-
-model TipoActividad {
-  id          Int          @id @default(autoincrement())
-  nombre      String       @unique @db.VarChar(100)
-  descripcion String?      @db.VarChar(500)
-  areaId      Int
-  area        Area         @relation(fields: [areaId], references: [id])
-  activo      Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  actividades Actividad[]
-
-  @@index([areaId])
-}
-
-
-
-model Actividad {
-  id              Int            @id @default(autoincrement())
-  causa_id        Int            // Cambiado a snake_case
-  tipo_actividad_id Int         // Cambiado a snake_case
-  usuario_id      Int            // Cambiado a snake_case
-  fechaInicio     DateTime
-  fechaTermino    DateTime
-  estado          EstadoActividad @default(inicio)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-
-  causa          Causa          @relation(fields: [causa_id], references: [id])
-  tipoActividad  TipoActividad  @relation(fields: [tipo_actividad_id], references: [id])
-  usuario        Usuario        @relation(fields: [usuario_id], references: [id])
-
-  @@index([causa_id])
-  @@index([tipo_actividad_id])
-  @@index([usuario_id])
+  @@map("tareas")
 }

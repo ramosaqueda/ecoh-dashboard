@@ -3,83 +3,38 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
-import { CalendarIcon, Loader2, Plus, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Form } from '@/components/ui/form';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import GeneralForm from './components/GeneralForm';
+import MiembrosForm from './components/MiembrosForm';
+import { organizacionSchema } from '@/schemas/organizacion.schema';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
+  OrganizacionFormProps,
+  OrganizacionFormValues,
+  Miembro
+} from '@/types/organizacion.types';
 
-const organizacionSchema = z.object({
-  nombre: z.string().min(1, 'El nombre es requerido'),
-  descripcion: z.string().optional(),
-  fechaIdentificacion: z.date({
-    required_error: 'La fecha de identificación es requerida'
-  }),
-  activa: z.boolean().default(true),
-  tipoOrganizacionId: z.string().min(1, 'El tipo de organización es requerido'),
-  miembros: z
-    .array(
-      z.object({
-        imputadoId: z.string().min(1, 'El imputado es requerido'),
-        rol: z.string().optional(),
-        orden: z.number().int().min(0).default(0),
-        fechaIngreso: z.date(),
-        fechaSalida: z.date().optional().nullable()
-      })
-    )
-    .optional()
-});
-
-type OrganizacionFormValues = z.infer<typeof organizacionSchema>;
-
-interface OrganizacionFormProps {
-  initialData?: any;
-  onSubmit: (data: OrganizacionFormValues) => Promise<void>;
-}
-
-export default function OrganizacionForm({
-  initialData,
-  onSubmit
-}: OrganizacionFormProps) {
+function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedMiembros, setSelectedMiembros] = useState<any[]>(
-    initialData?.miembros || []
-  );
   const [currentTab, setCurrentTab] = useState('general');
+  const [selectedMiembros, setSelectedMiembros] = useState<Miembro[]>(() => {
+    if (!initialData?.miembros?.length) return [];
+
+    return initialData.miembros.map((miembro) => ({
+      id: miembro.id,
+      organizacionId: miembro.organizacionId,
+      imputadoId: miembro.imputadoId.toString(),
+      rol: miembro.rol || '',
+      orden: miembro.orden || 0,
+      fechaIngreso: new Date(miembro.fechaIngreso),
+      fechaSalida: miembro.fechaSalida ? new Date(miembro.fechaSalida) : null,
+      imputado: miembro.imputado
+    }));
+  });
 
   const { data: tiposOrganizacion = [] } = useQuery({
     queryKey: ['tipos-organizacion'],
@@ -92,7 +47,7 @@ export default function OrganizacionForm({
   const { data: imputados = [] } = useQuery({
     queryKey: ['imputados'],
     queryFn: async () => {
-      const res = await fetch('/api/imputados');
+      const res = await fetch('/api/imputado');
       return res.json();
     }
   });
@@ -106,21 +61,104 @@ export default function OrganizacionForm({
         ? new Date(initialData.fechaIdentificacion)
         : new Date(),
       activa: initialData?.activa ?? true,
-      tipoOrganizacionId: initialData?.tipoOrganizacionId?.toString() || '',
-      miembros: selectedMiembros
+      tipoOrganizacionId: initialData?.tipoOrganizacionId?.toString() || ''
     }
   });
 
   const handleSubmit = async (data: OrganizacionFormValues) => {
     setIsSubmitting(true);
     try {
-      await onSubmit({ ...data, miembros: selectedMiembros });
+      // 1. Preparar datos de la organización
+      const organizacionData = {
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+        fechaIdentificacion: data.fechaIdentificacion.toISOString(),
+        activa: data.activa,
+        tipoOrganizacionId: parseInt(data.tipoOrganizacionId)
+      };
+
+      let organizacionResponse;
+
+      if (initialData?.id) {
+        // Modo edición
+        organizacionResponse = await fetch(
+          `/api/organizacion/${initialData.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(organizacionData)
+          }
+        ).then((res) => {
+          if (!res.ok) throw new Error('Error al actualizar la organización');
+          return res.json();
+        });
+      } else {
+        // Modo creación
+        organizacionResponse = await fetch('/api/organizacion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(organizacionData)
+        }).then((res) => {
+          if (!res.ok) throw new Error('Error al crear la organización');
+          return res.json();
+        });
+      }
+
+      // 2. Crear los nuevos miembros
+      for (const miembro of selectedMiembros) {
+        const miembroData = {
+          organizacionId: organizacionResponse.id,
+          imputadoId: parseInt(miembro.imputadoId),
+          rol: miembro.rol || '',
+          fechaIngreso: miembro.fechaIngreso.toISOString(),
+          fechaSalida: miembro.fechaSalida
+            ? miembro.fechaSalida.toISOString()
+            : null,
+          activo: true
+        };
+
+        console.log('Enviando miembro:', miembroData);
+
+        const response = await fetch('/api/organizacion/miembros', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(miembroData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al guardar miembro');
+        }
+      }
+
+      toast.success(
+        `Organización ${
+          initialData?.id ? 'actualizada' : 'creada'
+        } exitosamente`
+      );
+
+      await onSubmit(organizacionResponse);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : `Error al ${
+              initialData?.id ? 'actualizar' : 'crear'
+            } la organización`
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const addMiembro = () => {
+  const handleAddMiembro = () => {
     setSelectedMiembros([
       ...selectedMiembros,
       {
@@ -128,17 +166,13 @@ export default function OrganizacionForm({
         rol: '',
         orden: selectedMiembros.length,
         fechaIngreso: new Date(),
-        fechaSalida: null
+        fechaSalida: null,
+        imputado: undefined
       }
     ]);
   };
 
-  const removeMiembro = (index: number) => {
-    const newMiembros = selectedMiembros.filter((_, i) => i !== index);
-    setSelectedMiembros(newMiembros);
-  };
-
-  const updateMiembro = (index: number, field: string, value: any) => {
+  const handleUpdateMiembro = (index: number, field: string, value: any) => {
     const newMiembros = [...selectedMiembros];
     newMiembros[index] = {
       ...newMiembros[index],
@@ -147,9 +181,13 @@ export default function OrganizacionForm({
     setSelectedMiembros(newMiembros);
   };
 
+  const handleRemoveMiembro = (index: number) => {
+    setSelectedMiembros(selectedMiembros.filter((_, i) => i !== index));
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <div className="space-y-4">
         <Tabs
           defaultValue="general"
           className="w-full"
@@ -169,280 +207,26 @@ export default function OrganizacionForm({
           </TabsList>
 
           <TabsContent value="general">
-            <Card>
-              <CardContent className="space-y-4 pt-4">
-                <FormField
-                  control={form.control}
-                  name="nombre"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="descripcion"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descripción</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="fechaIdentificacion"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Fecha de Identificación</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={'outline'}
-                              className={cn(
-                                'w-[240px] pl-3 text-left font-normal',
-                                !field.value && 'text-muted-foreground'
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, 'PPP')
-                              ) : (
-                                <span>Seleccione una fecha</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date('1900-01-01')
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="tipoOrganizacionId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Organización</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccione un tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {tiposOrganizacion.map((tipo: any) => (
-                            <SelectItem
-                              key={tipo.id}
-                              value={tipo.id.toString()}
-                            >
-                              {tipo.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+            <GeneralForm form={form} tiposOrganizacion={tiposOrganizacion} />
           </TabsContent>
 
           <TabsContent value="miembros">
-            <Card>
-              <CardContent className="pt-4">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-medium">Lista de Miembros</h3>
-                  <Button onClick={addMiembro} type="button">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Agregar Miembro
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Imputado</TableHead>
-                        <TableHead>Rol</TableHead>
-                        <TableHead>Orden</TableHead>
-                        <TableHead>Fecha Ingreso</TableHead>
-                        <TableHead>Fecha Salida</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedMiembros.map((miembro, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Select
-                              value={miembro.imputadoId.toString()}
-                              onValueChange={(value) =>
-                                updateMiembro(index, 'imputadoId', value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccione un imputado" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {imputados.map((imp: any) => (
-                                  <SelectItem
-                                    key={imp.id}
-                                    value={imp.id.toString()}
-                                  >
-                                    {imp.nombreSujeto}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              placeholder="Rol"
-                              value={miembro.rol}
-                              onChange={(e) =>
-                                updateMiembro(index, 'rol', e.target.value)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              placeholder="Orden"
-                              value={miembro.orden}
-                              onChange={(e) =>
-                                updateMiembro(
-                                  index,
-                                  'orden',
-                                  parseInt(e.target.value)
-                                )
-                              }
-                              min="0"
-                              className="w-20"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    'w-[180px] justify-start text-left font-normal',
-                                    !miembro.fechaIngreso &&
-                                      'text-muted-foreground'
-                                  )}
-                                >
-                                  {miembro.fechaIngreso ? (
-                                    format(new Date(miembro.fechaIngreso), 'PP')
-                                  ) : (
-                                    <span>Seleccione fecha</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={new Date(miembro.fechaIngreso)}
-                                  onSelect={(date) =>
-                                    updateMiembro(index, 'fechaIngreso', date)
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </TableCell>
-                          <TableCell>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className={cn(
-                                    'w-[180px] justify-start text-left font-normal',
-                                    !miembro.fechaSalida &&
-                                      'text-muted-foreground'
-                                  )}
-                                >
-                                  {miembro.fechaSalida ? (
-                                    format(new Date(miembro.fechaSalida), 'PP')
-                                  ) : (
-                                    <span>Sin fecha de salida</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={
-                                    miembro.fechaSalida
-                                      ? new Date(miembro.fechaSalida)
-                                      : undefined
-                                  }
-                                  onSelect={(date) =>
-                                    updateMiembro(index, 'fechaSalida', date)
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeMiembro(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {selectedMiembros.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={6} className="h-24 text-center">
-                            No hay miembros agregados
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+            <MiembrosForm
+              miembros={selectedMiembros}
+              imputados={imputados}
+              isLoading={isSubmitting}
+              onAddMiembro={handleAddMiembro}
+              onUpdateMiembro={handleUpdateMiembro}
+              onRemoveMiembro={handleRemoveMiembro}
+            />
           </TabsContent>
         </Tabs>
 
         <div className="flex justify-end gap-4 pt-6">
-          <Button disabled={isSubmitting} type="submit">
+          <Button
+            onClick={form.handleSubmit(handleSubmit)}
+            disabled={isSubmitting}
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -453,7 +237,9 @@ export default function OrganizacionForm({
             )}
           </Button>
         </div>
-      </form>
+      </div>
     </Form>
   );
 }
+
+export default OrganizacionForm;

@@ -10,19 +10,29 @@ const MiembroSchema = z.object({
   rol: z.string().optional(),
   fechaIngreso: z.string().transform((str) => new Date(str)),
   fechaSalida: z
-    .string()
-    .optional()
-    .transform((str) => (str ? new Date(str) : null)),
+    .union([z.string().transform((str) => new Date(str)), z.null()])
+    .nullable()
+    .optional(),
   activo: z.boolean().default(true)
 });
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    console.log('Received data:', body);
     const validatedData = MiembroSchema.parse(body);
+    console.log('Validated data:', validatedData);
 
+    // Intentar crear el nuevo miembro
     const miembro = await prisma.miembrosOrganizacion.create({
-      data: validatedData,
+      data: {
+        organizacionId: validatedData.organizacionId,
+        imputadoId: validatedData.imputadoId,
+        rol: validatedData.rol,
+        fechaIngreso: validatedData.fechaIngreso,
+        fechaSalida: validatedData.fechaSalida,
+        activo: validatedData.activo
+      },
       include: {
         organizacion: true,
         imputado: true
@@ -31,6 +41,14 @@ export async function POST(req: Request) {
 
     return NextResponse.json(miembro, { status: 201 });
   } catch (error) {
+    console.error('Server error:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Error de validación', details: error.errors },
+        { status: 400 }
+      );
+    }
+    // Si el miembro ya existe, devolver un error 409
     if (error.code === 'P2002') {
       return NextResponse.json(
         { error: 'El imputado ya es miembro de esta organización' },
@@ -38,35 +56,7 @@ export async function POST(req: Request) {
       );
     }
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(req: Request) {
-  try {
-    const body = await req.json();
-    const validatedData = MiembroSchema.parse(body);
-
-    const miembro = await prisma.miembrosOrganizacion.update({
-      where: {
-        organizacionId_imputadoId: {
-          organizacionId: validatedData.organizacionId,
-          imputadoId: validatedData.imputadoId
-        }
-      },
-      data: validatedData,
-      include: {
-        organizacion: true,
-        imputado: true
-      }
-    });
-
-    return NextResponse.json(miembro);
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Error interno del servidor', details: error },
       { status: 500 }
     );
   }

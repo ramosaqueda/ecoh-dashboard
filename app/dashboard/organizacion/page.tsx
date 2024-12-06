@@ -1,142 +1,243 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { OrganizacionTable } from '@/components/tables/organizacion/OrganizacionTable';
-import OrganizacionForm from '@/components/forms/organizacion/OrganizacionForm';
-import { Organization } from '@/components/tables/organizacion/columns';
+import { Form } from '@/components/ui/form';
+import { useQuery } from '@tanstack/react-query';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import { GeneralForm, MiembrosForm } from '@/components/forms/organizacion';
+import { organizacionSchema } from '@/schemas/organizacion.schema';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from '@/components/ui/alert-dialog';
+  OrganizacionFormProps,
+  OrganizacionFormValues,
+  Miembro
+} from '@/types/organizacion.types';
 
-export default function OrganizacionesPage() {
-  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
+function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentTab, setCurrentTab] = useState('general');
+  const [selectedMiembros, setSelectedMiembros] = useState<Miembro[]>(() => {
+    if (!initialData?.miembros?.length) return [];
 
-  const { data: organizations = [], isLoading } = useQuery({
-    queryKey: ['organizations'],
+    return initialData.miembros.map((miembro) => ({
+      id: miembro.id,
+      organizacionId: miembro.organizacionId,
+      imputadoId: miembro.imputadoId.toString(),
+      rol: miembro.rol || '',
+      orden: miembro.orden || 0,
+      fechaIngreso: new Date(miembro.fechaIngreso),
+      fechaSalida: miembro.fechaSalida ? new Date(miembro.fechaSalida) : null,
+      imputado: miembro.imputado
+    }));
+  });
+
+  const { data: tiposOrganizacion = [] } = useQuery({
+    queryKey: ['tipos-organizacion'],
     queryFn: async () => {
-      const res = await fetch('/api/organizacion');
+      const res = await fetch('/api/tipo-organizacion');
       return res.json();
     }
   });
 
-  const handleCreate = () => {
-    setSelectedOrg(null);
-    setIsFormOpen(true);
-  };
-
-  const handleEdit = (organization: Organization) => {
-    setSelectedOrg(organization);
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = async (organization: Organization) => {
-    try {
-      await fetch(`/api/organizacion/${organization.id}`, {
-        method: 'DELETE'
-      });
-      queryClient.invalidateQueries(['organizations']);
-    } catch (error) {
-      console.error('Error deleting organization:', error);
+  const { data: imputados = [] } = useQuery({
+    queryKey: ['imputados'],
+    queryFn: async () => {
+      const res = await fetch('/api/imputado');
+      return res.json();
     }
-    setIsDeleteDialogOpen(false);
-  };
+  });
 
-  const handleSubmit = async (data: any) => {
-    const method = selectedOrg ? 'PUT' : 'POST';
-    const url = selectedOrg
-      ? `/api/organizacion/${selectedOrg.id}`
-      : '/api/organizacion';
+  const form = useForm<OrganizacionFormValues>({
+    resolver: zodResolver(organizacionSchema),
+    defaultValues: {
+      nombre: initialData?.nombre || '',
+      descripcion: initialData?.descripcion || '',
+      fechaIdentificacion: initialData?.fechaIdentificacion
+        ? new Date(initialData.fechaIdentificacion)
+        : new Date(),
+      activa: initialData?.activa ?? true,
+      tipoOrganizacionId: initialData?.tipoOrganizacionId?.toString() || ''
+    }
+  });
 
+  const handleSubmit = async (data: OrganizacionFormValues) => {
+    setIsSubmitting(true);
     try {
-      await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
-      queryClient.invalidateQueries(['organizations']);
-      setIsFormOpen(false);
+      // 1. Preparar datos de la organización
+      const organizacionData = {
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+        fechaIdentificacion: data.fechaIdentificacion.toISOString(),
+        activa: data.activa,
+        tipoOrganizacionId: parseInt(data.tipoOrganizacionId)
+      };
+
+      let organizacionResponse;
+
+      if (initialData?.id) {
+        // Modo edición
+        organizacionResponse = await fetch(
+          `/api/organizacion/${initialData.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(organizacionData)
+          }
+        ).then((res) => {
+          if (!res.ok) throw new Error('Error al actualizar la organización');
+          return res.json();
+        });
+      } else {
+        // Modo creación
+        organizacionResponse = await fetch('/api/organizacion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(organizacionData)
+        }).then((res) => {
+          if (!res.ok) throw new Error('Error al crear la organización');
+          return res.json();
+        });
+      }
+
+      // 2. Crear los nuevos miembros
+      for (const miembro of selectedMiembros) {
+        const miembroData = {
+          organizacionId: organizacionResponse.id,
+          imputadoId: parseInt(miembro.imputadoId),
+          rol: miembro.rol || '',
+          fechaIngreso: miembro.fechaIngreso.toISOString(),
+          fechaSalida: miembro.fechaSalida
+            ? miembro.fechaSalida.toISOString()
+            : null,
+          activo: true
+        };
+
+        console.log('Enviando miembro:', miembroData);
+
+        const response = await fetch('/api/organizacion/miembros', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(miembroData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al guardar miembro');
+        }
+      }
+
+      toast.success(
+        `Organización ${
+          initialData?.id ? 'actualizada' : 'creada'
+        } exitosamente`
+      );
+
+      await onSubmit(organizacionResponse);
     } catch (error) {
-      console.error('Error saving organization:', error);
+      console.error('Error:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : `Error al ${
+              initialData?.id ? 'actualizar' : 'crear'
+            } la organización`
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
-    return <div>Cargando...</div>;
-  }
+  const handleAddMiembro = () => {
+    setSelectedMiembros([
+      ...selectedMiembros,
+      {
+        imputadoId: '',
+        rol: '',
+        orden: selectedMiembros.length,
+        fechaIngreso: new Date(),
+        fechaSalida: null
+      }
+    ]);
+  };
+
+  const handleUpdateMiembro = (index: number, field: string, value: any) => {
+    const newMiembros = [...selectedMiembros];
+    newMiembros[index] = {
+      ...newMiembros[index],
+      [field]: value
+    };
+    setSelectedMiembros(newMiembros);
+  };
+
+  const handleRemoveMiembro = (index: number) => {
+    setSelectedMiembros(selectedMiembros.filter((_, i) => i !== index));
+  };
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Organizaciones</h1>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nueva Organización
-        </Button>
+    <Form {...form}>
+      <div className="space-y-4">
+        <Tabs
+          defaultValue="general"
+          className="w-full"
+          value={currentTab}
+          onValueChange={setCurrentTab}
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="general">Información General</TabsTrigger>
+            <TabsTrigger value="miembros" className="relative">
+              Miembros
+              {selectedMiembros.length > 0 && (
+                <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                  {selectedMiembros.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general">
+            <GeneralForm form={form} tiposOrganizacion={tiposOrganizacion} />
+          </TabsContent>
+
+          <TabsContent value="miembros">
+            <MiembrosForm
+              miembros={selectedMiembros}
+              imputados={imputados}
+              isLoading={isSubmitting}
+              onAddMiembro={handleAddMiembro}
+              onUpdateMiembro={handleUpdateMiembro}
+              onRemoveMiembro={handleRemoveMiembro}
+            />
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-end gap-4 pt-6">
+          <Button
+            onClick={form.handleSubmit(handleSubmit)}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar'
+            )}
+          </Button>
+        </div>
       </div>
-
-      <OrganizacionTable
-        data={organizations}
-        onEdit={handleEdit}
-        onDelete={(org) => {
-          setSelectedOrg(org);
-          setIsDeleteDialogOpen(true);
-        }}
-      />
-
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedOrg ? 'Editar' : 'Nueva'} Organización
-            </DialogTitle>
-          </DialogHeader>
-          <OrganizacionForm initialData={selectedOrg} onSubmit={handleSubmit} />
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente la
-              organización {selectedOrg?.nombre}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => selectedOrg && handleDelete(selectedOrg)}
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    </Form>
   );
 }
+
+export default OrganizacionForm;
