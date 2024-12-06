@@ -1,0 +1,10 @@
+pdfMake.vfs = {
+
+};
+
+// Definir las fuentes en pdfMake
+pdfMake.fonts = {
+  Montserrat: {
+
+  },
+};

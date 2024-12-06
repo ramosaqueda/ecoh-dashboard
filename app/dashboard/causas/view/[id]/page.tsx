@@ -13,13 +13,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Download } from 'lucide-react';
+import { Loader2, ArrowLeft} from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import pdfMake from 'pdfmake';
-import  {vfsFonts} from '../../../../../fonts/vfs_fonts';
+import dynamic from 'next/dynamic';
 
 interface MedidaCautelar {
   id: string;
@@ -143,23 +142,9 @@ export default function CausaViewPage() {
     );
   }
 
-  const exportToPdf = () => {
-    pdfMake.vfs = vfsFonts.pdfmake.vfs;
-
-    if (typeof window != 'undefined') {
-      const pdfContent = {
-        content: [
-          {text: 'Detalles de la Causa'},
-  
-        ],
-      };
-  
-      pdfMake.createPdf(pdfContent).download('Causa',causa.ruc,'.pdf');
-    } else {
-      console.log('La generación de pdf no se ejecuta en el servidor');
-    }
-    
-  }
+  const GeneratePdf = dynamic(() => import('@/components/GeneratePdf'), {
+      ssr: false,
+  });
 
   return (
     <div className="container w-full mx-auto space-y-6 py-12">
@@ -176,10 +161,7 @@ export default function CausaViewPage() {
           </div>
         </div >
         <div className="hidden items-center space-x-2 md:flex ml-10">
-              <Button variant="outline" size="default" onClick={exportToPdf}>   
-              <Download className="h-4 w-4" />
-              Descargar Informe
-              </Button>
+              <GeneratePdf />
         </div>
       </div>
 
