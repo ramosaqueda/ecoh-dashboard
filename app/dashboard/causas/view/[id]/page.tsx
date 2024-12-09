@@ -146,6 +146,23 @@ export default function CausaViewPage() {
       ssr: false,
   });
 
+  const datosCausa = {
+    RUC: causa.ruc,
+    denominacion: causa.denominacionCausa,
+    fiscal: causa.fiscal?.nombre ?? null,
+    RIT: causa.rit,
+    delito: causa.delito?.nombre ?? null,
+    folio_bw: causa.foliobw ?? null,
+    fecha_toma_conocimiento: causa.fechaHoraTomaConocimiento ? format(new Date(causa.fechaHoraTomaConocimiento), 'dd/MM/yyyy', {
+      locale: es
+    }) : null,
+    fecha_del_hecho: causa.fechaDelHecho ? format(new Date(causa.fechaDelHecho), 'dd/MM/yyyy', {
+      locale: es
+    }) : null,
+    estado_ecoh: causa.causaEcoh,
+  };
+
+
   return (
     <div className="container w-full mx-auto space-y-6 py-12">
       <div className="flex items-center justify-between">
@@ -161,7 +178,7 @@ export default function CausaViewPage() {
           </div>
         </div >
         <div className="hidden items-center space-x-2 md:flex ml-10">
-              <GeneratePdf />
+              <GeneratePdf pdfData={datosCausa} />
         </div>
       </div>
 

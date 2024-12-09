@@ -11,40 +11,59 @@ if (pdfMake && pdfFonts && pdfFonts.pdfMake?.vfs) {
 }
 
 interface DatosCausa {
-    RUC?: String | null;
-    denominacion?: String | null;
-    fiscal?: String | null;
-    RIT?: String | null;
-    delito?: String | null;
-    folio_bw?: String | null;
-    fecha_toma_conocimiento?: String | null;
-    fecha_del_hecho?: String | null;
-    estado_ecoh?: String | null;
+    RUC: string;
+    denominacion: string;
+    fiscal: string | null;
+    RIT: string;
+    delito: string | null;
+    folio_bw: string | null;
+    fecha_toma_conocimiento: string | null;
+    fecha_del_hecho: string | null;
+    estado_ecoh: boolean;
 }
 
-const GeneratePdf = () => {
+interface pdfProps {
+    pdfData : DatosCausa;
+}
 
-    const [pdfData, setPdfData] = useState<DatosCausa | undefined>(undefined);
+const GeneratePdf :  React.FC<pdfProps> = ({ pdfData }) => {
 
     const generatePdf = (params: DatosCausa) => {
+        if (!params) return;
+
+        let estado:string = '';
+        if (params.estado_ecoh) {
+            estado = 'si';
+        } else {
+            estado = 'no';
+        }
+
+        const RIT = params.RIT ?? '-';
+        const fiscal = params.fiscal ?? '-';
+        const delito = params.delito ?? '-';
+        const fecha_toma_conocimiento = params.fecha_toma_conocimiento ?? '-';
+        const fecha_del_hecho = params.fecha_del_hecho ?? '-';
 
         const documentDefinition = {
+
             content : [
-                { text: 'Detalles de la Causa', font: 'Roboto', bold: true, fontSize: 20},
-                { text: `RUC: ${params.RUC}`, font: 'Roboto', bold: false, fontSize: 20 },
-                { text: `\nDenominación: ${params.denominacion}`, font: 'Roboto', bold: true },
-  
+                {text: 'Detalles de la Causa', font: 'Roboto', bold: true, fontSize: 20},
+                {text: `RUC: ${params.RUC}`, font: 'Roboto', bold: false, fontSize: 20 },
+                {text: `\nDenominación: ${params.denominacion}`, font: 'Roboto', bold: true },
+                {text: `\nRIT: ${RIT}`},
+                {text: `\nFiscal: ${fiscal}`},
+                {text: `\nDelito: ${delito}`},
+                {text: `\nFolio BW: ${params.folio_bw}`},
+                {text: `\nFecha del hecho: ${fecha_del_hecho}`},
+                {text: `\nFecha Toma de conocimiento: ${fecha_toma_conocimiento}`},
+                {text: `\nECOH: ${estado}`}
+
             ],
         };
 
         pdfMake.createPdf(documentDefinition).download(`CAUSA${params.RUC}.pdf`);
 
     }
-
-    const handleChange = (e:React.ChangeEvent<HTMLInputElement>, field: keyof DatosCausa) => setPdfData ({
-        ...pdfData,
-        [field]: e.target.value,
-    });
 
     return (
         <div className="hidden items-center space-x-2 md:flex ml-10">
