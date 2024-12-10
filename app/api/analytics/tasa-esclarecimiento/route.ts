@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
+ 
 
 export async function GET(req: Request) {
   try {
@@ -9,28 +9,29 @@ export async function GET(req: Request) {
     const year = parseInt(
       searchParams.get('year') || new Date().getFullYear().toString()
     );
+    const tipoDelito = searchParams.get('tipoDelito');
 
     const startDate = new Date(year, 0, 1);
     const endDate = new Date(year, 11, 31);
 
-    // Obtener total de causas del año
+    // Base query conditions incluyendo causaEcoh = true
+    const baseWhere = {
+      fechaDelHecho: {
+        gte: startDate,
+        lte: endDate
+      },
+      causaEcoh: true, // Regla base: solo causas ECOH
+      ...(tipoDelito && tipoDelito !== 'todos' ? { delitoId: parseInt(tipoDelito) } : {})
+    };
+
+    // Obtener total de causas del año con filtros
     const totalCausas = await prisma.causa.count({
-      where: {
-        fechaDelHecho: {
-          gte: startDate,
-          lte: endDate
-        }
-      }
+      where: baseWhere
     });
 
-    // Obtener causas esclarecidas
+    // Obtener causas esclarecidas con filtros
     const causasImputados = await prisma.causa.findMany({
-      where: {
-        fechaDelHecho: {
-          gte: startDate,
-          lte: endDate
-        }
-      },
+      where: baseWhere,
       include: {
         imputados: {
           include: {
@@ -48,7 +49,7 @@ export async function GET(req: Request) {
     causasImputados.forEach((causa) => {
       const tieneFormalizados = causa.imputados.some((imp) => imp.formalizado);
       const tieneCautelar = causa.imputados.some(
-        (imp) => imp.cautelarId !== null
+        (imp) => imp.cautelarId !== null && imp.cautelar?.fechaTermino === null // Solo cautelares vigentes
       );
 
       if (tieneFormalizados) causasFormalizadas++;
@@ -57,7 +58,7 @@ export async function GET(req: Request) {
       if (tieneFormalizados || tieneCautelar) causasEsclarecidas++;
     });
 
-    const porcentaje = (causasEsclarecidas / totalCausas) * 100;
+    const porcentaje = totalCausas > 0 ? (causasEsclarecidas / totalCausas) * 100 : 0;
 
     return NextResponse.json({
       totalCausas,
@@ -75,5 +76,7 @@ export async function GET(req: Request) {
       { error: 'Error interno del servidor' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

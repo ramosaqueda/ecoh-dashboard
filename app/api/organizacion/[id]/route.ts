@@ -1,3 +1,4 @@
+// app/api/organizacion/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
@@ -7,7 +8,7 @@ const OrganizacionSchema = z.object({
   descripcion: z.string().optional(),
   fechaIdentificacion: z.string().transform((str) => new Date(str)),
   activa: z.boolean().default(true),
-  tipoOrganizacionId: z.number().int()
+  tipoOrganizacionId: z.number().int().positive()
 });
 
 export async function GET(
@@ -38,6 +39,7 @@ export async function GET(
 
     return NextResponse.json(organizacion);
   } catch (error) {
+    console.error('Error:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -50,12 +52,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const id = parseInt(params.id);
     const body = await req.json();
     const validatedData = OrganizacionSchema.parse(body);
 
     const organizacion = await prisma.organizacionDelictual.update({
       where: {
-        id: parseInt(params.id)
+        id: id
       },
       data: validatedData,
       include: {
@@ -70,6 +73,14 @@ export async function PUT(
 
     return NextResponse.json(organizacion);
   } catch (error) {
+    console.error('Error:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Datos inválidos', details: error.errors },
+        { status: 400 }
+      );
+    }
+    // Error de Prisma cuando no encuentra el registro
     if (error.code === 'P2025') {
       return NextResponse.json(
         { error: 'Organización no encontrada' },
@@ -88,14 +99,6 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Primero eliminamos los miembros asociados
-    await prisma.miembrosOrganizacion.deleteMany({
-      where: {
-        organizacionId: parseInt(params.id)
-      }
-    });
-
-    // Luego eliminamos la organización
     await prisma.organizacionDelictual.delete({
       where: {
         id: parseInt(params.id)

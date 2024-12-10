@@ -31,21 +31,27 @@ export async function GET(
     // Obtener todas las actividades relacionadas a la causa
     const actividades = await prisma.actividad.findMany({
       where: {
-        causaId: causaId
+        causa_id: causaId
       },
       include: {
-        imputado: true,
-        tipoActividad: true
+        causa: true,
+        tipoActividad: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true
+          }
+        }
       },
       orderBy: {
         fechaInicio: 'desc'
       }
     });
 
-    return NextResponse.json({
-      causa,
-      actividades
-    });
+    // Retornamos solo las actividades ya que el frontend espera un array de actividades
+    return NextResponse.json(actividades);
+
   } catch (error) {
     console.error('Error en GET /api/actividades/causa/[id]:', error);
     return NextResponse.json(

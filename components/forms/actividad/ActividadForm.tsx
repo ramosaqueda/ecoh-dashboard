@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import CausaSelector from '@/components/CausaSelector';
+import CausaSelector from '@/components/select/CausaSelector';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 

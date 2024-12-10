@@ -37,7 +37,14 @@ import {
   Share2Icon,
   VenetianMask,
   Smartphone,
-  UserRound
+  UserRound,
+  FolderCheckIcon,
+  SquareDashedKanbanIcon,
+  ListCheckIcon,
+  LucideListCheck,
+  ListChecksIcon,
+  
+
 } from 'lucide-react';
 
 export type Icon = LucideIcon;
@@ -49,7 +56,6 @@ export const Icons = {
   close: X,
   profile: User2Icon,
   spinner: Loader2,
-  kanban: CircuitBoardIcon,
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   trash: Trash,
@@ -78,6 +84,8 @@ export const Icons = {
   Mask: VenetianMask,
   Smartphone: Smartphone,
   UserRound: UserRound,
+  check:ListChecksIcon,
+
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"
@@ -96,5 +104,7 @@ export const Icons = {
     </svg>
   ),
   twitter: Twitter,
-  check: Check
+ 
+  kanban:SquareDashedKanbanIcon,
+  folder:FolderCheckIcon
 };

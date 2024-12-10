@@ -8,10 +8,26 @@ export const navItems: NavItem[] = [
     label: 'Dashboard'
   },
   {
-    title: 'Cauas',
-    href: '/dashboard/causas',
-    icon: 'briefcase',
-    label: 'causas'
+    title: 'Gestión de Cauasas',
+    icon: 'folder',
+    subItems: [
+      {
+        title: 'Cauas',
+        href: '/dashboard/causas',
+        icon: 'briefcase',
+        label: 'causas'
+      },
+      {
+        title: 'Actividades',
+        href: '/dashboard/actividades',
+        icon: 'check'
+      },
+      {
+        title: 'Tablero',
+        href: '/dashboard/kanban',
+        icon: 'kanban'
+      }
+    ]
   },
 
   {
@@ -34,6 +50,7 @@ export const navItems: NavItem[] = [
     icon: 'map',
     label: 'Mapas'
   },
+  
   {
     title: 'Registro Organizaciones',
     icon: 'Net',

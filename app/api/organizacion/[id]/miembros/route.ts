@@ -1,42 +1,30 @@
+// app/api/organizacion/[id]/miembros/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-const prisma = new PrismaClient();
-
 const MiembroSchema = z.object({
-  imputadoId: z.number().int(),
+  imputadoId: z.number().int().positive(),
   rol: z.string().optional(),
-  fechaIngreso: z.union([
-    z.string().transform((str) => new Date(str)),
-    z.date()
-  ]),
+  fechaIngreso: z.string().transform((str) => new Date(str)),
   fechaSalida: z
-    .union([z.string().transform((str) => new Date(str)), z.date(), z.null()])
+    .union([z.string().transform((str) => new Date(str)), z.null()])
     .nullable()
     .optional(),
   activo: z.boolean().default(true)
 });
 
-// GET: Obtener miembros de una organización específica
-// En /api/organizacion/[id]/route.ts
+// GET: Obtener todos los miembros de una organización
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const organizacionId = parseInt(params.id);
+
+    // Primero verificamos si la organización existe
     const organizacion = await prisma.organizacionDelictual.findUnique({
-      where: {
-        id: parseInt(params.id)
-      },
-      include: {
-        tipoOrganizacion: true,
-        miembros: {
-          include: {
-            imputado: true
-          }
-        }
-      }
+      where: { id: organizacionId }
     });
 
     if (!organizacion) {
@@ -46,8 +34,21 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(organizacion);
+    const miembros = await prisma.miembrosOrganizacion.findMany({
+      where: {
+        organizacionId: organizacionId
+      },
+      include: {
+        imputado: true
+      },
+      orderBy: {
+        fechaIngreso: 'desc'
+      }
+    });
+
+    return NextResponse.json(miembros);
   } catch (error) {
+    console.error('Error:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -55,17 +56,95 @@ export async function GET(
   }
 }
 
-// PUT: Actualizar todos los miembros de una organización
+// POST: Añadir un nuevo miembro a la organización
+export async function POST(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const organizacionId = parseInt(params.id);
+    const body = await req.json();
+    const validatedData = MiembroSchema.parse(body);
+
+    // Verificar si la organización existe
+    const organizacion = await prisma.organizacionDelictual.findUnique({
+      where: { id: organizacionId }
+    });
+
+    if (!organizacion) {
+      return NextResponse.json(
+        { error: 'Organización no encontrada' },
+        { status: 404 }
+      );
+    }
+
+    // Verificar si el imputado existe
+    const imputado = await prisma.imputado.findUnique({
+      where: { id: validatedData.imputadoId }
+    });
+
+    if (!imputado) {
+      return NextResponse.json(
+        { error: 'Imputado no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const miembro = await prisma.miembrosOrganizacion.create({
+      data: {
+        ...validatedData,
+        organizacionId
+      },
+      include: {
+        imputado: true
+      }
+    });
+
+    return NextResponse.json(miembro, { status: 201 });
+  } catch (error) {
+    console.error('Error:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Datos inválidos', details: error.errors },
+        { status: 400 }
+      );
+    }
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'El imputado ya es miembro de esta organización' },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT: Actualizar todos los miembros de la organización
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await req.json();
     const organizacionId = parseInt(params.id);
-
+    const body = await req.json();
+    
     // Validar el array de miembros
     const miembros = z.array(MiembroSchema).parse(body);
+
+    // Verificar si la organización existe
+    const organizacion = await prisma.organizacionDelictual.findUnique({
+      where: { id: organizacionId }
+    });
+
+    if (!organizacion) {
+      return NextResponse.json(
+        { error: 'Organización no encontrada' },
+        { status: 404 }
+      );
+    }
 
     // Usar una transacción para asegurar la integridad de los datos
     const result = await prisma.$transaction(async (tx) => {
@@ -80,11 +159,7 @@ export async function PUT(
           tx.miembrosOrganizacion.create({
             data: {
               ...miembro,
-              organizacionId,
-              fechaIngreso: new Date(miembro.fechaIngreso),
-              fechaSalida: miembro.fechaSalida
-                ? new Date(miembro.fechaSalida)
-                : null
+              organizacionId
             },
             include: {
               imputado: true
@@ -105,12 +180,6 @@ export async function PUT(
         { status: 400 }
       );
     }
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Uno o más imputados ya son miembros de esta organización' },
-        { status: 409 }
-      );
-    }
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -118,23 +187,3 @@ export async function PUT(
   }
 }
 
-// DELETE: Eliminar todos los miembros de una organización
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    await prisma.miembrosOrganizacion.deleteMany({
-      where: {
-        organizacionId: parseInt(params.id)
-      }
-    });
-
-    return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
-}

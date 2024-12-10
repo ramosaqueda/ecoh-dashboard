@@ -7,6 +7,7 @@ import { DelitosDistribution } from '@/components/charts/DelitosDistribution';
 import { ImputadosFlow } from '@/components/charts/ImputadosFlow';
 import { Button } from '@/components/ui/button';
 import { currentUser } from '@clerk/nextjs/server';
+import  CauseTimeline  from '@/components/CauseTimeline';
 import {
   Card,
   CardContent,
@@ -51,6 +52,9 @@ export default async function page() {
               <CausasLegadaCard />
               <EsclarecimientoCard />
             </div>
+            <div className="col-span-6">
+                <CauseTimeline />
+              </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
               <div className="col-span-4 md:col-span-3">
                 <CaseTimelineChart />
@@ -72,6 +76,7 @@ export default async function page() {
               <div className="col-span-6">
                 <CasesHeatmap />
               </div>
+              
             </div>
           </TabsContent>
         </Tabs>

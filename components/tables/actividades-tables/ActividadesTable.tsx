@@ -17,12 +17,19 @@ import { es } from 'date-fns/locale';
 
 interface Actividad {
   id: number;
+  causa:{
+    ruc:stirng
+  }
   tipoActividad: {
     nombre: string;
   };
   fechaInicio: string;
   fechaTermino: string;
   estado: 'inicio' | 'en_proceso' | 'terminado';
+  usuario:
+  { 
+    email:string
+  }
 }
 
 interface ActividadesTableProps {
@@ -57,10 +64,12 @@ export default function ActividadesTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>RUC</TableHead>
             <TableHead>Tipo de Actividad</TableHead>
             <TableHead>Fecha Inicio</TableHead>
             <TableHead>Fecha Término</TableHead>
             <TableHead>Estado</TableHead>
+            <TableHead>Asignado</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -77,6 +86,7 @@ export default function ActividadesTable({
           ) : (
             actividades.map((actividad) => (
               <TableRow key={actividad.id}>
+                  <TableCell>{actividad.causa.ruc}</TableCell>
                 <TableCell>{actividad.tipoActividad.nombre}</TableCell>
                 <TableCell>{formatFecha(actividad.fechaInicio)}</TableCell>
                 <TableCell>{formatFecha(actividad.fechaTermino)}</TableCell>
@@ -85,6 +95,7 @@ export default function ActividadesTable({
                     {estadoTexto[actividad.estado]}
                   </Badge>
                 </TableCell>
+                <TableCell>{actividad.usuario.email}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     {onEdit && (
