@@ -49,7 +49,7 @@ export async function PUT(
       },
       data: {
         numeroTelefonico: body.numeroTelefonico,
-        idProveedorServicio: body.idProveedorServicio,
+        idProveedorServicio: parseInt(body.idProveedorServicio), // Convertir a número
         imei: body.imei,
         abonado: body.abonado,
         solicitaTrafico: body.solicitaTrafico,

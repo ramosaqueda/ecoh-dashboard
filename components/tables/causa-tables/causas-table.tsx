@@ -74,14 +74,14 @@ export function CausasDataTable<TData, TValue>({
     observacion: false,
     foliobw: false
   });
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   // Fetch abogados and analistas
   useEffect(() => {
     const fetchProfessionals = async () => {
       try {
         const [abogadosRes, analistasRes] = await Promise.all([
-          fetch('http://localhost:3000/api/abogado'),
-          fetch('http://localhost:3000/api/analista')
+          fetch(`${API_BASE_URL}/api/abogado`),
+          fetch(`${API_BASE_URL}/apii/analista`)
         ]);
 
         if (abogadosRes.ok && analistasRes.ok) {

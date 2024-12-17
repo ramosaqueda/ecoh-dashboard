@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import dynamic from 'next/dynamic';
 
 interface MedidaCautelar {
   id: string;
@@ -141,6 +142,27 @@ export default function CausaViewPage() {
     );
   }
 
+
+  const GeneratePdf = dynamic(() => import('@/components/GeneratePdf'), {
+      ssr: false,
+  });
+
+  const datosCausa = {
+    RUC: causa.ruc,
+    denominacion: causa.denominacionCausa,
+    fiscal: causa.fiscal?.nombre ?? null,
+    RIT: causa.rit,
+    delito: causa.delito?.nombre ?? null,
+    folio_bw: causa.foliobw ?? null,
+    fecha_toma_conocimiento: causa.fechaHoraTomaConocimiento ? format(new Date(causa.fechaHoraTomaConocimiento), 'dd/MM/yyyy', {
+      locale: es
+    }) : null,
+    fecha_del_hecho: causa.fechaDelHecho ? format(new Date(causa.fechaDelHecho), 'dd/MM/yyyy', {
+      locale: es
+    }) : null,
+    estado_ecoh: causa.causaEcoh,
+};
+
   return (
     <div className="container mx-auto space-y-6 py-10">
       <div className="flex items-center justify-between">
@@ -154,6 +176,9 @@ export default function CausaViewPage() {
             <h1 className="text-2xl font-bold">Detalles de la Causa</h1>
             <p className="text-muted-foreground">RUC: {causa.ruc}</p>
           </div>
+          <div className="hidden items-center space-x-2 md:flex ml-10">
+              <GeneratePdf pdfData={datosCausa} />
+        </div>
         </div>
       </div>
 

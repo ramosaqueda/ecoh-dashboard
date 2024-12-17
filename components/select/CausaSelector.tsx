@@ -35,11 +35,11 @@ export default function CausaSelector({
   const [searchQuery, setSearchQuery] = useState('');
   const [causas, setCausas] = useState<Causa[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   useEffect(() => {
     const fetchCausas = async () => {
       try {
-        const response = await fetch('/api/causas');
+        const response = await fetch(`${API_BASE_URL}/api/causas`);
         if (!response.ok) throw new Error('Error al cargar las causas');
         const data = await response.json();
         setCausas(Array.isArray(data) ? data : []);

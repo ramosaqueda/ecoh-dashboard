@@ -31,14 +31,14 @@ export default function FocoSelect({
   const [Focos, setFocos] = useState<Foco[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   // Cargar los Focos cuando el componente se monta
   useEffect(() => {
     const fetchFocos = async () => {
       setIsLoading(true);
       setFetchError(null);
       try {
-        const response = await fetch('http://localhost:3000/api/foco');
+        const response = await fetch(`${API_BASE_URL}/api/foco`);
         if (!response.ok) {
           throw new Error('Error al cargar los Focos');
         }

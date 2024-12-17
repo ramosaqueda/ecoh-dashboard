@@ -31,14 +31,14 @@ export default function AnalistaSelect({
   const [Analistas, setAnalistas] = useState<Analista[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   // Cargar los Analistas cuando el componente se monta
   useEffect(() => {
     const fetchAnalistas = async () => {
       setIsLoading(true);
       setFetchError(null);
       try {
-        const response = await fetch('http://localhost:3000/api/analista');
+        const response = await fetch(`${API_BASE_URL}/api/analista`);
         if (!response.ok) {
           throw new Error('Error al cargar los Analistas');
         }

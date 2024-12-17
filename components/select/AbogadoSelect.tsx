@@ -31,14 +31,14 @@ export default function AbogadoSelect({
   const [abogados, setAbogados] = useState<Abogado[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   // Cargar los abogados cuando el componente se monta
   useEffect(() => {
     const fetchAbogados = async () => {
       setIsLoading(true);
       setFetchError(null);
       try {
-        const response = await fetch('http://localhost:3000/api/abogado');
+        const response = await fetch(`${API_BASE_URL}/api/abogado`);
         if (!response.ok) {
           throw new Error('Error al cargar los abogados');
         }

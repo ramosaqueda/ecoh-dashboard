@@ -31,14 +31,14 @@ export default function FiscalSelect({
   const [Fiscals, setFiscals] = useState<Fiscal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   // Cargar los Fiscals cuando el componente se monta
   useEffect(() => {
     const fetchFiscals = async () => {
       setIsLoading(true);
       setFetchError(null);
       try {
-        const response = await fetch('http://localhost:3000/api/fiscal');
+        const response = await fetch(`${API_BASE_URL}/api/fiscal`);
         if (!response.ok) {
           throw new Error('Error al cargar los Fiscals');
         }

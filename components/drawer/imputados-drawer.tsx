@@ -7,6 +7,11 @@ import {
   SheetDescription,
   SheetClose
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger
+} from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
@@ -21,16 +26,18 @@ type ImputadoInfo = {
   essujetoInteres: boolean;
   formalizado: boolean;
   fechaFormalizacion: string | null;
+  plazo: number | null;
   cautelarId: number | null;
   imputado: {
     nombreSujeto: string;
+    fotoPrincipal?: string;
   };
   causa: {
     ruc: string;
   };
   cautelar: {
     nombre: string;
-  };
+  } | null;
 };
 
 interface ImputadosDrawerProps {
@@ -66,24 +73,49 @@ export default function ImputadosDrawer({
                   key={registro.id}
                   className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
                 >
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="font-medium">
-                      {registro.imputado.nombreSujeto}
-                    </h3>
-                    <div className="flex gap-2">
-                      {registro.esImputado && (
-                        <Badge className="bg-blue-500 hover:bg-blue-600">
-                          Imputado
-                        </Badge>
-                      )}
-                      {registro.essujetoInteres && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-amber-500 hover:bg-amber-600"
-                        >
-                          Sujeto de Interés
-                        </Badge>
-                      )}
+                  <div className="mb-2 flex items-center gap-4">
+                    {registro.imputado.fotoPrincipal && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <button className="flex-shrink-0">
+                            <img
+                              src={registro.imputado.fotoPrincipal}
+                              alt={registro.imputado.nombreSujeto}
+                              className="h-16 w-16 rounded-full object-cover cursor-pointer"
+                            />
+                          </button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-lg">
+                          <div className="aspect-square w-full">
+                            <img
+                              src={registro.imputado.fotoPrincipal}
+                              alt={registro.imputado.nombreSujeto}
+                              className="h-full w-full object-contain rounded-lg"
+                            />
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    
+                    <div className="flex flex-grow items-center justify-between">
+                      <h3 className="font-medium">
+                        {registro.imputado.nombreSujeto}
+                      </h3>
+                      <div className="flex gap-2">
+                        {registro.esImputado && (
+                          <Badge className="bg-blue-500 hover:bg-blue-600">
+                            Imputado
+                          </Badge>
+                        )}
+                        {registro.essujetoInteres && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-amber-500 hover:bg-amber-600"
+                          >
+                            Sujeto de Interés
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -103,6 +135,14 @@ export default function ImputadosDrawer({
                             'dd/MM/yyyy',
                             { locale: es }
                           )}
+                        </span>
+                      </div>
+                    )}
+                    {registro.plazo !== null && registro.plazo > 0 && (
+                      <div className="flex justify-between py-2">
+                        <span>Plazo:</span>
+                        <span className="font-medium text-foreground">
+                          {registro.plazo} días
                         </span>
                       </div>
                     )}

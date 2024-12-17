@@ -31,14 +31,14 @@ export default function DelitoSelect({
   const [Delitos, setDelitos] = useState<Delito[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   // Cargar los Delitos cuando el componente se monta
   useEffect(() => {
     const fetchDelitos = async () => {
       setIsLoading(true);
       setFetchError(null);
       try {
-        const response = await fetch('http://localhost:3000/api/delito');
+        const response = await fetch(`${API_BASE_URL}/api/delito`);
         if (!response.ok) {
           throw new Error('Error al cargar los Delitos');
         }

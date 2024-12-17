@@ -33,6 +33,7 @@ export default function NacionalidadSelect({
   const [fetchError, setFetchError] = useState<string | null>(null);
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    
   // Cargar los Nacionalidads cuando el componente se monta
   useEffect(() => {
     const fetchNacionalidads = async () => {
