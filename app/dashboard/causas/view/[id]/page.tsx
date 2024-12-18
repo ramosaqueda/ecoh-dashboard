@@ -59,7 +59,7 @@ interface CausaImputado {
   imputado: {
     nombreSujeto: string;
     fotoPrincipal: string;
-    docId: string;
+    docId:string;
   };
   cautelar: {
     nombre: string;
@@ -100,7 +100,7 @@ export default function CausaViewPage() {
   const params = useParams();
   const [causa, setCausa] = useState<Causa | null>(null);
   const [imputados, setImputados] = useState<CausaImputado[]>([]);
-  const [datosImputado, setDatosImputado] = useState<Imputado[]>([]);
+  const [causaImputado, setCausaImputado] = useState<CausaImputado | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -120,10 +120,23 @@ export default function CausaViewPage() {
         if (!imputadosResponse.ok)
           throw new Error('Error al cargar los imputados');
         const imputadosData = await imputadosResponse.json();
-
         
-        /*
-        // 3. Para cada imputado, obtener sus medidas cautelares
+        setImputados(imputadosData);
+        
+      } catch (error) {
+        console.error('Error al cargar los datos:', error);
+        toast.error('Error al cargar los datos de la causa');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCausa();
+    
+    
+    /*
+    const fetchCautelaresImputado = async () => {
+     // 3. Para cada imputado, obtener sus medidas cautelares
         const imputadosConMedidas = await Promise.all(
           imputadosData.map(async (imputado: any) => {
             try {
@@ -146,18 +159,7 @@ export default function CausaViewPage() {
             }
           })
         );
-        */
-        setImputados(imputadosData);
-      } catch (error) {
-        console.error('Error al cargar los datos:', error);
-        toast.error('Error al cargar los datos de la causa');
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchCausa();
-    const fetchImputado = async () => {
       imputados.map(async (imputado: any) => { 
         try {
           //Obtener datos de cada imputado
@@ -177,10 +179,10 @@ export default function CausaViewPage() {
         
     };
     
-    fetchImputado();
-
+    fetchCautelaresImputado();
+    */
   }, [params.id]);
-
+  
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -197,10 +199,10 @@ export default function CausaViewPage() {
           <Button variant="outline">Volver</Button>
         </Link>
       </div>
+      
     );
   }
-
-
+ 
   const GeneratePdf = dynamic(() => import('@/components/GeneratePdf'), {
       ssr: false,
   });
@@ -219,8 +221,10 @@ export default function CausaViewPage() {
       locale: es
     }) : null,
     estado_ecoh: causa.causaEcoh,
+    nombre_imputado: imputados.map(causaImputado => causaImputado.imputado.nombreSujeto) || null,
+    rut_imputado: imputados.map(causaImputado => causaImputado.imputado.docId) || null
 };
-
+console.log(datosCausa);
   return (
     <div className="container mx-auto space-y-6 py-10">
       <div className="flex items-center justify-between">
