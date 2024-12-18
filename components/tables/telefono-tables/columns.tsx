@@ -8,7 +8,7 @@ import { TelefonoCausasDrawer } from '@/components/drawer/telefono-causas-drawer
 
 export type Telefono = {
   id: string;
-  numeroTelefonico: number;
+  numeroTelefonico: string;
   proveedorServicio: {
     id: number;
     nombre: string;

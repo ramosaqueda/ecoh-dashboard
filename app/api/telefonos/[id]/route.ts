@@ -48,8 +48,8 @@ export async function PUT(
         id: parseInt(params.id)
       },
       data: {
-        numeroTelefonico: body.numeroTelefonico,
-        idProveedorServicio: parseInt(body.idProveedorServicio), // Convertir a número
+        numeroTelefonico: body.numeroTelefonico?.toString(), // Convertir a string si existe
+        idProveedorServicio: parseInt(body.idProveedorServicio),
         imei: body.imei,
         abonado: body.abonado,
         solicitaTrafico: body.solicitaTrafico,
@@ -63,13 +63,13 @@ export async function PUT(
 
     return NextResponse.json(telefono);
   } catch (error) {
+    console.error('Error en PUT:', error);
     return NextResponse.json(
       { error: 'Error al actualizar teléfono' },
       { status: 500 }
     );
   }
 }
-
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }

@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import { TelefonoCausaManager } from '@/components/forms/Telefonos/TelefonoCausaManager';
 
 const formSchema = z.object({
-  numeroTelefonico: z.number().min(100000000, 'Número inválido'),
+  numeroTelefonico: z.string().optional(),
   idProveedorServicio: z.string().min(1, 'Seleccione un proveedor'),
   imei: z.string().min(1, 'IMEI es requerido'),
   abonado: z.string().min(1, 'Abonado es requerido'),
@@ -97,7 +97,7 @@ export function TelefonoForm({
               <FormLabel>Número Telefónico</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
+                  type="text"
                   {...field}
                   onChange={(e) => field.onChange(parseInt(e.target.value))}
                 />

@@ -205,7 +205,7 @@ model MiembrosOrganizacion {
 
 model Telefono {
   id                  Int            @id @default(autoincrement())
-  numeroTelefonico    Int
+  numeroTelefonico    String?
   proveedorServicio   Proveedor     @relation(fields: [idProveedorServicio], references: [id])
   idProveedorServicio Int
   imei                String
@@ -222,7 +222,6 @@ model Proveedor {
   id        Int        @id @default(autoincrement())
   nombre    String
   telefonos Telefono[]
-
   @@map("proveedores")
 }
 

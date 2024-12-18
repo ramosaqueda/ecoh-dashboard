@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     const telefono = await prisma.telefono.create({
       data: {
-        numeroTelefonico: parseInt(body.numeroTelefonico),
+        numeroTelefonico: (body.numeroTelefonico),
         idProveedorServicio: parseInt(body.idProveedorServicio),
         imei: body.imei,
         abonado: body.abonado,
