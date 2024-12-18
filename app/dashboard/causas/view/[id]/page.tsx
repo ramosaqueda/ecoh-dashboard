@@ -112,6 +112,7 @@ export default function CausaViewPage() {
         const causaData = await causaResponse.json();
         setCausa(causaData);
         
+        console.log(causaData);
 
         // 2. Obtener los imputados de la causa
         const imputadosResponse = await fetch(
@@ -129,6 +130,7 @@ export default function CausaViewPage() {
       } finally {
         setLoading(false);
       }
+
     };
 
     fetchCausa();
@@ -206,7 +208,7 @@ export default function CausaViewPage() {
   const GeneratePdf = dynamic(() => import('@/components/GeneratePdf'), {
       ssr: false,
   });
-
+  
   const datosCausa = {
     RUC: causa.ruc,
     denominacion: causa.denominacionCausa,
@@ -224,7 +226,7 @@ export default function CausaViewPage() {
     nombre_imputado: imputados.map(causaImputado => causaImputado.imputado.nombreSujeto) || null,
     rut_imputado: imputados.map(causaImputado => causaImputado.imputado.docId) || null
 };
-console.log(datosCausa);
+
   return (
     <div className="container mx-auto space-y-6 py-10">
       <div className="flex items-center justify-between">
@@ -312,7 +314,7 @@ console.log(datosCausa);
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-medium">Estado ECOH</h3>
+                  <h3 className="font-medium">Causa ECOH</h3>
                   <Badge variant={causa.causaEcoh ? 'default' : 'secondary'}>
                     {causa.causaEcoh ? 'Sí' : 'No'}
                   </Badge>
