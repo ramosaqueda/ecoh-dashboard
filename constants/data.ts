@@ -8,11 +8,11 @@ export const navItems: NavItem[] = [
     label: 'Dashboard'
   },
   {
-    title: 'Gestión de Cauasas',
+    title: 'Gestión de Causas',
     icon: 'folder',
     subItems: [
       {
-        title: 'Cauas',
+        title: 'Causas',
         href: '/dashboard/causas',
         icon: 'briefcase',
         label: 'causas'
