@@ -307,7 +307,7 @@ model Actividad {
   estado          EstadoActividad @default(inicio)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-
+  observacion     String?
   causa          Causa          @relation(fields: [causa_id], references: [id])
   tipoActividad  TipoActividad  @relation(fields: [tipo_actividad_id], references: [id])
   usuario        Usuario        @relation(fields: [usuario_id], references: [id])

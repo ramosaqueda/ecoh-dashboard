@@ -13,6 +13,7 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -32,6 +33,7 @@ const ActividadSchema = z
     tipoActividadId: z.string().min(1, 'Debe seleccionar un tipo de actividad'),
     fechaInicio: z.string().min(1, 'Debe seleccionar una fecha de inicio'),
     fechaTermino: z.string().min(1, 'Debe seleccionar una fecha de término'),
+    observacion: z.string().optional(),
     estado: z.enum(['inicio', 'en_proceso', 'terminado'])
   })
   .refine((data) => data.fechaTermino >= data.fechaInicio, {
@@ -71,7 +73,8 @@ export default function ActividadForm({
       tipoActividadId: '',
       fechaInicio: new Date().toISOString().split('T')[0],
       fechaTermino: new Date().toISOString().split('T')[0],
-      estado: 'inicio'
+      estado: 'inicio',
+      observacion: ''
     }
   });
 
@@ -203,6 +206,20 @@ export default function ActividadForm({
                       <SelectItem value="terminado">Terminado</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="observacion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Observación</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

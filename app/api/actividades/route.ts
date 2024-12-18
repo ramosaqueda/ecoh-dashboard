@@ -103,6 +103,8 @@ export async function POST(req: NextRequest) {
         fechaInicio: new Date(data.fechaInicio),
         fechaTermino: new Date(data.fechaTermino),
         estado: data.estado as EstadoActividad,
+        observacion: data.observacion,  
+
         causa: {
           connect: { id: parseInt(data.causaId) }
         },
