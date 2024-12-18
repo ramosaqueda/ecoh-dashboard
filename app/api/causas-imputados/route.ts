@@ -46,6 +46,7 @@ export async function GET(req: Request) {
             select: {
               nombreSujeto: true,
               fotoPrincipal: true 
+              docId: true
             }
           },
           cautelar: {
