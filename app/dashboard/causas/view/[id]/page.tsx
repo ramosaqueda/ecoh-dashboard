@@ -59,6 +59,7 @@ interface CausaImputado {
   imputado: {
     nombreSujeto: string;
     fotoPrincipal: string;
+    docId: string;
   };
   cautelar: {
     nombre: string;
@@ -346,7 +347,7 @@ export default function CausaViewPage() {
                           {causaImputado.imputado.nombreSujeto}
                         </h4>
                         <p className="text-sm text-muted-foreground">
-                          RUT: {causaImputado.datosImputado?.rut|| '-'}
+                          RUT: {causaImputado.imputado.docId|| '-'}
                         </p>
                       </div>
                       
