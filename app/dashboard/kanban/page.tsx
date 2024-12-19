@@ -12,7 +12,6 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import CausaSelector from '@/components/select/CausaSelector';
 
-
 interface Actividad {
   id: number;
   causa: {
@@ -61,28 +60,56 @@ export default function ActividadesKanban() {
   const fetchActividades = async (onlyUser: boolean = false) => {
     setIsLoading(true);
     try {
-      const url = onlyUser ? '/api/actividades/usuario' : '/api/actividades';
+      const params = new URLSearchParams();
+      params.append('limit', '1000');
+      
+      const url = onlyUser 
+        ? `/api/actividades/usuario` 
+        : `/api/actividades?${params.toString()}`;
+      
       const response = await fetch(url);
       if (!response.ok) throw new Error('Error al cargar actividades');
-      const data = await response.json();
-      setActividades(data);
-      filterActividades(data, selectedCausaId);
+      
+      const responseData = await response.json();
+      
+      // Manejar ambos formatos de respuesta
+      let actividadesData = [];
+      
+      if (onlyUser) {
+        // Si es el endpoint de usuario, asumimos que devuelve directamente el array
+        actividadesData = Array.isArray(responseData) ? responseData : [];
+      } else {
+        // Si es el endpoint normal, extraemos data
+        actividadesData = responseData.data || [];
+      }
+
+      // Verificación adicional de que sea un array
+      if (!Array.isArray(actividadesData)) {
+        actividadesData = [];
+      }
+
+      setActividades(actividadesData);
+      filterActividades(actividadesData, selectedCausaId);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar las actividades');
+      setActividades([]);
+      setFilteredActividades([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const filterActividades = (actividadesList: Actividad[], causaId: string) => {
+    const safeList = Array.isArray(actividadesList) ? actividadesList : [];
+    
     if (!causaId) {
-      setFilteredActividades(actividadesList);
+      setFilteredActividades(safeList);
       return;
     }
     
-    const filtered = actividadesList.filter(
-      actividad => actividad.causa.id.toString() === causaId
+    const filtered = safeList.filter(
+      actividad => actividad?.causa?.id?.toString() === causaId
     );
     setFilteredActividades(filtered);
   };
@@ -93,10 +120,12 @@ export default function ActividadesKanban() {
 
   useEffect(() => {
     filterActividades(actividades, selectedCausaId);
-  }, [selectedCausaId]);
+  }, [selectedCausaId, actividades]);
 
   const actividadesPorEstado = (estado: string) => {
-    return filteredActividades.filter((actividad) => actividad.estado === estado);
+    return Array.isArray(filteredActividades) 
+      ? filteredActividades.filter((actividad) => actividad?.estado === estado)
+      : [];
   };
 
   const handleDragEnd = async (result: any) => {
@@ -148,8 +177,8 @@ export default function ActividadesKanban() {
   }
 
   return (
-    <PageContainer className="flex h-screen flex-col overflow-hidden">
-      <div className="flex flex-col space-y-4 pb-4">
+    <PageContainer className="flex h-screen flex-col">
+      <div className="flex flex-col space-y-4">
         <Breadcrumbs items={breadcrumbItems} />
         
         <div className="flex flex-col space-y-4">
@@ -177,26 +206,26 @@ export default function ActividadesKanban() {
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex-1 overflow-x-auto pb-6">
-          <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-3">
-            {estados.map((estado) => (
-              <div key={estado.id} className="flex h-full flex-col">
-                <div className={`sticky top-0 z-10 rounded-t-lg p-4 ${estado.color}`}>
-                  <h2 className="font-semibold">{estado.label}</h2>
-                  <div className="text-sm text-muted-foreground">
-                    {actividadesPorEstado(estado.id).length} actividades
-                  </div>
+        <div className="mt-4 grid h-[calc(100vh-280px)] grid-cols-1 gap-4 md:grid-cols-3">
+          {estados.map((estado) => (
+            <div key={estado.id} className="flex flex-col rounded-lg border-2">
+              <div className={`rounded-t-lg p-4 ${estado.color}`}>
+                <h2 className="font-semibold">{estado.label}</h2>
+                <div className="text-sm text-muted-foreground">
+                  {actividadesPorEstado(estado.id).length} actividades
                 </div>
+              </div>
 
-                <Droppable droppableId={estado.id}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`flex-1 overflow-y-auto rounded-b-lg border-2 ${
-                        estado.color
-                      } p-2 ${snapshot.isDraggingOver ? 'bg-muted/50' : ''}`}
-                    >
+              <Droppable droppableId={estado.id}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`flex-1 overflow-y-auto p-2 ${
+                      snapshot.isDraggingOver ? 'bg-muted/50' : ''
+                    }`}
+                  >
+                    <div className="space-y-2">
                       {actividadesPorEstado(estado.id).map(
                         (actividad, index) => (
                           <Draggable
@@ -209,7 +238,6 @@ export default function ActividadesKanban() {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className="mb-2"
                               >
                                 <Card
                                   className={`transition-shadow hover:shadow-md ${
@@ -253,16 +281,16 @@ export default function ActividadesKanban() {
                       )}
                       {provided.placeholder}
                       {actividadesPorEstado(estado.id).length === 0 && (
-                        <div className="p-4 text-center text-sm text-muted-foreground">
+                        <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
                           No hay actividades en este estado
                         </div>
                       )}
                     </div>
-                  )}
-                </Droppable>
-              </div>
-            ))}
-          </div>
+                  </div>
+                )}
+              </Droppable>
+            </div>
+          ))}
         </div>
       </DragDropContext>
     </PageContainer>

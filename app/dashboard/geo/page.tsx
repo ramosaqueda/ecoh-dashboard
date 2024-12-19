@@ -27,6 +27,7 @@ const breadcrumbItems = [
   { title: 'Mapa Delitos', link: '/dashboard/geo' }
 ];
 
+// Carga dinámica del mapa para evitar problemas de SSR
 const LeafletMap = dynamic(() => import('@/components/LeafletMap'), {
   ssr: false,
   loading: () => <p>Cargando mapa...</p>
@@ -38,6 +39,7 @@ export default function MapPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showEcohOnly, setShowEcohOnly] = useState(false);
 
+  // Fetch de causas
   const { data: causas = [], isLoading: isLoadingCausas } = useQuery({
     queryKey: ['causas'],
     queryFn: async () => {
@@ -46,6 +48,7 @@ export default function MapPage() {
     }
   });
 
+  // Fetch de delitos
   const { data: delitos = [], isLoading: isLoadingDelitos } = useQuery({
     queryKey: ['delitos'],
     queryFn: async () => {
@@ -64,6 +67,7 @@ export default function MapPage() {
     )
   ).sort((a, b) => b - a);
 
+  // Filtrado de causas
   const causasFiltradas = causas
     .filter((causa) =>
       selectedDelito === 'todos'
@@ -88,97 +92,112 @@ export default function MapPage() {
       return causa.isEcoh === true;
     });
 
-  if (isLoadingCausas || isLoadingDelitos) return <div>Cargando datos...</div>;
+  if (isLoadingCausas || isLoadingDelitos) {
+    return (
+      <PageContainer>
+        <div className="flex h-[50vh] items-center justify-center">
+          <div className="text-lg">Cargando datos...</div>
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer scrollable={true}>
-      <div className="space-y-6 p-4">
-        <Breadcrumbs items={breadcrumbItems} />
-        <h1 className="text-2xl font-bold">Mapa de Causas</h1>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <div className="lg:col-span-9">
-            <StatsPanel
-              causas={causasFiltradas}
-              selectedDelito={selectedDelito}
-            />
-          </div>
-
-          <div className="space-y-4 lg:col-span-3">
-            {/* Switch de ECOH */}
-            <div className="flex items-center justify-between space-x-2 rounded-lg border p-3 shadow-sm">
-              <Label htmlFor="ecoh-mode" className="font-medium">
-                Solo causas ECOH
-              </Label>
-              <Switch
-                id="ecoh-mode"
-                checked={showEcohOnly}
-                onCheckedChange={setShowEcohOnly}
-              />
-            </div>
-
-            {/* Select de Delitos */}
-            <div className="select-wrapper w-full">
-              <Select value={selectedDelito} onValueChange={setSelectedDelito}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Filtrar por delito" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Delitos</SelectLabel>
-                    <SelectItem value="todos">Todos los delitos</SelectItem>
-                    {delitos.map((delito) => (
-                      <SelectItem key={delito.id} value={delito.id.toString()}>
-                        {delito.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Select de Años */}
-            <div className="select-wrapper w-full">
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Filtrar por año" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Año</SelectLabel>
-                    <SelectItem value="todos">Todos los años</SelectItem>
-                    {yearsAvailable.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Campo de Búsqueda */}
-            <div className="relative w-full">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por RUC o dirección..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8"
-              />
-            </div>
-
-            {/* Contador de resultados */}
-            <div className="text-sm text-muted-foreground">
-              Mostrando {causasFiltradas.length} de {causas.length} causas
-              {showEcohOnly && ' (Solo ECOH)'}
-            </div>
-          </div>
+      <div className="flex h-full flex-col">
+        <div className="border-b bg-background px-6 py-4">
+          <Breadcrumbs items={breadcrumbItems} />
+          <h1 className="mt-4 text-2xl font-bold">Mapa de Causas</h1>
         </div>
 
-        {/* Mapa */}
-        <div className="h-[calc(100vh-300px)] min-h-[500px]">
-          <LeafletMap causas={causasFiltradas} />
+        <div className="flex-1  px-6 py-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            <div className="lg:col-span-9">
+              <StatsPanel
+                causas={causasFiltradas}
+                selectedDelito={selectedDelito}
+              />
+            </div>
+
+            <div className="space-y-4 lg:col-span-2">
+              {/* Switch de ECOH */}
+              <div className="flex items-center justify-between space-x-2 rounded-lg border p-3 shadow-sm">
+                <Label htmlFor="ecoh-mode" className="font-medium">
+                  Solo causas ECOH
+                </Label>
+                <Switch
+                  id="ecoh-mode"
+                  checked={showEcohOnly}
+                  onCheckedChange={setShowEcohOnly}
+                />
+              </div>
+
+              {/* Select de Delitos */}
+              <div className="select-wrapper w-full">
+                <Select value={selectedDelito} onValueChange={setSelectedDelito}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filtrar por delito" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Delitos</SelectLabel>
+                      <SelectItem value="todos">Todos los delitos</SelectItem>
+                      {delitos.map((delito) => (
+                        <SelectItem key={delito.id} value={delito.id.toString()}>
+                          {delito.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Select de Años */}
+              <div className="select-wrapper w-full">
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filtrar por año" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Año</SelectLabel>
+                      <SelectItem value="todos">Todos los años</SelectItem>
+                      {yearsAvailable.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Campo de Búsqueda */}
+              <div className="relative w-full">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por RUC o dirección..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-8"
+                />
+              </div>
+
+              {/* Contador de resultados */}
+              <div className="text-sm text-muted-foreground">
+                Mostrando {causasFiltradas.length} de {causas.length} causas
+                {showEcohOnly && ' (Solo ECOH)'}
+              </div>
+            </div>
+          </div>
+
+          {/* Mapa */}
+
+          <div className="h-[calc(100vh-400px)] min-h-[600px] w-full rounded-lg border">
+
+
+            <LeafletMap causas={causasFiltradas} />
+          </div>
         </div>
       </div>
     </PageContainer>

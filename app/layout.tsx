@@ -14,7 +14,7 @@ import Header from '@/components/layout/header';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Ecoh Tools',
+  title: 'ECOH PIR',
   description: 'Set de herramientas ECOH'
 };
 

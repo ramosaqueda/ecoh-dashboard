@@ -167,6 +167,7 @@ export const causaService = {
       causaEcoh: data.causaEcoh,
       causaLegada: data.causaLegada,
       constituyeSs: data.constituyeSs,
+      homicidioConsumado: data.homicidioConsumado,
 
       // Campos de texto
       denominacionCausa: data.denominacionCausa,
@@ -225,6 +226,7 @@ export const causaService = {
       causaLegada: data.causaLegada || false,
       constituyeSs: data.constituyeSs || false,
       denominacionCausa: data.denominacionCausa || '',
+      homicidioConsumado: data.homicidioConsumado || false,
       ruc: data.ruc || '',
       foliobw: data.foliobw || '',
       coordenadasSs: data.coordenadasSs || '',

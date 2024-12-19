@@ -312,7 +312,7 @@ console.log(datosCausa);
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-medium">Estado ECOH</h3>
+                  <h3 className="font-medium">Causa ECOH</h3>
                   <Badge variant={causa.causaEcoh ? 'default' : 'secondary'}>
                     {causa.causaEcoh ? 'Sí' : 'No'}
                   </Badge>

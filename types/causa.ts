@@ -2,6 +2,7 @@ export interface CausaFormData {
   causaEcoh: boolean;
   causaLegada: boolean;
   constituyeSs: boolean;
+  homicidioConsumado?: boolean;
   fechaHoraTomaConocimiento: string;
   fechaDelHecho: string;
   fechaIta?: string | null;

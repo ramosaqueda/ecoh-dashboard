@@ -41,6 +41,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
       causaEcoh: false,
       causaLegada: false,
       constituyeSs: false,
+      homicidioConsumado: false,
       // Sobrescribir con los valores iniciales si existen
       ...initialValues
     }
@@ -97,7 +98,8 @@ const CausaForm: React.FC<CausaFormProps> = ({
       console.log('No initialValues provided');
     }
   }, [initialValues, form]);
-
+  const selectedDelito = form.watch('delito');
+  const isHomicidio = selectedDelito === "1";
   const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
 
   return (
@@ -122,7 +124,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
             {/* Sección de Switches */}
             <div className="space-y-4 rounded-lg bg-muted/50 p-4">
               <h3 className="mb-4 font-medium">Configuración inicial</h3>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                 <SwitchField form={form} name="causaEcoh" label="Causa ECOH" />
                 <SwitchField
                   form={form}
@@ -134,6 +136,10 @@ const CausaForm: React.FC<CausaFormProps> = ({
                   name="constituyeSs"
                   label="Constituye SS"
                 />
+
+                {isHomicidio && (
+                    <SwitchField form={form} name="homicidioConsumado" label="Homicidio Consumado" />
+                  )}
               </div>
             </div>
 

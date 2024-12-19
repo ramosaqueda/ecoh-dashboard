@@ -2,20 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { EstadoActividad } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
- 
-
 
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
     const id = searchParams.get('id');
-    const causaId = searchParams.get('causaId');
-    const tipoActividadId = searchParams.get('tipoActividadId');
+    const ruc = searchParams.get('ruc');
+    const tipo_actividad_id = searchParams.get('tipo_actividad_id');
     const estado = searchParams.get('estado');
     const fechaDesde = searchParams.get('fechaDesde');
     const fechaHasta = searchParams.get('fechaHasta');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
 
-    // Configuración base de include para todas las consultas
     const includeConfig = {
       causa: true,
       tipoActividad: true,
@@ -28,7 +28,6 @@ export async function GET(req: NextRequest) {
       },
     };
 
-    // Buscar por ID específico
     if (id) {
       const actividad = await prisma.actividad.findUnique({
         where: { id: Number(id) },
@@ -45,16 +44,32 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(actividad);
     }
 
-    // Construir filtros para búsqueda
-    const where: any = {
-      AND: [
-        causaId ? { causaId: Number(causaId) } : {},
-        tipoActividadId ? { tipoActividadId: Number(tipoActividadId) } : {},
-        estado ? { estado: estado as EstadoActividad } : {},
-        fechaDesde ? { fechaInicio: { gte: new Date(fechaDesde) } } : {},
-        fechaHasta ? { fechaTermino: { lte: new Date(fechaHasta) } } : {},
-      ],
-    };
+    const whereConditions = [];
+
+    if (ruc) {
+      whereConditions.push({ causa: { ruc } });
+    }
+
+    if (tipo_actividad_id) {
+      whereConditions.push({ tipo_actividad_id: Number(tipo_actividad_id) });
+    }
+
+    if (estado) {
+      whereConditions.push({ estado: estado as EstadoActividad });
+    }
+
+    if (fechaDesde) {
+      whereConditions.push({ fechaInicio: { gte: new Date(fechaDesde) } });
+    }
+
+    if (fechaHasta) {
+      whereConditions.push({ fechaTermino: { lte: new Date(fechaHasta) } });
+    }
+
+    const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+    // Get total count for pagination
+    const total = await prisma.actividad.count({ where });
 
     const actividades = await prisma.actividad.findMany({
       where,
@@ -62,9 +77,19 @@ export async function GET(req: NextRequest) {
       orderBy: {
         fechaInicio: 'desc',
       },
+      skip,
+      take: limit,
     });
 
-    return NextResponse.json(actividades);
+    return NextResponse.json({
+      data: actividades,
+      metadata: {
+        total,
+        page,
+        limit,
+        hasMore: skip + actividades.length < total
+      }
+    });
   } catch (error) {
     console.error('Error en GET /api/actividades:', error);
     return NextResponse.json(
@@ -100,20 +125,13 @@ export async function POST(req: NextRequest) {
     
     const actividad = await prisma.actividad.create({
       data: {
+        causa_id: parseInt(data.causaId),
+        tipo_actividad_id: parseInt(data.tipoActividadId),
+        usuario_id: usuario.id,
         fechaInicio: new Date(data.fechaInicio),
         fechaTermino: new Date(data.fechaTermino),
         estado: data.estado as EstadoActividad,
-        observacion: data.observacion,  
-
-        causa: {
-          connect: { id: parseInt(data.causaId) }
-        },
-        tipoActividad: {
-          connect: { id: parseInt(data.tipoActividadId) }
-        },
-        usuario: {
-          connect: { id: usuario.id }
-        }
+        observacion: data.observacion
       },
       include: {
         causa: true,
@@ -154,14 +172,22 @@ export async function PUT(req: NextRequest) {
     const actividad = await prisma.actividad.update({
       where: { id: Number(id) },
       data: {
-        tipoActividadId: data.tipoActividadId ? parseInt(data.tipoActividadId) : undefined,
+        tipo_actividad_id: data.tipoActividadId ? parseInt(data.tipoActividadId) : undefined,
         fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : undefined,
         fechaTermino: data.fechaTermino ? new Date(data.fechaTermino) : undefined,
-        estado: data.estado
+        estado: data.estado as EstadoActividad,
+        observacion: data.observacion
       },
       include: {
         causa: true,
         tipoActividad: true,
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true
+          }
+        }
       },
     });
 
