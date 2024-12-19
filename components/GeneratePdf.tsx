@@ -87,4 +87,3 @@ const GeneratePdf :  React.FC<pdfProps> = ({ pdfData }) => {
 
 export default GeneratePdf;
 
-//aaaaaaa
