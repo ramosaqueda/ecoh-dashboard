@@ -1,149 +1,300 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ActividadForm from '@/components/forms/actividad/ActividadForm';
-
-import ActividadesTable from '@/components/tables/actividades-tables/ActividadesTable';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import PageContainer from '@/components/layout/page-container';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import CausaSelector from '@/components/select/CausaSelector';
 
-export default function ActividadesPage() {
-  const [actividades, setActividades] = useState([]);
+interface Actividad {
+  id: number;
+  causa: {
+    id: number;
+    ruc: string;
+    denominacionCausa: string;
+  };
+  tipoActividad: {
+    nombre: string;
+  };
+  fechaInicio: string;
+  fechaTermino: string;
+  estado: 'inicio' | 'en_proceso' | 'terminado';
+}
+
+const breadcrumbItems = [
+  { title: 'Dashboard', link: '/dashboard' },
+  { title: 'Kanban Actividades', link: '/dashboard/actividades-kanban' }
+];
+
+const estados = [
+  {
+    id: 'inicio',
+    label: 'Por Iniciar',
+    color: 'bg-yellow-50 border-yellow-200'
+  },
+  {
+    id: 'en_proceso',
+    label: 'En Proceso',
+    color: 'bg-blue-50 border-blue-200'
+  },
+  { 
+    id: 'terminado', 
+    label: 'Terminado', 
+    color: 'bg-green-50 border-green-200' 
+  }
+];
+
+export default function ActividadesKanban() {
+  const [actividades, setActividades] = useState<Actividad[]>([]);
+  const [filteredActividades, setFilteredActividades] = useState<Actividad[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [rucFilter, setRucFilter] = useState('');
+  const [showOnlyUserActivities, setShowOnlyUserActivities] = useState(false);
+  const [selectedCausaId, setSelectedCausaId] = useState('');
 
-  const fetchActividades = async (ruc?: string) => {
+  const fetchActividades = async (onlyUser: boolean = false) => {
+    setIsLoading(true);
     try {
-      const url = ruc
-        ? `/api/actividades?ruc=${encodeURIComponent(ruc)}`
-        : '/api/actividades';
-
+      const params = new URLSearchParams();
+      params.append('limit', '1000');
+      
+      const url = onlyUser 
+        ? `/api/actividades/usuario?${params.toString()}` 
+        : `/api/actividades?${params.toString()}`;
+      
       const response = await fetch(url);
       if (!response.ok) throw new Error('Error al cargar actividades');
-      const data = await response.json();
-      setActividades(data);
+      
+      const responseData = await response.json();
+      
+      // Manejar ambos formatos de respuesta
+      let actividadesData = [];
+      
+      if (onlyUser) {
+        // Si es el endpoint de usuario, asumimos que devuelve directamente el array
+        actividadesData = Array.isArray(responseData) ? responseData : [];
+      } else {
+        // Si es el endpoint normal, extraemos data
+        actividadesData = responseData.data || [];
+      }
+  
+      // Verificación adicional de que sea un array
+      if (!Array.isArray(actividadesData)) {
+        actividadesData = [];
+      }
+  
+      setActividades(actividadesData);
+      filterActividades(actividadesData, selectedCausaId);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar las actividades');
+      // En caso de error, establecer arrays vacíos
+      setActividades([]);
+      setFilteredActividades([]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const filterActividades = (actividadesList: Actividad[], causaId: string) => {
+    // Asegurarse de que actividadesList sea un array
+    const safeList = Array.isArray(actividadesList) ? actividadesList : [];
+    
+    if (!causaId) {
+      setFilteredActividades(safeList);
+      return;
+    }
+    
+    const filtered = safeList.filter(
+      actividad => actividad?.causa?.id?.toString() === causaId
+    );
+    setFilteredActividades(filtered);
+  };
   useEffect(() => {
-    fetchActividades();
-  }, []);
+    fetchActividades(showOnlyUserActivities);
+  }, [showOnlyUserActivities]);
 
-  const handleSubmit = async (data: any) => {
-    setIsSubmitting(true);
+  useEffect(() => {
+    filterActividades(actividades, selectedCausaId);
+  }, [selectedCausaId, actividades]);
+
+  const actividadesPorEstado = (estado: string) => {
+    // Verificar que filteredActividades sea un array
+    return Array.isArray(filteredActividades) 
+      ? filteredActividades.filter((actividad) => actividad?.estado === estado)
+      : [];
+  };
+
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination) return;
+
+    const { draggableId, destination } = result;
+    const newEstado = destination.droppableId;
+    const actividadId = parseInt(draggableId);
+
     try {
-      const response = await fetch('/api/actividades', {
-        method: 'POST',
+      const response = await fetch(`/api/actividades?id=${actividadId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          estado: newEstado
+        })
       });
 
-      if (!response.ok) throw new Error('Error al crear la actividad');
+      if (!response.ok) throw new Error('Error al actualizar el estado');
 
-      await fetchActividades(rucFilter);
-      toast.success('Actividad creada exitosamente');
-      setDialogOpen(false);
+      setActividades((prevActividades) => {
+        const updatedActividades = prevActividades.map((actividad) =>
+          actividad.id === actividadId
+            ? { ...actividad, estado: newEstado }
+            : actividad
+        );
+        filterActividades(updatedActividades, selectedCausaId);
+        return updatedActividades;
+      });
+
+      toast.success('Estado actualizado correctamente');
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error al crear la actividad');
-    } finally {
-      setIsSubmitting(false);
+      toast.error('Error al actualizar el estado');
+      fetchActividades(showOnlyUserActivities);
     }
   };
 
-  const handleRucSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchActividades(rucFilter);
-  };
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <div className="flex h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Gestión de Actividades</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Actividad
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Crear Nueva Actividad</DialogTitle>
-            </DialogHeader>
-            <ActividadForm
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
+    <PageContainer className="flex h-screen flex-col">
+      <div className="flex flex-col space-y-4">
+        <Breadcrumbs items={breadcrumbItems} />
+        
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Tablero de Actividades</h1>
+            <div className="flex items-center gap-2">
+              <label htmlFor="user-activities" className="text-sm text-muted-foreground">
+                Ver solo mis actividades
+              </label>
+              <Switch
+                id="user-activities"
+                checked={showOnlyUserActivities}
+                onCheckedChange={setShowOnlyUserActivities}
+              />
+            </div>
+          </div>
+          
+          <div className="w-full max-w-md">
+            <CausaSelector
+              value={selectedCausaId}
+              onChange={(value) => setSelectedCausaId(value)}
             />
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleRucSearch} className="flex gap-4">
-        <div className="max-w-sm flex-1">
-          <Input
-            placeholder="Buscar por RUC..."
-            value={rucFilter}
-            onChange={(e) => setRucFilter(e.target.value)}
-          />
-        </div>
-        <Button type="submit" variant="secondary">
-          <Search className="mr-2 h-4 w-4" />
-          Buscar
-        </Button>
-        {rucFilter && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setRucFilter('');
-              fetchActividades();
-            }}
-          >
-            Limpiar
-          </Button>
-        )}
-      </form>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="mt-4 grid h-[calc(100vh-280px)] grid-cols-1 gap-4 md:grid-cols-3">
+          {estados.map((estado) => (
+            <div key={estado.id} className="flex flex-col rounded-lg border-2">
+              <div className={`rounded-t-lg p-4 ${estado.color}`}>
+                <h2 className="font-semibold">{estado.label}</h2>
+                <div className="text-sm text-muted-foreground">
+                  {actividadesPorEstado(estado.id).length} actividades
+                </div>
+              </div>
 
-      {isLoading ? (
-        <div className="text-center">Cargando actividades...</div>
-      ) : (
-        <ActividadesTable
-          actividades={actividades}
-          onDelete={async (id) => {
-            if (window.confirm('¿Está seguro de eliminar esta actividad?')) {
-              try {
-                const response = await fetch(`/api/actividades?id=${id}`, {
-                  method: 'DELETE'
-                });
-                if (!response.ok) throw new Error('Error al eliminar');
-                await fetchActividades(rucFilter);
-                toast.success('Actividad eliminada correctamente');
-              } catch (error) {
-                toast.error('Error al eliminar la actividad');
-              }
-            }
-          }}
-        />
-      )}
-    </div>
+              <Droppable droppableId={estado.id}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`flex-1 overflow-y-auto p-2 ${
+                      snapshot.isDraggingOver ? 'bg-muted/50' : ''
+                    }`}
+                  >
+                    <div className="space-y-2">
+                      {actividadesPorEstado(estado.id).map(
+                        (actividad, index) => (
+                          <Draggable
+                            key={actividad.id}
+                            draggableId={actividad.id.toString()}
+                            index={index}
+                          >
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                              >
+                                <Card
+                                  className={`transition-shadow hover:shadow-md ${
+                                    snapshot.isDragging ? 'shadow-lg' : ''
+                                  }`}
+                                >
+                                  <CardContent className="space-y-2 p-4">
+                                    <div className="font-medium">
+                                      {actividad.tipoActividad.nombre}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      RUC: {actividad.causa.ruc}
+                                    </div>
+                                    <div className="line-clamp-2 text-sm text-muted-foreground">
+                                      {actividad.causa.denominacionCausa}
+                                    </div>
+                                    <div className="border-t pt-2 text-xs text-muted-foreground">
+                                      <div>
+                                        Inicio:{' '}
+                                        {format(
+                                          new Date(actividad.fechaInicio),
+                                          'dd/MM/yyyy',
+                                          { locale: es }
+                                        )}
+                                      </div>
+                                      <div>
+                                        Término:{' '}
+                                        {format(
+                                          new Date(actividad.fechaTermino),
+                                          'dd/MM/yyyy',
+                                          { locale: es }
+                                        )}
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </div>
+                            )}
+                          </Draggable>
+                        )
+                      )}
+                      {provided.placeholder}
+                      {actividadesPorEstado(estado.id).length === 0 && (
+                        <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                          No hay actividades en este estado
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </Droppable>
+            </div>
+          ))}
+        </div>
+      </DragDropContext>
+    </PageContainer>
   );
 }

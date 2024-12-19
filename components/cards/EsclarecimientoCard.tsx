@@ -47,6 +47,8 @@ export function EsclarecimientoCard() {
     (new Date().getFullYear() - i).toString()
   );
 
+  const [soloHomicidiosConsumados, setSoloHomicidiosConsumados] = useState(false);
+
   // Cargar tipos de delito al montar el componente
   useEffect(() => {
     const fetchTiposDelito = async () => {

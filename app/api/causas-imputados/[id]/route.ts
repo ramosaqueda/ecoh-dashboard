@@ -135,3 +135,7 @@ export async function PATCH(req: Request, { params }: Props) {
     );
   }
 }
+
+export async function PUT(req: Request, { params }: Props) {
+
+}

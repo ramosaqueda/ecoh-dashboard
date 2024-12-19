@@ -6,7 +6,7 @@ export const causaSchema = z.object({
   causaEcoh: z.boolean().default(false),
   causaLegada: z.boolean().default(false),
   constituyeSs: z.boolean().default(false),
-
+  homicidioConsumado: z.boolean().optional(),
   // Campos requeridos
   fechaHoraTomaConocimiento: z
     .string()

@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
     const count = searchParams.get('count');
     const causaEcoh = searchParams.get('causaEcoh');
     const causaLegada = searchParams.get('causaLegada');
+    const homicidioConsumado = searchParams.get('homicidioConsumado'); // Nuevo parámetro
 
     let whereClause: any = {};
 
@@ -17,6 +18,11 @@ export async function GET(req: NextRequest) {
 
     if (causaLegada !== null) {
       whereClause.causaLegada = causaLegada === 'true';
+    }
+
+    // Nuevo filtro para homicidioConsumado
+    if (homicidioConsumado !== null) {
+      whereClause.homicidioConsumado = homicidioConsumado === 'true';
     }
 
     if (count === 'true') {
@@ -54,13 +60,12 @@ export async function GET(req: NextRequest) {
           },
           _count: {
             select: {
-              imputados: true // Esto añadirá el conteo de imputados
+              imputados: true
             }
           }
         }
       });
 
-      // Formateamos la respuesta para asegurarnos que todos los campos necesarios estén presentes
       const formattedCausas = causas.map((causa) => ({
         ...causa,
         fiscal: causa.fiscal
@@ -95,6 +100,8 @@ export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
     console.log(data);
+    
+    // Aseguramos que homicidioConsumado sea booleano
     const transformedData = {
       ...data,
       delitoId: parseInt(data.delito),
@@ -104,7 +111,8 @@ export async function POST(req: NextRequest) {
       abogadoId: data.abogado ? parseInt(data.abogado) : null,
       abogado: undefined,
       analistaId: data.analista ? parseInt(data.analista) : null,
-      analista: undefined
+      analista: undefined,
+      homicidioConsumado: data.homicidioConsumado ?? false // Aseguramos valor por defecto
     };
 
     const newCausa = await prisma.causa.create({

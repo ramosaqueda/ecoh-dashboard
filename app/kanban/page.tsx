@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Loader2 } from 'lucide-react';
@@ -9,10 +10,12 @@ import { toast } from 'sonner';
 import PageContainer from '@/components/layout/page-container';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import CausaSelector from '@/components/select/CausaSelector';
 
 interface Actividad {
   id: number;
   causa: {
+    id: number;
     ruc: string;
     denominacionCausa: string;
   };
@@ -40,33 +43,77 @@ const estados = [
     label: 'En Proceso',
     color: 'bg-blue-50 border-blue-200'
   },
-  { id: 'terminado', label: 'Terminado', color: 'bg-green-50 border-green-200' }
+  { 
+    id: 'terminado', 
+    label: 'Terminado', 
+    color: 'bg-green-50 border-green-200' 
+  }
 ];
 
 export default function ActividadesKanban() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
+  const [filteredActividades, setFilteredActividades] = useState<Actividad[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showOnlyUserActivities, setShowOnlyUserActivities] = useState(false);
+  const [selectedCausaId, setSelectedCausaId] = useState('');
 
-  const fetchActividades = async () => {
+  const fetchActividades = async (onlyUser: boolean = false) => {
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/actividades/usuario');
+      const params = new URLSearchParams();
+      params.append('limit', '1000'); // Solicitamos todas las actividades
+      
+      const url = onlyUser 
+        ? `/api/actividades/usuario?${params.toString()}` 
+        : `/api/actividades?${params.toString()}`;
+      
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Error al cargar actividades');
-      const data = await response.json();
-      setActividades(data);
+      const { data } = await response.json();
+      
+      // Aseguramos que data sea un array
+      const actividadesArray = Array.isArray(data) ? data : [];
+      setActividades(actividadesArray);
+      filterActividades(actividadesArray, selectedCausaId);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar las actividades');
+      // En caso de error, establecemos arrays vacíos
+      setActividades([]);
+      setFilteredActividades([]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const filterActividades = (actividadesList: Actividad[], causaId: string) => {
+    // Aseguramos que actividadesList sea un array
+    const arrayToFilter = Array.isArray(actividadesList) ? actividadesList : [];
+    
+    if (!causaId) {
+      setFilteredActividades(arrayToFilter);
+      return;
+    }
+    
+    const filtered = arrayToFilter.filter(
+      actividad => actividad.causa.id.toString() === causaId
+    );
+    setFilteredActividades(filtered);
+  };
+
   useEffect(() => {
-    fetchActividades();
-  }, []);
+    fetchActividades(showOnlyUserActivities);
+  }, [showOnlyUserActivities]);
+
+  useEffect(() => {
+    filterActividades(actividades, selectedCausaId);
+  }, [selectedCausaId]);
 
   const actividadesPorEstado = (estado: string) => {
-    return actividades.filter((actividad) => actividad.estado === estado);
+    // Aseguramos que filteredActividades sea un array
+    return Array.isArray(filteredActividades) 
+      ? filteredActividades.filter((actividad) => actividad.estado === estado)
+      : [];
   };
 
   const handleDragEnd = async (result: any) => {
@@ -89,45 +136,61 @@ export default function ActividadesKanban() {
 
       if (!response.ok) throw new Error('Error al actualizar el estado');
 
-      // Actualizar estado local
-      setActividades((prevActividades) =>
-        prevActividades.map((actividad) =>
+      setActividades((prevActividades) => {
+        const updatedActividades = prevActividades.map((actividad) =>
           actividad.id === actividadId
             ? { ...actividad, estado: newEstado }
             : actividad
-        )
-      );
+        );
+        filterActividades(updatedActividades, selectedCausaId);
+        return updatedActividades;
+      });
 
       toast.success('Estado actualizado correctamente');
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al actualizar el estado');
-      // Recargar actividades en caso de error
-      fetchActividades();
+      fetchActividades(showOnlyUserActivities);
     }
   };
 
-  if (isLoading) {
-    return (
-      <PageContainer>
-        <div className="flex h-[50vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </PageContainer>
-    );
-  }
+ 
 
   return (
-    <PageContainer>
-      <div className="space-y-4">
+    <PageContainer className="flex h-screen flex-col overflow-hidden">
+      <div className="flex flex-col space-y-4 pb-4">
         <Breadcrumbs items={breadcrumbItems} />
-        <h1 className="text-2xl font-bold">Tablero de Actividades</h1>
+        
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Tablero de Actividades</h1>
+            <div className="flex items-center gap-2">
+              <label htmlFor="user-activities" className="text-sm text-muted-foreground">
+                Ver solo mis actividades
+              </label>
+              <Switch
+                id="user-activities"
+                checked={showOnlyUserActivities}
+                onCheckedChange={setShowOnlyUserActivities}
+              />
+            </div>
+          </div>
+          
+          <div className="w-full max-w-md">
+            <CausaSelector
+              value={selectedCausaId}
+              onChange={(value) => setSelectedCausaId(value)}
+            />
+          </div>
+        </div>
+      </div>
 
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex-1 overflow-x-auto pb-6">
+          <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-3">
             {estados.map((estado) => (
-              <div key={estado.id} className="flex flex-col">
-                <div className={`rounded-t-lg p-4 ${estado.color}`}>
+              <div key={estado.id} className="flex h-full flex-col">
+                <div className={`sticky top-0 z-10 rounded-t-lg p-4 ${estado.color}`}>
                   <h2 className="font-semibold">{estado.label}</h2>
                   <div className="text-sm text-muted-foreground">
                     {actividadesPorEstado(estado.id).length} actividades
@@ -139,7 +202,7 @@ export default function ActividadesKanban() {
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`min-h-[500px] flex-1 rounded-b-lg border-2 ${
+                      className={`flex-1 overflow-y-auto rounded-b-lg border-2 ${
                         estado.color
                       } p-2 ${snapshot.isDraggingOver ? 'bg-muted/50' : ''}`}
                     >
@@ -209,8 +272,8 @@ export default function ActividadesKanban() {
               </div>
             ))}
           </div>
-        </DragDropContext>
-      </div>
+        </div>
+      </DragDropContext>
     </PageContainer>
   );
 }

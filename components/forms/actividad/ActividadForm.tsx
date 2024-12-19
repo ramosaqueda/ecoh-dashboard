@@ -52,23 +52,28 @@ export type ActividadFormValues = z.infer<typeof ActividadSchema>;
 interface ActividadFormProps {
   onSubmit: (data: ActividadFormValues) => Promise<void>;
   isSubmitting: boolean;
-}
-interface TipoActividad {
-  id: number;
-  nombre: string;
-  activo: boolean;
+  initialData?: {
+    id?: number;
+    causaId: string;
+    tipoActividadId: string;
+    fechaInicio: string;
+    fechaTermino: string;
+    estado: 'inicio' | 'en_proceso' | 'terminado';
+    observacion?: string;
+  };
 }
 
 export default function ActividadForm({
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  initialData
 }: ActividadFormProps) {
   const [tiposActividad, setTiposActividad] = useState<TipoActividad[]>([]);
   const [isLoadingTipos, setIsLoadingTipos] = useState(true);
 
   const form = useForm<ActividadFormValues>({
     resolver: zodResolver(ActividadSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       causaId: '',
       tipoActividadId: '',
       fechaInicio: new Date().toISOString().split('T')[0],
@@ -77,6 +82,13 @@ export default function ActividadForm({
       observacion: ''
     }
   });
+
+  // Reset form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      form.reset(initialData);
+    }
+  }, [form, initialData]);
 
   useEffect(() => {
     const fetchTiposActividad = async () => {
@@ -102,7 +114,9 @@ export default function ActividadForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Nueva Actividad</CardTitle>
+            <CardTitle>
+              {initialData ? 'Editar Actividad' : 'Nueva Actividad'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
