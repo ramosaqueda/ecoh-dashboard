@@ -1,38 +1,95 @@
-'use client';
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ForceGraph2D } from 'react-force-graph';
 import { GraphControls } from './controls/GraphControls';
 import { DetailPanel } from './detail/DetailPanel';
+import { Building2, User } from 'lucide-react';
 
-const OrganizationNetworkGraph = () => {
-  const forceRef = useRef();
+interface Organization {
+  id: number;
+  nombre: string;
+  activa: boolean;
+  tipoOrganizacionId: number;
+  miembros?: Member[];
+}
+
+interface Member {
+  imputadoId: number;
+  activo: boolean;
+  rol?: string;
+  imputado?: Imputado;
+}
+
+interface Imputado {
+  id: number;
+  nombreSujeto: string;
+  organizaciones?: Organization[];
+}
+
+interface GraphNode {
+  id: string;
+  name: string;
+  val: number;
+  type: 'organization' | 'imputado';
+  color: string;
+  x?: number;
+  y?: number;
+  org?: Organization;
+  imputado?: Imputado;
+  organizaciones?: Organization[];
+}
+
+interface GraphLink {
+  source: string;
+  target: string;
+  value: number;
+  rol?: string;
+}
+
+interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+interface Dimensions {
+  width: number;
+  height: number;
+}
+
+interface Filters {
+  tipoOrganizacion: string;
+  showActiveOnly: boolean;
+}
+
+interface VisualConfig {
+  linkDistance: number;
+  dagMode: string;
+  nodeSize: number;
+}
+
+const OrganizationNetworkGraph: React.FC = () => {
+  const forceRef = useRef<any>();
   
-  // Estados base
-  const [graphData, setGraphData] = useState<{ nodes: any[]; links: any[] }>({ nodes: [], links: [] });
-  const [rawData, setRawData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
+  const [rawData, setRawData] = useState<Organization[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedNode, setSelectedNode] = useState<any>(null);
-  const [tipos, setTipos] = useState([]);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [tipos, setTipos] = useState<any[]>([]);
 
-  // Estados para filtros
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     tipoOrganizacion: 'all',
     showActiveOnly: false
   });
 
-  // Estados para visualización
-  const [visualConfig, setVisualConfig] = useState({
+  const [visualConfig, setVisualConfig] = useState<VisualConfig>({
     linkDistance: 100,
     dagMode: 'none',
     nodeSize: 10
   });
 
-  // Estado para dimensiones
-  const [dimensions, setDimensions] = useState({
+  const [dimensions, setDimensions] = useState<Dimensions>({
     width: typeof window !== 'undefined' ? window.innerWidth - 100 : 800,
     height: typeof window !== 'undefined' ? window.innerHeight - 300 : 600
   });
@@ -49,7 +106,6 @@ const OrganizationNetworkGraph = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Efecto para reaccionar a cambios en la configuración visual
   useEffect(() => {
     if (rawData.length > 0) {
       const updatedGraphData = processGraphData(rawData, '');
@@ -58,9 +114,64 @@ const OrganizationNetworkGraph = () => {
         forceRef.current.d3ReheatSimulation();
       }
     }
-  }, [visualConfig.nodeSize, visualConfig.linkDistance, visualConfig.dagMode]);
+  }, [visualConfig, rawData]);
 
-  const handleNodeClick = async (node: any) => {
+  const drawShape = (
+    ctx: CanvasRenderingContext2D,
+    node: GraphNode,
+    size: number
+  ): void => {
+    // Configura el fondo
+    ctx.fillStyle = node.color;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 2;
+  
+   
+  
+    // Configura el estilo del icono
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1.5;
+  
+    // Ajusta la escala y posición para el icono
+    ctx.save();
+    ctx.translate(node.x || 0, node.y || 0);
+    const scale = size/24;
+    ctx.scale(scale, scale);
+    ctx.translate(-12, -12); // Centra el icono (24x24 es el tamaño base de Lucide)
+  
+    // Dibuja el icono según el tipo
+    if (node.type === 'organization') {
+      // Building2 icon path de Lucide
+      ctx.beginPath();
+      ctx.moveTo(3, 9);
+      ctx.lineTo(3, 21);
+      ctx.lineTo(21, 21);
+      ctx.lineTo(21, 9);
+      ctx.moveTo(3, 9);
+      ctx.lineTo(21, 9);
+      ctx.moveTo(9, 21);
+      ctx.lineTo(9, 9);
+      ctx.moveTo(15, 21);
+      ctx.lineTo(15, 9);
+      ctx.moveTo(6, 9);
+      ctx.lineTo(6, 3);
+      ctx.lineTo(18, 3);
+      ctx.lineTo(18, 9);
+
+      
+    } else {
+      // User icon path de Lucide
+      ctx.beginPath();
+      ctx.arc(12, 8, 4, 0, Math.PI * 2);
+      ctx.moveTo(20, 21);
+      ctx.arc(12, 21, 8, 0, Math.PI, true);
+    }
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  const handleNodeClick = async (node: GraphNode) => {
     try {
       if (!node) return;
 
@@ -90,9 +201,9 @@ const OrganizationNetworkGraph = () => {
     }
   };
 
-  const processGraphData = (data: any[], searchTerm: string) => {
-    const nodes: any[] = [];
-    const links: any[] = [];
+  const processGraphData = (data: Organization[], searchTerm: string): GraphData => {
+    const nodes: GraphNode[] = [];
+    const links: GraphLink[] = [];
     
     data.filter(org => {
       const matchesSearch = !searchTerm || 
@@ -109,7 +220,7 @@ const OrganizationNetworkGraph = () => {
         name: org.nombre,
         val: visualConfig.nodeSize * 2,
         type: 'organization',
-        color: org.activa ? '#4CAF50' : '#f44336',
+        color: org.activa ? '#1E88E5' : '#0D47A1',
         org
       });
 
@@ -124,7 +235,7 @@ const OrganizationNetworkGraph = () => {
             name: member.imputado.nombreSujeto,
             val: visualConfig.nodeSize,
             type: 'imputado',
-            color: member.activo ? '#2196F3' : '#9E9E9E',
+            color: member.activo ? '#FB8C00' : '#EF6C00',
             imputado: member.imputado,
             organizaciones: []
           });
@@ -225,41 +336,25 @@ const OrganizationNetworkGraph = () => {
           width={dimensions.width}
           height={dimensions.height}
           nodeLabel="name"
-          nodeColor={node => node.color}
-          nodeVal={node => node.val}
-          linkLabel={link => link.rol}
+          nodeColor={node => (node as GraphNode).color}
+          nodeVal={node => (node as GraphNode).val}
+          linkLabel={link => (link as GraphLink).rol}
           linkDistance={visualConfig.linkDistance}
           dagMode={visualConfig.dagMode}
           dagLevelDistance={50}
           nodeCanvasObjectMode={() => 'after'}
           nodeCanvasObject={(node, ctx, globalScale) => {
-            const label = node.name;
+            const typedNode = node as GraphNode;
+            const label = typedNode.name;
             const fontSize = 12/globalScale;
-            const size = node.val;
+            const size = typedNode.val;
             
             ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
             ctx.shadowBlur = 5;
             ctx.shadowOffsetX = 2;
             ctx.shadowOffsetY = 2;
 
-            if (node.type === 'organization') {
-              ctx.beginPath();
-              ctx.arc(node.x, node.y, size/2, 0, 2 * Math.PI);
-              ctx.fillStyle = node.color;
-              ctx.fill();
-              
-              ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-              ctx.lineWidth = 2;
-              ctx.stroke();
-            } else {
-              const rectSize = size * 0.8;
-              ctx.fillStyle = node.color;
-              ctx.fillRect(node.x - rectSize/2, node.y - rectSize/2, rectSize, rectSize);
-              
-              ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-              ctx.lineWidth = 2;
-              ctx.strokeRect(node.x - rectSize/2, node.y - rectSize/2, rectSize, rectSize);
-            }
+            drawShape(ctx, typedNode, size);
 
             ctx.shadowColor = 'none';
             ctx.shadowBlur = 0;
@@ -275,14 +370,14 @@ const OrganizationNetworkGraph = () => {
             
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.fillRect(
-              node.x - bckgDimensions[0] / 2,
-              node.y + size,
+              typedNode.x! - bckgDimensions[0] / 2,
+              typedNode.y! + size,
               bckgDimensions[0],
               bckgDimensions[1]
             );
 
             ctx.fillStyle = '#333';
-            ctx.fillText(label, node.x, node.y + size + fontSize/2);
+            ctx.fillText(label, typedNode.x!, typedNode.y! + size + fontSize/2);
           }}
           onNodeClick={handleNodeClick}
           linkColor={() => 'rgba(100, 100, 100, 0.4)'}
