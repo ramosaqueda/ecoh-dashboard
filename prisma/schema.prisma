@@ -48,6 +48,25 @@ model Causa {
   victimas                  CausasVictimas[]
   telefonos                 TelefonoCausa[]   // Nueva relación agregada
 
+ // New relations for related causes
+  causasRelacionadasMadre   CausasRelacionadas[] @relation("CausaMadre")
+  causasRelacionadasArista  CausasRelacionadas[] @relation("CausaArista")
+}
+
+// New model to track cause relationships
+model CausasRelacionadas {
+  id              Int      @id @default(autoincrement())
+  causaMadreId    Int
+  causaAristaId   Int
+  fechaRelacion   DateTime @default(now())
+  observacion     String?
+  tipoRelacion    String?  // Para indicar el tipo de relación si es necesario
+  
+  // Relations to Causa model
+  causaMadre      Causa    @relation("CausaMadre", fields: [causaMadreId], references: [id])
+  causaArista     Causa    @relation("CausaArista", fields: [causaAristaId], references: [id])
+
+  @@unique([causaMadreId, causaAristaId])
 }
 
 model Victima {
