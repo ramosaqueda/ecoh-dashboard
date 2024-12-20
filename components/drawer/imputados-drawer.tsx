@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { SquarePen } from 'lucide-react';
 import ImputadoFormalizacionForm from '../ImputadoFormalizacionForm';
 
+import { Edit } from 'lucide-react';
 type ImputadoInfo = {
   id: string;
   causaId: number;

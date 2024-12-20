@@ -57,7 +57,7 @@ export function ImputadosFlow() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Flujo de Imputados</CardTitle>
+        <CardTitle>Flujo gestitión de causas con imputados</CardTitle>
         <Select value={selectedYear} onValueChange={setSelectedYear}>
           <SelectTrigger className="w-[100px]">
             <SelectValue placeholder="Año" />

@@ -28,55 +28,57 @@ export default async function page() {
 
   return (
     <PageContainer scrollable={true}>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between space-y-2">
+      <div className="space-y-4 p-4 md:p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold tracking-tight">
-            Hola,{user?.firstName} de vuelta por aqui? 👋
+            Hola, {user?.firstName} de vuelta por aqui? 👋
           </h2>
           <div className="hidden items-center space-x-2 md:flex">
             <CalendarDateRangePicker />
             <Button>Descargar informe</Button>
           </div>
         </div>
+
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="overview">Estadisticas</TabsTrigger>
+            <TabsTrigger value="overview">Estadísticas</TabsTrigger>
             <TabsTrigger value="analytics" disabled>
-              Analitica
+              Analítica
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-4">
+          
+          <TabsContent value="overview" className="space-y-6">
+            {/* Indicadores principales */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <CausasCard />
               <CausasEcohCard />
               <CausasLegadaCard />
               <EsclarecimientoCard />
             </div>
-            <div className="col-span-6">
-                <CauseTimeline />
-              </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <div className="col-span-4 md:col-span-3">
-                <CaseTimelineChart />
-              </div>
-              <div className="col-span-4 md:col-span-3">
-                <DelitosDistribution />
-              </div>
-              <div className="col-span-4 md:col-span-3">
-                <AbogadoAnalistaChart />
-              </div>
-              <div className="col-span-4 md:col-span-3">
-                <NationalityDistribution />
-              </div>
 
-              <div className="col-span-4 md:col-span-3">
-                <ImputadosFlow />
-              </div>
+            {/* Línea de tiempo destacada */}
+            <div className="w-full">
+              <CauseTimeline />
+            </div>
 
-              <div className="col-span-6">
-                <CasesHeatmap />
-              </div>
+            {/* Gráficos principales - Primera fila */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <CaseTimelineChart />
+              <DelitosDistribution />
+            </div>
+
+            {/* Gráficos secundarios - Segunda fila */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <ImputadosFlow />
+              <AbogadoAnalistaChart />
+              <NationalityDistribution />
               
+            </div>
+
+            {/* Mapa de calor - Ancho completo */}
+            <div className="w-full">
+              <CasesHeatmap />
             </div>
           </TabsContent>
         </Tabs>

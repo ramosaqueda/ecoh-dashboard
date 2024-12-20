@@ -1,9 +1,7 @@
-// components/tables/causa-tables/columns.tsx
 'use client';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Edit, Trash2, Users, Eye } from 'lucide-react';
+import { ArrowUpDown, Edit, Trash2, Users, Eye, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -11,6 +9,7 @@ import { useState } from 'react';
 import ImputadosDrawer from '@/components/drawer/imputados-drawer';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+ 
 
 export type Causa = {
   id: string;
@@ -108,7 +107,24 @@ export const columns: ColumnDef<Causa>[] = [
   },
   {
     accessorKey: 'ruc',
-    header: 'RUC'
+    header: 'RUC',
+    cell: ({ row }) => {
+      const ruc = row.getValue('ruc') as string;
+      return (
+        <div className="flex items-center gap-2">
+          <span>{ruc}</span>
+          <a 
+            href={`${process.env.NEXT_PUBLIC_FICHACASORUC}?ruc=${ruc}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              <ExternalLink className="h-4 w-4 text-blue-600" />
+            </Button>
+          </a>
+        </div>
+      );
+    }
   },
   {
     accessorKey: 'rit',
@@ -156,7 +172,6 @@ export const columns: ColumnDef<Causa>[] = [
   },
   {
     id: 'actions',
-
     cell: ({ row, table }) => {
       const causa = row.original;
       const { onEdit, onDelete } = table.options.meta || {};

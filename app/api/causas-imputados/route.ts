@@ -227,7 +227,7 @@ export async function DELETE(req: Request) {
     );
   }
 }
-/*
+
 export async function PUT(req: Request) {
   try {
     const { searchParams } = new URL(req.url); 
@@ -293,4 +293,4 @@ export async function PUT(req: Request) {
   }
 }
 
-*/
+

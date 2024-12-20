@@ -10,26 +10,28 @@ export async function GET(req: Request) {
       searchParams.get('year') || new Date().getFullYear().toString()
     );
     const tipoDelito = searchParams.get('tipoDelito');
+    const homicidioConsumado = searchParams.get('homicidioConsumado') === 'true';
 
     const startDate = new Date(year, 0, 1);
     const endDate = new Date(year, 11, 31);
 
-    // Base query conditions incluyendo causaEcoh = true
+    // Base query conditions
     const baseWhere = {
       fechaDelHecho: {
         gte: startDate,
         lte: endDate
       },
-      causaEcoh: true, // Regla base: solo causas ECOH
-      ...(tipoDelito && tipoDelito !== 'todos' ? { delitoId: parseInt(tipoDelito) } : {})
+      causaEcoh: true,
+      ...(tipoDelito && tipoDelito !== 'todos' ? { delitoId: parseInt(tipoDelito) } : {}),
+      // Agregar condición de homicidioConsumado solo si estamos filtrando por homicidios
+      ...(tipoDelito === '1' && homicidioConsumado ? { homicidioConsumado: true } : {})
     };
 
-    // Obtener total de causas del año con filtros
+    // Resto del código se mantiene igual...
     const totalCausas = await prisma.causa.count({
       where: baseWhere
     });
 
-    // Obtener causas esclarecidas con filtros
     const causasImputados = await prisma.causa.findMany({
       where: baseWhere,
       include: {
@@ -40,6 +42,7 @@ export async function GET(req: Request) {
         }
       }
     });
+ 
 
     let causasFormalizadas = 0;
     let causasConCautelar = 0;
