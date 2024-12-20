@@ -227,7 +227,7 @@ export async function DELETE(req: Request) {
     );
   }
 }
-
+/*
 export async function PUT(req: Request) {
   try {
     const { searchParams } = new URL(req.url); 
@@ -271,7 +271,7 @@ export async function PUT(req: Request) {
       },
       include: {
         causa: {
-          select: {
+          include: {
             imputados: {
               select: {
                 plazo: true,
@@ -292,3 +292,5 @@ export async function PUT(req: Request) {
     );
   }
 }
+
+*/

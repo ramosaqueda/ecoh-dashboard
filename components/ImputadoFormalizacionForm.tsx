@@ -50,7 +50,6 @@ const ImputadoFormalizacionForm :React.FC<ImputadoFormalizacionProps>= ({causaId
         } catch(error) {
             console.error("Error al actualizar plazo: ", error);
         }
-        console.log("Nuevo Plazo:", data.plazo);
        
     };
     

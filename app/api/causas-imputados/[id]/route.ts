@@ -136,6 +136,7 @@ export async function PATCH(req: Request, { params }: Props) {
   }
 }
 
+
 export async function PUT(req: NextRequest, { params }: {params: {id: string}}) {
   try {
     const causaId = params.id;
@@ -147,9 +148,9 @@ export async function PUT(req: NextRequest, { params }: {params: {id: string}}) 
       );
     }
 
-    const {imputadoId, plazo, ...updateData } = await req.json();
+    const {imputadoId, newPlazo, ...updateData } = await req.json();
 
-    if (!imputadoId || !plazo) {
+    if (!imputadoId || !newPlazo) {
       return NextResponse.json(
         { error: 'Se requiere el ID del imputado y el plazo' },
         { status: 400 }
@@ -163,6 +164,27 @@ export async function PUT(req: NextRequest, { params }: {params: {id: string}}) 
       );
     }
 
+
+    const plazo = await prisma.causasImputados.findUnique({
+      where: {
+        causaId_imputadoId: {
+          causaId: parseInt(causaId),
+          imputadoId: parseInt(imputadoId)
+        }
+      },
+      include: {
+        causa: {
+            select: {
+              imputados: {
+                select: {
+                  plazo: true,
+                }
+              }
+            }
+        }
+      }
+    });
+
     console.log('Updating plazo del imputado:', imputadoId);
     const updatedPlazo = await prisma.causasImputados.update ({
       where: {
@@ -171,7 +193,7 @@ export async function PUT(req: NextRequest, { params }: {params: {id: string}}) 
           imputadoId: parseInt(imputadoId)
         }
       },
-      data: {plazo: plazo, ...updateData},
+      data: {plazo: 0, ...updateData},
       include: {
         causa: {
             select: {
@@ -195,3 +217,6 @@ export async function PUT(req: NextRequest, { params }: {params: {id: string}}) 
     );
   }
 }
+
+
+
