@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 
+import { Edit } from 'lucide-react';
 type ImputadoInfo = {
   id: string;
   causaId: number;
@@ -124,6 +125,13 @@ export default function ImputadosDrawer({
                       <span>Formalizado:</span>
                       <span className="font-medium text-foreground">
                         {registro.formalizado ? 'Sí' : 'No'}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Editar"
+                        >
+                          <Edit className="h-4 w-4 text-blue-600" />
+                        </Button>
                       </span>
                     </div>
                     {registro.fechaFormalizacion && (

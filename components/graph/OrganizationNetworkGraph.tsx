@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ForceGraph2D } from 'react-force-graph';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import ForceGraph3D from 'react-force-graph-3d';
 import { GraphControls } from './controls/GraphControls';
 import { DetailPanel } from './detail/DetailPanel';
-import { Building2, User } from 'lucide-react';
+import * as THREE from 'three';
 
 interface Organization {
   id: number;
@@ -35,6 +35,7 @@ interface GraphNode {
   color: string;
   x?: number;
   y?: number;
+  z?: number;
   org?: Organization;
   imputado?: Imputado;
   organizaciones?: Organization[];
@@ -52,25 +53,8 @@ interface GraphData {
   links: GraphLink[];
 }
 
-interface Dimensions {
-  width: number;
-  height: number;
-}
-
-interface Filters {
-  tipoOrganizacion: string;
-  showActiveOnly: boolean;
-}
-
-interface VisualConfig {
-  linkDistance: number;
-  dagMode: string;
-  nodeSize: number;
-}
-
 const OrganizationNetworkGraph: React.FC = () => {
   const forceRef = useRef<any>();
-  
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [rawData, setRawData] = useState<Organization[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -78,97 +62,69 @@ const OrganizationNetworkGraph: React.FC = () => {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [tipos, setTipos] = useState<any[]>([]);
 
-  const [filters, setFilters] = useState<Filters>({
+  const [filters, setFilters] = useState({
     tipoOrganizacion: 'all',
     showActiveOnly: false
   });
 
-  const [visualConfig, setVisualConfig] = useState<VisualConfig>({
-    linkDistance: 100,
-    dagMode: 'none',
-    nodeSize: 10
+  const [dimensions, setDimensions] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth - 50 : 800,
+    height: typeof window !== 'undefined' ? window.innerHeight - 200 : 600
   });
 
-  const [dimensions, setDimensions] = useState<Dimensions>({
-    width: typeof window !== 'undefined' ? window.innerWidth - 100 : 800,
-    height: typeof window !== 'undefined' ? window.innerHeight - 300 : 600
+  // Estado visualConfig corregido con setter
+  const [visualConfig, setVisualConfig] = useState({
+    linkDistance: 250,
+    nodeSize: 20,
+    charge: -150
   });
 
-  useEffect(() => {
-    const handleResize = () => {
-      setDimensions({
-        width: window.innerWidth - 100,
-        height: window.innerHeight - 300
-      });
-    };
+  // Generar colores únicos usando HSL
+  const generateUniqueColor = (index: number) => {
+    const hue = (index * 137.508) % 360;
+    return `hsl(${hue}, 70%, 50%)`;
+  };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (rawData.length > 0) {
-      const updatedGraphData = processGraphData(rawData, '');
-      setGraphData(updatedGraphData);
-      if (forceRef.current) {
-        forceRef.current.d3ReheatSimulation();
-      }
-    }
-  }, [visualConfig, rawData]);
-
-  const drawShape = (
-    ctx: CanvasRenderingContext2D,
-    node: GraphNode,
-    size: number
-  ): void => {
-    // Configura el fondo
-    ctx.fillStyle = node.color;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 2;
-  
-   
-  
-    // Configura el estilo del icono
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 1.5;
-  
-    // Ajusta la escala y posición para el icono
-    ctx.save();
-    ctx.translate(node.x || 0, node.y || 0);
-    const scale = size/24;
-    ctx.scale(scale, scale);
-    ctx.translate(-12, -12); // Centra el icono (24x24 es el tamaño base de Lucide)
-  
-    // Dibuja el icono según el tipo
+  // Crear objeto 3D para los nodos
+  const createNodeObject = (node: GraphNode) => {
     if (node.type === 'organization') {
-      // Building2 icon path de Lucide
-      ctx.beginPath();
-      ctx.moveTo(3, 9);
-      ctx.lineTo(3, 21);
-      ctx.lineTo(21, 21);
-      ctx.lineTo(21, 9);
-      ctx.moveTo(3, 9);
-      ctx.lineTo(21, 9);
-      ctx.moveTo(9, 21);
-      ctx.lineTo(9, 9);
-      ctx.moveTo(15, 21);
-      ctx.lineTo(15, 9);
-      ctx.moveTo(6, 9);
-      ctx.lineTo(6, 3);
-      ctx.lineTo(18, 3);
-      ctx.lineTo(18, 9);
-
+      // Cubo para organizaciones
+      const geometry = new THREE.BoxGeometry(2, 2, 2);
+      const group = new THREE.Group();
       
+      const material = new THREE.MeshPhongMaterial({
+        color: new THREE.Color(node.color),
+        shininess: 100,
+        specular: new THREE.Color(0x444444)
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      
+      // Agregar bordes al cubo
+      const edges = new THREE.EdgesGeometry(geometry);
+      const line = new THREE.LineSegments(
+        edges,
+        new THREE.LineBasicMaterial({ 
+          color: 0xffffff, 
+          transparent: true, 
+          opacity: 0.3 
+        })
+      );
+      
+      group.add(mesh);
+      group.add(line);
+      return group;
     } else {
-      // User icon path de Lucide
-      ctx.beginPath();
-      ctx.arc(12, 8, 4, 0, Math.PI * 2);
-      ctx.moveTo(20, 21);
-      ctx.arc(12, 21, 8, 0, Math.PI, true);
+      // Esfera para imputados
+      const geometry = new THREE.SphereGeometry(1, 32, 32);
+      const material = new THREE.MeshPhongMaterial({
+        color: new THREE.Color(node.color),
+        shininess: 100,
+        specular: new THREE.Color(0x444444),
+        transparent: true,
+        opacity: 0.9
+      });
+      return new THREE.Mesh(geometry, material);
     }
-    ctx.stroke();
-    ctx.restore();
   };
 
   const handleNodeClick = async (node: GraphNode) => {
@@ -179,16 +135,11 @@ const OrganizationNetworkGraph: React.FC = () => {
         const response = await fetch(`/api/organizacion/${node.org.id}`);
         if (!response.ok) throw new Error('Error al cargar detalles de la organización');
         const orgData = await response.json();
-        
-        setSelectedNode({
-          ...node,
-          org: orgData
-        });
+        setSelectedNode({ ...node, org: orgData });
       } else if (node.type === 'imputado' && node.imputado?.id) {
         const response = await fetch(`/api/imputado/${node.imputado.id}`);
         if (!response.ok) throw new Error('Error al cargar detalles del imputado');
         const imputadoData = await response.json();
-
         setSelectedNode({
           ...node,
           imputado: imputadoData,
@@ -204,6 +155,7 @@ const OrganizationNetworkGraph: React.FC = () => {
   const processGraphData = (data: Organization[], searchTerm: string): GraphData => {
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
+    let colorIndex = 0;
     
     data.filter(org => {
       const matchesSearch = !searchTerm || 
@@ -215,12 +167,15 @@ const OrganizationNetworkGraph: React.FC = () => {
       return matchesSearch && matchesTipo && matchesActive;
     })
     .forEach(org => {
+      const orgColor = generateUniqueColor(colorIndex);
+      colorIndex++;
+
       nodes.push({
         id: `org-${org.id}`,
         name: org.nombre,
-        val: visualConfig.nodeSize * 2,
+        val: visualConfig.nodeSize * 1.5,
         type: 'organization',
-        color: org.activa ? '#1E88E5' : '#0D47A1',
+        color: orgColor,
         org
       });
 
@@ -235,7 +190,7 @@ const OrganizationNetworkGraph: React.FC = () => {
             name: member.imputado.nombreSujeto,
             val: visualConfig.nodeSize,
             type: 'imputado',
-            color: member.activo ? '#FB8C00' : '#EF6C00',
+            color: orgColor,
             imputado: member.imputado,
             organizaciones: []
           });
@@ -283,6 +238,26 @@ const OrganizationNetworkGraph: React.FC = () => {
   };
 
   useEffect(() => {
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth - 50,
+        height: window.innerHeight - 200
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (forceRef.current && graphData.nodes.length > 0) {
+      setTimeout(() => {
+        forceRef.current.zoomToFit(1000, 50);
+      }, 500);
+    }
+  }, [graphData]);
+
+  useEffect(() => {
     handleSearch('');
   }, [filters.tipoOrganizacion, filters.showActiveOnly]);
 
@@ -318,10 +293,6 @@ const OrganizationNetworkGraph: React.FC = () => {
         onLinkDistanceChange={(value) => {
           setVisualConfig(prev => ({ ...prev, linkDistance: value }));
         }}
-        dagMode={visualConfig.dagMode}
-        onDagModeChange={(value) => {
-          setVisualConfig(prev => ({ ...prev, dagMode: value }));
-        }}
         nodeSize={visualConfig.nodeSize}
         onNodeSizeChange={(value) => {
           setVisualConfig(prev => ({ ...prev, nodeSize: value }));
@@ -330,70 +301,38 @@ const OrganizationNetworkGraph: React.FC = () => {
       />
 
       <Card className="p-4">
-        <ForceGraph2D
+        <ForceGraph3D
           ref={forceRef}
           graphData={graphData}
           width={dimensions.width}
           height={dimensions.height}
+          backgroundColor="#1a1a1a"
           nodeLabel="name"
-          nodeColor={node => (node as GraphNode).color}
-          nodeVal={node => (node as GraphNode).val}
-          linkLabel={link => (link as GraphLink).rol}
-          linkDistance={visualConfig.linkDistance}
-          dagMode={visualConfig.dagMode}
-          dagLevelDistance={50}
-          nodeCanvasObjectMode={() => 'after'}
-          nodeCanvasObject={(node, ctx, globalScale) => {
-            const typedNode = node as GraphNode;
-            const label = typedNode.name;
-            const fontSize = 12/globalScale;
-            const size = typedNode.val;
-            
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-
-            drawShape(ctx, typedNode, size);
-
-            ctx.shadowColor = 'none';
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-
-            ctx.font = `${fontSize}px Sans-Serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            const textWidth = ctx.measureText(label).width;
-            const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.4);
-            
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.fillRect(
-              typedNode.x! - bckgDimensions[0] / 2,
-              typedNode.y! + size,
-              bckgDimensions[0],
-              bckgDimensions[1]
-            );
-
-            ctx.fillStyle = '#333';
-            ctx.fillText(label, typedNode.x!, typedNode.y! + size + fontSize/2);
-          }}
-          onNodeClick={handleNodeClick}
-          linkColor={() => 'rgba(100, 100, 100, 0.4)'}
-          linkWidth={2}
+          nodeVal={(node) => (node as GraphNode).val}
+          linkLabel={(link) => (link as GraphLink).rol}
+          linkColor={() => "#ffffff"}
+          linkOpacity={0.2}
+          linkWidth={1}
+          nodeThreeObject={(node) => createNodeObject(node as GraphNode)}
+          nodeThreeObjectExtend={false}
+          showNavInfo={false}
           enableNodeDrag={true}
-          enableZoomInteraction={true}
-          minZoom={0.5}
-          maxZoom={5}
-          cooldownTime={2000}
+          enableNavigationControls={true}
+          controlType="orbit"
+          onNodeClick={handleNodeClick}
+          d3AlphaDecay={0.02}
           d3VelocityDecay={0.3}
+          linkDistance={visualConfig.linkDistance}
+          d3Force={'charge'}
+          d3ForceStrength={visualConfig.charge}
+          warmupTicks={100}
+          cooldownTime={5000}
         />
       </Card>
 
       <DetailPanel 
         node={selectedNode} 
-        onClose={() => setSelectedNode(null)}
+        onClose={() => setSelectedNode(null)} 
       />
     </div>
   );

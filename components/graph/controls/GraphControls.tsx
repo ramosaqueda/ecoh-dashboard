@@ -28,7 +28,6 @@ interface TipoOrganizacion {
 }
 
 interface GraphControlsProps {
-  // Propiedades existentes
   onSearch: (value: string) => void;
   tipoOrganizacion: string;
   onTipoChange: (value: string) => void;
@@ -36,11 +35,8 @@ interface GraphControlsProps {
   onActiveChange: (value: boolean) => void;
   tipos: TipoOrganizacion[];
   className?: string;
-  // Nuevas propiedades para visualización
   linkDistance: number;
   onLinkDistanceChange: (value: number) => void;
-  dagMode: string;
-  onDagModeChange: (value: string) => void;
   nodeSize: number;
   onNodeSizeChange: (value: number) => void;
 }
@@ -55,8 +51,6 @@ export const GraphControls = ({
   className,
   linkDistance,
   onLinkDistanceChange,
-  dagMode,
-  onDagModeChange,
   nodeSize,
   onNodeSizeChange
 }: GraphControlsProps) => {
@@ -122,24 +116,6 @@ export const GraphControls = ({
             <PopoverContent className="w-80">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Disposición del grafo</Label>
-                  <Select value={dagMode} onValueChange={onDagModeChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar disposición" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Libre</SelectItem>
-                      <SelectItem value="td">Arriba - Abajo</SelectItem>
-                      <SelectItem value="bu">Abajo - Arriba</SelectItem>
-                      <SelectItem value="lr">Izquierda - Derecha</SelectItem>
-                      <SelectItem value="rl">Derecha - Izquierda</SelectItem>
-                      <SelectItem value="radialout">Radial (hacia afuera)</SelectItem>
-                      <SelectItem value="radialin">Radial (hacia adentro)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Distancia entre nodos</Label>
                     <span className="text-sm text-muted-foreground">
@@ -149,11 +125,14 @@ export const GraphControls = ({
                   <Slider
                     value={[linkDistance]}
                     onValueChange={([value]) => onLinkDistanceChange(value)}
-                    min={50}
-                    max={200}
-                    step={10}
+                    min={100}
+                    max={400}
+                    step={50}
                     className="w-full"
                   />
+                  <span className="text-xs text-muted-foreground">
+                    Ajusta el espacio entre organizaciones e imputados
+                  </span>
                 </div>
 
                 <div className="space-y-2">
@@ -166,11 +145,20 @@ export const GraphControls = ({
                   <Slider
                     value={[nodeSize]}
                     onValueChange={([value]) => onNodeSizeChange(value)}
-                    min={5}
-                    max={20}
-                    step={1}
+                    min={10}
+                    max={30}
+                    step={5}
                     className="w-full"
                   />
+                  <span className="text-xs text-muted-foreground">
+                    Organizaciones (cubos) y Personas (esferas)
+                  </span>
+                </div>
+
+                <div className="pt-2 text-xs text-muted-foreground">
+                  <p>• Organizaciones representadas como cubos</p>
+                  <p>• Personas representadas como esferas</p>
+                  <p>• Colores únicos para cada grupo de relación</p>
                 </div>
               </div>
             </PopoverContent>
