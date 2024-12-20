@@ -1,5 +1,5 @@
 //ImputadoFormalizacionForm.tsx
-
+import { useForm, FormProvider } from "react-hook-form";
 import {
     Dialog,
     DialogContent,
@@ -10,10 +10,6 @@ import {
   } from "@/components/ui/dialog"
 import { SquarePen } from "lucide-react";
 import { Input } from "./ui/input";
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { toast } from "@/components/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -25,46 +21,76 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
-const ImputadoFormalizacionForm :React.FC<>= ({}) => {
+interface ImputadoFormalizacionProps {
+    causaId: number,
+    imputadoId: number
+}
+
+const ImputadoFormalizacionForm :React.FC<ImputadoFormalizacionProps>= ({causaId, imputadoId}) => {
+    const form = useForm({
+        defaultValues: {
+          plazo: "",
+        },
+      });
+      const { handleSubmit, control } = form;
+
+    const updatePlazo = async (data: { plazo: string }) => {
+        try {
+            const updatePlazoResponse = await fetch(`/api/causas-imputados?causaId=${causaId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json" 
+                }, body: JSON.stringify({
+                    imputadoId: imputadoId,
+                    plazo: parseInt(data.plazo)
+                })
+
+            })
+
+        } catch(error) {
+            console.error("Error al actualizar plazo: ", error);
+        }
+        console.log("Nuevo Plazo:", data.plazo);
+       
+    };
     
     return (
         <Dialog>
-            <DialogTrigger>
-                <Button >
-                    <SquarePen/>
-                </Button>
-                </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Editar Plazo</DialogTitle>
-                    <DialogDescription>
-                        <Form {...form}>
-                            <form>
-                                <FormField
-                                    control={}
-                                    name="plazo"
-                                    render={({field}) => (
-                                        <FormItem>
-                                        <FormLabel>Plazo</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="ingrese la cantidad de dias" {... field} />
-                                            </FormControl>
-                                    </FormItem>
-                                    )}
-                                    
-                                />
-                            </form>
-                            
-                        </Form>
-                        
-                        
-
-                    </DialogDescription>
-                </DialogHeader>
-            </DialogContent>
+          <DialogTrigger>
+            <Button>
+              <SquarePen />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Plazo</DialogTitle>
+              <DialogDescription>
+                <FormProvider {...form}>
+                  <form onSubmit={handleSubmit(updatePlazo)}>
+                    <FormField
+                      control={control}
+                      name="plazo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="Ingrese la cantidad de días"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="mt-4">
+                      Guardar
+                    </Button>
+                  </form>
+                </FormProvider>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
         </Dialog>
-        
-    );
+      );
 };
 
 export default ImputadoFormalizacionForm;

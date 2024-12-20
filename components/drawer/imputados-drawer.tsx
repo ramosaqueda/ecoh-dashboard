@@ -19,6 +19,7 @@ import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 //import ImputadoFormalizacionForm from '../ImputadoFormalizacionForm';
 import { SquarePen } from 'lucide-react';
+import ImputadoFormalizacionForm from '../ImputadoFormalizacionForm';
 
 type ImputadoInfo = {
   id: string;
@@ -127,7 +128,7 @@ export default function ImputadosDrawer({
                       <span className="font-medium text-foreground" style={{ display: 'flex', justifyContent: 'center', gap: '30px' }}>
                         {registro.formalizado ? 'Sí' : 'No'}
                       <span className="flex justify-right">
-                        aqui irá el boton al form
+                      <ImputadoFormalizacionForm causaId = {registro.causaId} imputadoId = {registro.imputadoId}/>
                       </span>
                       </span>
                     </div>

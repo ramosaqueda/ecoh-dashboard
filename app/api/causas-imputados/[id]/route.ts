@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
@@ -136,6 +136,62 @@ export async function PATCH(req: Request, { params }: Props) {
   }
 }
 
-export async function PUT(req: Request, { params }: Props) {
+export async function PUT(req: NextRequest, { params }: {params: {id: string}}) {
+  try {
+    const causaId = params.id;
 
+    if (isNaN(parseInt(causaId))) {
+      return NextResponse.json(
+        { error: 'El ID de la causa no es válido' },
+        { status: 400 }
+      );
+    }
+
+    const {imputadoId, plazo, ...updateData } = await req.json();
+
+    if (!imputadoId || !plazo) {
+      return NextResponse.json(
+        { error: 'Se requiere el ID del imputado y el plazo' },
+        { status: 400 }
+      );
+    }
+
+    if (isNaN(parseInt(imputadoId))) {
+      return NextResponse.json(
+        { error: 'El ID del imputado no es válido' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Updating plazo del imputado:', imputadoId);
+    const updatedPlazo = await prisma.causasImputados.update ({
+      where: {
+        causaId_imputadoId: {
+          causaId: parseInt(causaId),
+          imputadoId: parseInt(imputadoId)
+        }
+      },
+      data: {plazo: plazo, ...updateData},
+      include: {
+        causa: {
+            select: {
+              imputados: {
+                select: {
+                  plazo: true,
+                }
+              }
+            }
+        }
+      }
+    });
+
+    return NextResponse.json(updatedPlazo);
+
+  } catch (error) {
+    console.error('Error updating plazo:', error);
+    return NextResponse.json(
+      { error: 'Error updating plazo' },
+      { status: 500 }
+    );
+  }
 }
