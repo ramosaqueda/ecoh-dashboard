@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     const count = searchParams.get('count');
     const causaEcoh = searchParams.get('causaEcoh');
     const causaLegada = searchParams.get('causaLegada');
-    const homicidioConsumado = searchParams.get('homicidioConsumado'); // Nuevo parámetro
+    const homicidioConsumado = searchParams.get('homicidioConsumado');
 
     let whereClause: any = {};
 
@@ -20,7 +20,6 @@ export async function GET(req: NextRequest) {
       whereClause.causaLegada = causaLegada === 'true';
     }
 
-    // Nuevo filtro para homicidioConsumado
     if (homicidioConsumado !== null) {
       whereClause.homicidioConsumado = homicidioConsumado === 'true';
     }
@@ -60,7 +59,9 @@ export async function GET(req: NextRequest) {
           },
           _count: {
             select: {
-              imputados: true
+              imputados: true,
+              causasRelacionadasMadre: true,
+              causasRelacionadasArista: true
             }
           }
         }
@@ -81,7 +82,9 @@ export async function GET(req: NextRequest) {
             }
           : null,
         _count: {
-          imputados: causa._count?.imputados || 0
+          imputados: causa._count?.imputados || 0,
+          causasRelacionadasMadre: causa._count?.causasRelacionadasMadre || 0,
+          causasRelacionadasArista: causa._count?.causasRelacionadasArista || 0
         }
       }));
 

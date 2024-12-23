@@ -180,6 +180,7 @@ export default function ActividadesKanban() {
 
   return (
     <PageContainer className="flex h-screen flex-col">
+      <div className="container mx-auto space-y-6 py-10">
       <div className="flex flex-col space-y-4">
         <Breadcrumbs items={breadcrumbItems} />
         
@@ -208,7 +209,7 @@ export default function ActividadesKanban() {
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="mt-4 grid h-[calc(100vh-280px)] grid-cols-1 gap-4 md:grid-cols-3">
+       <div className="mt-4 grid h-[calc(100vh-200px)] grid-cols-1 gap-4 md:grid-cols-3">
           {estados.map((estado) => (
             <div key={estado.id} className="flex flex-col rounded-lg border-2">
               <div className={`rounded-t-lg p-4 ${estado.color}`}>
@@ -295,6 +296,9 @@ export default function ActividadesKanban() {
           ))}
         </div>
       </DragDropContext>
+
+      </div>
+      
     </PageContainer>
   );
 }

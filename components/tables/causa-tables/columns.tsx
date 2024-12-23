@@ -1,7 +1,7 @@
 'use client';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Edit, Trash2, Users, Eye, ExternalLink } from 'lucide-react';
+import { ArrowUpDown, Edit, Trash2, Users, Eye, ExternalLink, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -9,7 +9,6 @@ import { useState } from 'react';
 import ImputadosDrawer from '@/components/drawer/imputados-drawer';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
- 
 
 export type Causa = {
   id: string;
@@ -25,6 +24,8 @@ export type Causa = {
   delitoId: string;
   _count?: {
     imputados: number;
+    causasRelacionadasMadre?: number;
+    causasRelacionadasArista?: number;
   };
 };
 
@@ -77,7 +78,7 @@ const ImputadosCell = ({ causa }: { causa: Causa }) => {
         disabled={isLoading}
       >
         <Users className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-        <span>{causa._count?.imputados || 0} </span>
+        <span>{causa._count?.imputados || 0}</span>
       </Button>
 
       <ImputadosDrawer
@@ -177,6 +178,9 @@ export const columns: ColumnDef<Causa>[] = [
       const { onEdit, onDelete } = table.options.meta || {};
       const { canEdit, canDelete } = useUserPermissions();
 
+      const totalRelaciones = (causa._count?.causasRelacionadasMadre || 0) + 
+                          (causa._count?.causasRelacionadasArista || 0);
+
       return (
         <div className="flex items-center gap-2">
           <Link href={`/dashboard/causas/view/${causa.id}`} passHref>
@@ -184,6 +188,22 @@ export const columns: ColumnDef<Causa>[] = [
               <Eye className="h-4 w-4 text-primary" />
             </Button>
           </Link>
+
+          <Link href={`/dashboard/causas/${causa.id}/relacionadas`} passHref>
+            <Button 
+              variant="ghost" 
+              className="flex items-center gap-1 h-8 px-2" 
+              title="Causas relacionadas"
+            >
+              <div className="flex items-center">
+                <Link2 className="h-4 w-4 text-green-600" />
+                <span className="ml-1 text-xs font-medium">
+                  {totalRelaciones}
+                </span>
+              </div>
+            </Button>
+          </Link>
+
           {canEdit && (
             <Button
               variant="ghost"
@@ -194,6 +214,7 @@ export const columns: ColumnDef<Causa>[] = [
               <Edit className="h-4 w-4 text-blue-600" />
             </Button>
           )}
+          
           {canDelete && (
             <Button
               variant="ghost"

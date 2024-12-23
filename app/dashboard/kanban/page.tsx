@@ -177,7 +177,9 @@ export default function ActividadesKanban() {
   }
 
   return (
-    <PageContainer className="flex h-screen flex-col">
+    
+    <PageContainer>
+      <div className="container mx-auto space-y-6 py-10">
       <div className="flex flex-col space-y-4">
         <Breadcrumbs items={breadcrumbItems} />
         
@@ -293,6 +295,9 @@ export default function ActividadesKanban() {
           ))}
         </div>
       </DragDropContext>
+
+      </div>
+      
     </PageContainer>
   );
 }
