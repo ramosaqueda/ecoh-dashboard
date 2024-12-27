@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import ForceGraph3D from 'react-force-graph-3d';
 import { GraphControls } from './controls/GraphControls';
 import { DetailPanel } from './detail/DetailPanel';
-import * as THREE from 'three';
+import * as d3 from 'd3';
 
 interface Organization {
   id: number;
@@ -27,110 +26,193 @@ interface Imputado {
   organizaciones?: Organization[];
 }
 
-interface GraphNode {
+interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
   name: string;
   val: number;
   type: 'organization' | 'imputado';
   color: string;
-  x?: number;
-  y?: number;
-  z?: number;
   org?: Organization;
   imputado?: Imputado;
   organizaciones?: Organization[];
 }
 
-interface GraphLink {
-  source: string;
-  target: string;
+interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
+  source: string | GraphNode;
+  target: string | GraphNode;
   value: number;
   rol?: string;
 }
 
-interface GraphData {
-  nodes: GraphNode[];
-  links: GraphLink[];
-}
-
 const OrganizationNetworkGraph: React.FC = () => {
-  const forceRef = useRef<any>();
-  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
-  const [rawData, setRawData] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [tipos, setTipos] = useState<any[]>([]);
+  const [dimensions, setDimensions] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth - 100 : 800,
+    height: typeof window !== 'undefined' ? window.innerHeight - 250 : 600
+  });
 
   const [filters, setFilters] = useState({
     tipoOrganizacion: 'all',
     showActiveOnly: false
   });
 
-  const [dimensions, setDimensions] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth - 50 : 800,
-    height: typeof window !== 'undefined' ? window.innerHeight - 200 : 600
-  });
-
-  // Estado visualConfig corregido con setter
   const [visualConfig, setVisualConfig] = useState({
-    linkDistance: 250,
+    linkDistance: 100,
     nodeSize: 20,
-    charge: -150
+    charge: -400
   });
 
-  // Generar colores únicos usando HSL
   const generateUniqueColor = (index: number) => {
     const hue = (index * 137.508) % 360;
-    return `hsl(${hue}, 70%, 50%)`;
+    return d3.hsl(hue, 0.7, 0.5).toString();
   };
 
-  // Crear objeto 3D para los nodos
-  const createNodeObject = (node: GraphNode) => {
-    if (node.type === 'organization') {
-      // Cubo para organizaciones
-      const geometry = new THREE.BoxGeometry(2, 2, 2);
-      const group = new THREE.Group();
-      
-      const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(node.color),
-        shininess: 100,
-        specular: new THREE.Color(0x444444)
+  const initializeGraph = (data: { nodes: GraphNode[]; links: GraphLink[] }) => {
+    if (!svgRef.current) return;
+
+    // Limpiar SVG existente
+    d3.select(svgRef.current).selectAll('*').remove();
+
+    const svg = d3.select(svgRef.current)
+      .attr('width', dimensions.width)
+      .attr('height', dimensions.height);
+
+    // Crear el contenedor principal con zoom
+    const g = svg.append('g');
+
+    // Configurar zoom
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 4])
+      .on('zoom', (event) => {
+        g.attr('transform', event.transform);
       });
-      const mesh = new THREE.Mesh(geometry, material);
-      
-      // Agregar bordes al cubo
-      const edges = new THREE.EdgesGeometry(geometry);
-      const line = new THREE.LineSegments(
-        edges,
-        new THREE.LineBasicMaterial({ 
-          color: 0xffffff, 
-          transparent: true, 
-          opacity: 0.3 
-        })
-      );
-      
-      group.add(mesh);
-      group.add(line);
-      return group;
-    } else {
-      // Esfera para imputados
-      const geometry = new THREE.SphereGeometry(1, 32, 32);
-      const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(node.color),
-        shininess: 100,
-        specular: new THREE.Color(0x444444),
-        transparent: true,
-        opacity: 0.9
+
+    svg.call(zoom);
+
+    // Crear la simulación
+    const simulation = d3.forceSimulation<GraphNode>(data.nodes)
+      .force('link', d3.forceLink<GraphNode, GraphLink>(data.links)
+        .id(d => d.id)
+        .distance(visualConfig.linkDistance))
+      .force('charge', d3.forceManyBody()
+        .strength(visualConfig.charge))
+      .force('center', d3.forceCenter(dimensions.width / 2, dimensions.height / 2))
+      .force('collision', d3.forceCollide().radius(visualConfig.nodeSize * 1.5));
+
+    // Crear las líneas para los enlaces
+    const link = g.append('g')
+      .selectAll('line')
+      .data(data.links)
+      .join('line')
+      .attr('stroke', '#999')
+      .attr('stroke-opacity', 0.6)
+      .attr('stroke-width', 1);
+
+    // Crear los grupos de nodos
+    const node = g.append('g')
+      .selectAll('.node')
+      .data(data.nodes)
+      .join('g')
+      .attr('class', 'node')
+      .call(d3.drag<SVGGElement, GraphNode>()
+        .on('start', dragstarted)
+        .on('drag', dragged)
+        .on('end', dragended));
+
+    // Añadir formas de nodos
+    node.each(function(d) {
+      const element = d3.select(this);
+      if (d.type === 'organization') {
+        element.append('rect')
+          .attr('width', visualConfig.nodeSize * 1.5)
+          .attr('height', visualConfig.nodeSize * 1.5)
+          .attr('x', -visualConfig.nodeSize * 0.75)
+          .attr('y', -visualConfig.nodeSize * 0.75)
+          .attr('fill', d.color)
+          .attr('stroke', '#fff')
+          .attr('stroke-width', 2);
+      } else {
+        element.append('circle')
+          .attr('r', visualConfig.nodeSize / 2)
+          .attr('fill', d.color)
+          .attr('stroke', '#fff')
+          .attr('stroke-width', 2);
+      }
+
+      // Añadir etiquetas
+      element.append('text')
+        .attr('dy', visualConfig.nodeSize)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#000')
+        .style('font-size', '12px')
+        .style('pointer-events', 'none')
+        .text(d.name);
+    });
+
+    // Eventos de hover y click
+    node
+      .on('mouseover', function(event, d) {
+        d3.select(this).select('rect, circle')
+          .attr('stroke', '#000')
+          .attr('stroke-width', 3);
+      })
+      .on('mouseout', function(event, d) {
+        if (selectedNode?.id !== d.id) {
+          d3.select(this).select('rect, circle')
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 2);
+        }
+      })
+      .on('click', async (event, d) => {
+        handleNodeClick(d);
       });
-      return new THREE.Mesh(geometry, material);
+
+    // Funciones de arrastre
+    function dragstarted(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      event.subject.fx = event.subject.x;
+      event.subject.fy = event.subject.y;
     }
+
+    function dragged(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
+      event.subject.fx = event.x;
+      event.subject.fy = event.y;
+    }
+
+    function dragended(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
+      if (!event.active) simulation.alphaTarget(0);
+      event.subject.fx = null;
+      event.subject.fy = null;
+    }
+
+    // Actualizar posiciones
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => (d.source as GraphNode).x!)
+        .attr('y1', d => (d.source as GraphNode).y!)
+        .attr('x2', d => (d.target as GraphNode).x!)
+        .attr('y2', d => (d.target as GraphNode).y!);
+
+      node
+        .attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // Centrar el grafo inicialmente
+    const initialScale = 0.8;
+    const transform = d3.zoomIdentity
+      .translate(dimensions.width / 2, dimensions.height / 2)
+      .scale(initialScale)
+      .translate(-dimensions.width / 2, -dimensions.height / 2);
+    
+    svg.call(zoom.transform, transform);
   };
 
   const handleNodeClick = async (node: GraphNode) => {
     try {
-      if (!node) return;
-
       if (node.type === 'organization' && node.org?.id) {
         const response = await fetch(`/api/organizacion/${node.org.id}`);
         if (!response.ok) throw new Error('Error al cargar detalles de la organización');
@@ -152,7 +234,7 @@ const OrganizationNetworkGraph: React.FC = () => {
     }
   };
 
-  const processGraphData = (data: Organization[], searchTerm: string): GraphData => {
+  const processGraphData = (data: Organization[], searchTerm: string) => {
     const nodes: GraphNode[] = [];
     const links: GraphLink[] = [];
     let colorIndex = 0;
@@ -173,7 +255,7 @@ const OrganizationNetworkGraph: React.FC = () => {
       nodes.push({
         id: `org-${org.id}`,
         name: org.nombre,
-        val: visualConfig.nodeSize * 1.5,
+        val: visualConfig.nodeSize,
         type: 'organization',
         color: orgColor,
         org
@@ -225,10 +307,8 @@ const OrganizationNetworkGraph: React.FC = () => {
       const tiposData = await tiposResponse.json();
       
       setTipos(tiposData);
-      setRawData(orgData.data);
-      
       const graphData = processGraphData(orgData.data, searchTerm);
-      setGraphData(graphData);
+      initializeGraph(graphData);
     } catch (error) {
       console.error('Error:', error);
       setError('Error al cargar los datos. Por favor, intente nuevamente.');
@@ -240,22 +320,16 @@ const OrganizationNetworkGraph: React.FC = () => {
   useEffect(() => {
     const handleResize = () => {
       setDimensions({
-        width: window.innerWidth - 50,
-        height: window.innerHeight - 200
+        width: window.innerWidth - 100,
+        height: window.innerHeight - 250
       });
     };
 
     window.addEventListener('resize', handleResize);
+    handleSearch('');
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    if (forceRef.current && graphData.nodes.length > 0) {
-      setTimeout(() => {
-        forceRef.current.zoomToFit(1000, 50);
-      }, 500);
-    }
-  }, [graphData]);
 
   useEffect(() => {
     handleSearch('');
@@ -292,41 +366,24 @@ const OrganizationNetworkGraph: React.FC = () => {
         linkDistance={visualConfig.linkDistance}
         onLinkDistanceChange={(value) => {
           setVisualConfig(prev => ({ ...prev, linkDistance: value }));
+          handleSearch('');
         }}
         nodeSize={visualConfig.nodeSize}
         onNodeSizeChange={(value) => {
           setVisualConfig(prev => ({ ...prev, nodeSize: value }));
+          handleSearch('');
         }}
         className="mb-4"
       />
 
-      <Card className="p-4">
-        <ForceGraph3D
-          ref={forceRef}
-          graphData={graphData}
-          width={dimensions.width}
-          height={dimensions.height}
-          backgroundColor="#1a1a1a"
-          nodeLabel="name"
-          nodeVal={(node) => (node as GraphNode).val}
-          linkLabel={(link) => (link as GraphLink).rol}
-          linkColor={() => "#ffffff"}
-          linkOpacity={0.2}
-          linkWidth={1}
-          nodeThreeObject={(node) => createNodeObject(node as GraphNode)}
-          nodeThreeObjectExtend={false}
-          showNavInfo={false}
-          enableNodeDrag={true}
-          enableNavigationControls={true}
-          controlType="orbit"
-          onNodeClick={handleNodeClick}
-          d3AlphaDecay={0.02}
-          d3VelocityDecay={0.3}
-          linkDistance={visualConfig.linkDistance}
-          d3Force={'charge'}
-          d3ForceStrength={visualConfig.charge}
-          warmupTicks={100}
-          cooldownTime={5000}
+      <Card className="p-4 bg-white">
+        <svg 
+          ref={svgRef}
+          className="w-full"
+          style={{ 
+            background: '#fff',
+            maxHeight: `${dimensions.height}px`
+          }}
         />
       </Card>
 

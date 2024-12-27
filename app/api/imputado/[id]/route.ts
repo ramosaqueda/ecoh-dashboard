@@ -78,7 +78,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { nombreSujeto, docId, nacionalidadId, causaIds } = body;
+    const { nombreSujeto, docId, nacionalidadId,alias,caracteristicas, causaIds } = body;
 
     console.log('Received data:', body);
     console.log('Updating imputado with ID:', id);
@@ -108,6 +108,7 @@ export async function PUT(
       data: {
         nombreSujeto,
         docId,
+        alias,
         nacionalidadId: nacionalidadId ? Number(nacionalidadId) : null,
         causas: causaIds
           ? {

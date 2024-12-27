@@ -83,6 +83,8 @@ model Imputado {
   nombreSujeto   String
   docId          String
   nacionalidadId Int?
+  alias          String?
+  caracterisiticas          String?
   createdAt      DateTime?              @default(now())
   updatedAt      DateTime?              @updatedAt
   causas         CausasImputados[]
@@ -90,6 +92,7 @@ model Imputado {
   fotografias   Fotografia[]
   nacionalidad   Nacionalidad?          @relation(fields: [nacionalidadId], references: [id])
   organizaciones MiembrosOrganizacion[]
+
 }
 
 model Fotografia {
