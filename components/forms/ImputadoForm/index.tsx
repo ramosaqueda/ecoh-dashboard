@@ -13,6 +13,7 @@ import {
   FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Plus } from 'lucide-react';
 import NacionalidadSelect from '@/components/select/NacionalidadSelect';
 import CausaImputadoContainer from '@/components/forms/CausaImputadoForm/CausaImputadoContainer';
@@ -26,7 +27,7 @@ import { CausasGrid } from '@/components/forms/ImputadoForm/CausasGrid';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import ImputadoPhotos from '@/components/forms/ImputadoForm/ImputadoPhotos'; // Asegúrate de ajustar la ruta según tu estructura
+import ImputadoPhotos from '@/components/forms/ImputadoForm/ImputadoPhotos';
 import { formatRun, validateRun } from '@/utils/runValidator';
 
 const ImputadoFormSchema = z.object({
@@ -37,7 +38,9 @@ const ImputadoFormSchema = z.object({
     .refine((val) => validateRun(val), {
       message: 'RUN inválido'
     }),
-  nacionalidadId: z.string().min(1, 'La nacionalidad es requerida')
+  nacionalidadId: z.string().min(1, 'La nacionalidad es requerida'),
+  alias: z.string().optional(),
+  caracteristicas: z.string().optional()
 });
 
 export type ImputadoFormValues = z.infer<typeof ImputadoFormSchema>;
@@ -61,7 +64,6 @@ const ImputadoForm = ({
 }: ImputadoFormProps) => {
   const queryClient = useQueryClient();
 
-  // Query para obtener las causas del imputado usando la ruta correcta
   const { data: causasAsociadas = [], refetch: refetchCausas } = useQuery<
     CausaImputado[]
   >({
@@ -77,7 +79,7 @@ const ImputadoForm = ({
       }
       return response.json();
     },
-    enabled: !!imputadoId && isEditing // Solo ejecutar si hay ID y estamos en modo edición
+    enabled: !!imputadoId && isEditing
   });
 
   const form = useForm<ImputadoFormValues>({
@@ -86,6 +88,8 @@ const ImputadoForm = ({
       nombreSujeto: '',
       docId: '',
       nacionalidadId: '',
+      alias: '',
+      caracteristicas: '',
       ...initialValues
     }
   });
@@ -93,11 +97,9 @@ const ImputadoForm = ({
   const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
 
   const handleCausaSuccess = async () => {
-    // Invalidar y recargar las causas asociadas
     await queryClient.invalidateQueries({
       queryKey: ['causas-imputados', imputadoId]
     });
-    // Llamar al callback de éxito si existe
     onSuccess?.();
   };
 
@@ -159,6 +161,38 @@ const ImputadoForm = ({
                     value={field.value}
                     onValueChange={field.onChange}
                     error={form.formState.errors.nacionalidadId?.message}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="alias"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Alias</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Ingrese alias conocidos" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="caracteristicas"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Características</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    {...field} 
+                    placeholder="Ingrese características físicas o distintiva separadas por coma"
+                    className="min-h-[100px]"
                   />
                 </FormControl>
                 <FormMessage />

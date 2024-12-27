@@ -6604,6 +6604,15 @@ react-dom@^18.2.0:
     loose-envify "^1.1.0"
     scheduler "^0.23.2"
 
+react-force-graph-2d@1.26.1:
+  version "1.26.1"
+  resolved "https://registry.yarnpkg.com/react-force-graph-2d/-/react-force-graph-2d-1.26.1.tgz#47db157f91024a88bd2dc37355d4ee41d507ca5c"
+  integrity sha512-7dRD0zNjMpeNghc6dwqzKrdWz45kM1/RNQ7OfR/Y4t9cK02NvHjtmA5JeKePAmzZajqmQQFCbTtwxEfhKgcsww==
+  dependencies:
+    force-graph "^1.47"
+    prop-types "15"
+    react-kapsule "^2.5"
+
 react-force-graph-3d@1.25.1:
   version "1.25.1"
   resolved "https://registry.yarnpkg.com/react-force-graph-3d/-/react-force-graph-3d-1.25.1.tgz#a16d33783d6d1a663c723f819b080095433b035b"
