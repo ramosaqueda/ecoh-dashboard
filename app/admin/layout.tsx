@@ -5,7 +5,7 @@ export default function AdminLayout({
 }) {
   return (
     <div className="flex h-screen">
-      <main className="relative flex-1 overflow-auto">{children}</main>
+      <main className="relative flex-1 overflow-screen">{children}</main>
     </div>
   );
 }

@@ -1,300 +1,319 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Loader2 } from 'lucide-react';
+import ActividadForm from '@/components/forms/actividad/ActividadForm';
+import { ActividadesTable } from '@/components/tables/actividades-tables/ActividadesTable';
+import { columns } from '@/components/tables/actividades-tables/columns';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import PageContainer from '@/components/layout/page-container';
-import { Breadcrumbs } from '@/components/breadcrumbs';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import CausaSelector from '@/components/select/CausaSelector';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Actividad {
   id: number;
   causa: {
     id: number;
     ruc: string;
-    denominacionCausa: string;
   };
   tipoActividad: {
+    id: number;
     nombre: string;
   };
   fechaInicio: string;
   fechaTermino: string;
+  observacion: string;
   estado: 'inicio' | 'en_proceso' | 'terminado';
+  usuario: {
+    email: string;
+  };
 }
 
-const breadcrumbItems = [
-  { title: 'Dashboard', link: '/dashboard' },
-  { title: 'Kanban Actividades', link: '/dashboard/actividades-kanban' }
-];
+interface ActividadEditing {
+  id: number;
+  causaId: string;
+  tipoActividadId: string;
+  fechaInicio: string;
+  fechaTermino: string;
+  estado: 'inicio' | 'en_proceso' | 'terminado';
+  observacion?: string;
+}
 
-const estados = [
-  {
-    id: 'inicio',
-    label: 'Por Iniciar',
-    color: 'bg-yellow-50 border-yellow-200'
-  },
-  {
-    id: 'en_proceso',
-    label: 'En Proceso',
-    color: 'bg-blue-50 border-blue-200'
-  },
-  { 
-    id: 'terminado', 
-    label: 'Terminado', 
-    color: 'bg-green-50 border-green-200' 
-  }
-];
+interface TipoActividad {
+  id: number;
+  nombre: string;
+}
 
-export default function ActividadesKanban() {
+export default function ActividadesPage() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
-  const [filteredActividades, setFilteredActividades] = useState<Actividad[]>([]);
+  const [tiposActividad, setTiposActividad] = useState<TipoActividad[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showOnlyUserActivities, setShowOnlyUserActivities] = useState(false);
-  const [selectedCausaId, setSelectedCausaId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [tipoActividadFilter, setTipoActividadFilter] = useState('all');
+  const [actividadEditing, setActividadEditing] = useState<ActividadEditing | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize] = useState(10);
+  const [pageCount, setPageCount] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
 
-  const fetchActividades = async (onlyUser: boolean = false) => {
-    setIsLoading(true);
+  const fetchTiposActividad = async () => {
     try {
+      const response = await fetch('/api/tipos-actividad');
+      if (!response.ok) throw new Error('Error al cargar tipos de actividad');
+      const data = await response.json();
+      setTiposActividad(data);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al cargar los tipos de actividad');
+    }
+  };
+
+  const fetchActividades = async (tipoId?: string, pageNum: number = 1) => {
+    try {
+      setIsLoading(true);
       const params = new URLSearchParams();
-      params.append('limit', '1000');
       
-      const url = onlyUser 
-        ? `/api/actividades/usuario?${params.toString()}` 
-        : `/api/actividades?${params.toString()}`;
+      if (tipoId && tipoId !== 'all') {
+        params.append('tipo_actividad_id', tipoId);
+      }
+
+      params.append('page', pageNum.toString());
+      params.append('limit', pageSize.toString());
+
+      const url = `/api/actividades?${params.toString()}`;
       
       const response = await fetch(url);
       if (!response.ok) throw new Error('Error al cargar actividades');
+      const { data, metadata } = await response.json();
       
-      const responseData = await response.json();
-      
-      // Manejar ambos formatos de respuesta
-      let actividadesData = [];
-      
-      if (onlyUser) {
-        // Si es el endpoint de usuario, asumimos que devuelve directamente el array
-        actividadesData = Array.isArray(responseData) ? responseData : [];
-      } else {
-        // Si es el endpoint normal, extraemos data
-        actividadesData = responseData.data || [];
-      }
-  
-      // Verificación adicional de que sea un array
-      if (!Array.isArray(actividadesData)) {
-        actividadesData = [];
-      }
-  
-      setActividades(actividadesData);
-      filterActividades(actividadesData, selectedCausaId);
+      setTotalRecords(metadata.total);
+      setPageCount(Math.ceil(metadata.total / pageSize));
+      setActividades(data);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar las actividades');
-      // En caso de error, establecer arrays vacíos
-      setActividades([]);
-      setFilteredActividades([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filterActividades = (actividadesList: Actividad[], causaId: string) => {
-    // Asegurarse de que actividadesList sea un array
-    const safeList = Array.isArray(actividadesList) ? actividadesList : [];
-    
-    if (!causaId) {
-      setFilteredActividades(safeList);
-      return;
-    }
-    
-    const filtered = safeList.filter(
-      actividad => actividad?.causa?.id?.toString() === causaId
-    );
-    setFilteredActividades(filtered);
-  };
   useEffect(() => {
-    fetchActividades(showOnlyUserActivities);
-  }, [showOnlyUserActivities]);
+    fetchTiposActividad();
+    fetchActividades();
+  }, []);
 
-  useEffect(() => {
-    filterActividades(actividades, selectedCausaId);
-  }, [selectedCausaId, actividades]);
-
-  const actividadesPorEstado = (estado: string) => {
-    // Verificar que filteredActividades sea un array
-    return Array.isArray(filteredActividades) 
-      ? filteredActividades.filter((actividad) => actividad?.estado === estado)
-      : [];
-  };
-
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination) return;
-
-    const { draggableId, destination } = result;
-    const newEstado = destination.droppableId;
-    const actividadId = parseInt(draggableId);
-
+  const handleSubmit = async (data: any) => {
+    setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/actividades?id=${actividadId}`, {
-        method: 'PUT',
+      const url = actividadEditing
+        ? `/api/actividades?id=${actividadEditing.id}`
+        : '/api/actividades';
+
+      const method = actividadEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          estado: newEstado
-        })
+        body: JSON.stringify(data)
       });
 
-      if (!response.ok) throw new Error('Error al actualizar el estado');
+      if (!response.ok) throw new Error('Error al guardar la actividad');
 
-      setActividades((prevActividades) => {
-        const updatedActividades = prevActividades.map((actividad) =>
-          actividad.id === actividadId
-            ? { ...actividad, estado: newEstado }
-            : actividad
-        );
-        filterActividades(updatedActividades, selectedCausaId);
-        return updatedActividades;
-      });
-
-      toast.success('Estado actualizado correctamente');
+      setPageIndex(1);
+      await fetchActividades(tipoActividadFilter, 1);
+      toast.success(
+        actividadEditing
+          ? 'Actividad actualizada exitosamente'
+          : 'Actividad creada exitosamente'
+      );
+      setDialogOpen(false);
+      setActividadEditing(null);
     } catch (error) {
       console.error('Error:', error);
-      toast.error('Error al actualizar el estado');
-      fetchActividades(showOnlyUserActivities);
+      toast.error('Error al guardar la actividad');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <PageContainer>
-        <div className="flex h-[50vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </PageContainer>
-    );
-  }
+  const handleClearFilters = () => {
+    setTipoActividadFilter('all');
+    setPageIndex(1);
+    fetchActividades(undefined, 1);
+  };
+
+  const handleEdit = (actividad: Actividad) => {
+    setActividadEditing({
+      id: actividad.id,
+      causaId: actividad.causa.id.toString(),
+      tipoActividadId: actividad.tipoActividad.id.toString(),
+      fechaInicio: actividad.fechaInicio.split('T')[0],
+      fechaTermino: actividad.fechaTermino.split('T')[0],
+      estado: actividad.estado,
+      observacion: actividad.observacion
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    setDeleteId(id);
+    setShowDeleteAlert(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      const response = await fetch(`/api/actividades?id=${deleteId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Error al eliminar');
+      setPageIndex(1);
+      await fetchActividades(tipoActividadFilter, 1);
+      toast.success('Actividad eliminada correctamente');
+    } catch (error) {
+      toast.error('Error al eliminar la actividad');
+    } finally {
+      setShowDeleteAlert(false);
+      setDeleteId(null);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPageIndex(newPage);
+    fetchActividades(tipoActividadFilter, newPage);
+  };
 
   return (
-    <PageContainer className="flex h-screen flex-col">
-      <div className="flex flex-col space-y-4">
-        <Breadcrumbs items={breadcrumbItems} />
-        
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Tablero de Actividades</h1>
-            <div className="flex items-center gap-2">
-              <label htmlFor="user-activities" className="text-sm text-muted-foreground">
-                Ver solo mis actividades
-              </label>
-              <Switch
-                id="user-activities"
-                checked={showOnlyUserActivities}
-                onCheckedChange={setShowOnlyUserActivities}
-              />
-            </div>
-          </div>
-          
-          <div className="w-full max-w-md">
-            <CausaSelector
-              value={selectedCausaId}
-              onChange={(value) => setSelectedCausaId(value)}
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Gestión de Actividades</h1>
+        <Dialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) {
+              setActividadEditing(null);
+            }
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva Actividad
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>
+                {actividadEditing ? 'Editar Actividad' : 'Nueva Actividad'}
+              </DialogTitle>
+            </DialogHeader>
+            <ActividadForm
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              initialData={actividadEditing}
             />
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="mt-4 grid h-[calc(100vh-280px)] grid-cols-1 gap-4 md:grid-cols-3">
-          {estados.map((estado) => (
-            <div key={estado.id} className="flex flex-col rounded-lg border-2">
-              <div className={`rounded-t-lg p-4 ${estado.color}`}>
-                <h2 className="font-semibold">{estado.label}</h2>
-                <div className="text-sm text-muted-foreground">
-                  {actividadesPorEstado(estado.id).length} actividades
-                </div>
-              </div>
+      <div className="flex gap-4">
+        <Select
+          value={tipoActividadFilter}
+          onValueChange={(value) => {
+            setTipoActividadFilter(value);
+            setPageIndex(1);
+            fetchActividades(value, 1);
+          }}
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Tipo de Actividad" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {tiposActividad.map((tipo) => (
+              <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                {tipo.nombre}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-              <Droppable droppableId={estado.id}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`flex-1 overflow-y-auto p-2 ${
-                      snapshot.isDraggingOver ? 'bg-muted/50' : ''
-                    }`}
-                  >
-                    <div className="space-y-2">
-                      {actividadesPorEstado(estado.id).map(
-                        (actividad, index) => (
-                          <Draggable
-                            key={actividad.id}
-                            draggableId={actividad.id.toString()}
-                            index={index}
-                          >
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                              >
-                                <Card
-                                  className={`transition-shadow hover:shadow-md ${
-                                    snapshot.isDragging ? 'shadow-lg' : ''
-                                  }`}
-                                >
-                                  <CardContent className="space-y-2 p-4">
-                                    <div className="font-medium">
-                                      {actividad.tipoActividad.nombre}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">
-                                      RUC: {actividad.causa.ruc}
-                                    </div>
-                                    <div className="line-clamp-2 text-sm text-muted-foreground">
-                                      {actividad.causa.denominacionCausa}
-                                    </div>
-                                    <div className="border-t pt-2 text-xs text-muted-foreground">
-                                      <div>
-                                        Inicio:{' '}
-                                        {format(
-                                          new Date(actividad.fechaInicio),
-                                          'dd/MM/yyyy',
-                                          { locale: es }
-                                        )}
-                                      </div>
-                                      <div>
-                                        Término:{' '}
-                                        {format(
-                                          new Date(actividad.fechaTermino),
-                                          'dd/MM/yyyy',
-                                          { locale: es }
-                                        )}
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            )}
-                          </Draggable>
-                        )
-                      )}
-                      {provided.placeholder}
-                      {actividadesPorEstado(estado.id).length === 0 && (
-                        <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-                          No hay actividades en este estado
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </Droppable>
-            </div>
-          ))}
-        </div>
-      </DragDropContext>
-    </PageContainer>
+        {tipoActividadFilter !== 'all' && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleClearFilters}
+          >
+            Limpiar
+          </Button>
+        )}
+      </div>
+
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esta acción eliminará permanentemente la actividad
+              y los datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {isLoading ? (
+        <div className="text-center">Cargando actividades...</div>
+      ) : (
+        <ActividadesTable
+          columns={columns}
+          data={actividades}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          pageSize={pageSize}
+          pageIndex={pageIndex}
+          pageCount={pageCount}
+          totalRecords={totalRecords}
+          onPageChange={handlePageChange}
+        />
+      )}
+    </div>
   );
 }

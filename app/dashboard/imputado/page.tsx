@@ -112,7 +112,7 @@ export default function ImputadosPage() {
   }
 
   return (
-    <PageContainer scrollable={true}>
+    <PageContainer >
       <div className="container mx-auto space-y-6 py-10">
         <Breadcrumbs items={breadcrumbItems} />
 

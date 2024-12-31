@@ -17,6 +17,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
+//import ImputadoFormalizacionForm from '../ImputadoFormalizacionForm';
+import { SquarePen } from 'lucide-react';
+import ImputadoFormalizacionForm from '../ImputadoFormalizacionForm';
 
 import { Edit } from 'lucide-react';
 type ImputadoInfo = {
@@ -123,15 +126,11 @@ export default function ImputadosDrawer({
                   <div className="mt-2 space-y-2 divide-y text-sm text-muted-foreground">
                     <div className="flex justify-between py-2">
                       <span>Formalizado:</span>
-                      <span className="font-medium text-foreground">
+                      <span className="font-medium text-foreground" style={{ display: 'flex', justifyContent: 'center', gap: '30px' }}>
                         {registro.formalizado ? 'Sí' : 'No'}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Editar"
-                        >
-                          <Edit className="h-4 w-4 text-blue-600" />
-                        </Button>
+                      <span className="flex justify-right">
+                      <ImputadoFormalizacionForm causaId = {registro.causaId} imputadoId = {registro.imputadoId}/>
+                      </span>
                       </span>
                     </div>
                     {registro.fechaFormalizacion && (

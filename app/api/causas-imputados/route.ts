@@ -227,3 +227,70 @@ export async function DELETE(req: Request) {
     );
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url); 
+    const causaId = searchParams.get("causaId"); 
+
+  
+    if (!causaId || isNaN(parseInt(causaId))) {
+      return NextResponse.json(
+        { error: 'El ID de la causa no es válido' },
+        { status: 400 }
+      );
+    }
+
+    const { imputadoId, plazo } = await req.json();
+
+    if (!imputadoId || !plazo) {
+      return NextResponse.json(
+        { error: 'Se requiere el ID del imputado y el plazo' },
+        { status: 400 }
+      );
+    }
+
+    if (isNaN(parseInt(imputadoId))) {
+      return NextResponse.json(
+        { error: 'El ID del imputado no es válido' },
+        { status: 400 }
+      );
+    }
+    console.log('Actualizando el plazo del imputado:', imputadoId);
+
+
+    const updatedPlazo = await prisma.causasImputados.update({
+      where: {
+        causaId_imputadoId: {
+          causaId: Number(causaId), 
+          imputadoId: Number(imputadoId),
+        }
+      },
+      data: {
+        plazo: plazo,
+      },
+      include: {
+        causa: {
+          include: {
+            imputados: {
+              select: {
+                plazo: true,
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return NextResponse.json(updatedPlazo);
+
+  } catch (error) {
+    console.error('Error al actualizar el plazo:', error);
+    return NextResponse.json(
+      { error: 'Error al actualizar el plazo' },
+      { status: 500 }
+    );
+  }
+}
+
+
