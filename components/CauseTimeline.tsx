@@ -21,10 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, ChevronDown, ChevronUp,ExternalLink } from "lucide-react"; 
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import DelitoSelect from '@/components/select/DelitoSelect';
+import { Button } from '@/components/ui/button';
 
 const CauseTimeline = () => {
   const [causes, setCauses] = useState([]);
@@ -294,6 +295,17 @@ const CauseTimeline = () => {
               <DialogTitle>
                 Detalles de la Causa
                 {selectedCause && <span className="ml-2 text-muted-foreground">RUC: {selectedCause.ruc}</span>}
+                  {selectedCause?.ruc && (
+                  <a 
+                    href={`${process.env.NEXT_PUBLIC_FICHACASORUC}?ruc=${selectedCause.ruc}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                      <ExternalLink className="h-4 w-4 text-blue-600" />
+                    </Button>
+                  </a>
+                )}
               </DialogTitle>
             </DialogHeader>
             

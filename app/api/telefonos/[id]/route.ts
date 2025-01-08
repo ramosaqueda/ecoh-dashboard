@@ -43,21 +43,56 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
+
+    // Validación de campos requeridos
+    if (!body.idProveedorServicio || !body.imei || !body.abonado) {
+      return NextResponse.json(
+        { error: 'Faltan campos requeridos' },
+        { status: 400 }
+      );
+    }
+
+    // Función auxiliar para convertir valores de checkbox
+    const convertCheckboxValue = (value: any): boolean | null => {
+      if (value === true) return true;
+      if (value === false) return false;
+      return null;
+    };
+
     const telefono = await prisma.telefono.update({
       where: {
         id: parseInt(params.id)
       },
       data: {
-        numeroTelefonico: body.numeroTelefonico?.toString(), // Convertir a string si existe
-        idProveedorServicio: parseInt(body.idProveedorServicio),
+        numeroTelefonico: body.numeroTelefonico || null,
+        proveedorServicio: {
+          connect: { id: parseInt(body.idProveedorServicio) }
+        },
         imei: body.imei,
         abonado: body.abonado,
-        solicitaTrafico: body.solicitaTrafico,
-        solicitaImei: body.solicitaImei,
-        observacion: body.observacion
+        solicitaTrafico: convertCheckboxValue(body.solicitaTrafico),
+        solicitaImei: convertCheckboxValue(body.solicitaImei),
+        extraccionForense: convertCheckboxValue(body.extraccionForense),
+        observacion: body.observacion || null
       },
       include: {
-        proveedorServicio: true
+        proveedorServicio: {
+          select: {
+            id: true,
+            nombre: true
+          }
+        },
+        telefonosCausa: {
+          include: {
+            causa: {
+              select: {
+                id: true,
+                ruc: true,
+                denominacionCausa: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -65,11 +100,15 @@ export async function PUT(
   } catch (error) {
     console.error('Error en PUT:', error);
     return NextResponse.json(
-      { error: 'Error al actualizar teléfono' },
+      { 
+        error: 'Error al actualizar teléfono',
+        details: error.message 
+      },
       { status: 500 }
     );
   }
 }
+
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }

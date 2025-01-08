@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
- 
-
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -23,11 +21,9 @@ export async function GET(req: Request) {
       },
       causaEcoh: true,
       ...(tipoDelito && tipoDelito !== 'todos' ? { delitoId: parseInt(tipoDelito) } : {}),
-      // Agregar condición de homicidioConsumado solo si estamos filtrando por homicidios
-      ...(tipoDelito === '1' && homicidioConsumado ? { homicidioConsumado: true } : {})
+      ...(homicidioConsumado ? { homicidioConsumado: true } : {})
     };
 
-    // Resto del código se mantiene igual...
     const totalCausas = await prisma.causa.count({
       where: baseWhere
     });
@@ -37,40 +33,59 @@ export async function GET(req: Request) {
       include: {
         imputados: {
           include: {
-            cautelar: true
+            cautelar: true,
+            imputado: true
           }
         }
       }
     });
- 
 
-    let causasFormalizadas = 0;
-    let causasConCautelar = 0;
-    let causasAmbasSituaciones = 0;
     let causasEsclarecidas = 0;
 
-    causasImputados.forEach((causa) => {
-      const tieneFormalizados = causa.imputados.some((imp) => imp.formalizado);
-      const tieneCautelar = causa.imputados.some(
-        (imp) => imp.cautelarId !== null && imp.cautelar?.fechaTermino === null // Solo cautelares vigentes
-      );
+    // Usaremos sets para mantener un registro único de las causas por cada condición
+    const causasFormalizadasSet = new Set();
+    const causasConCautelarSet = new Set();
+    const causasAmbasSituacionesSet = new Set();
+    const causasEsclarecidasSet = new Set();
 
-      if (tieneFormalizados) causasFormalizadas++;
-      if (tieneCautelar) causasConCautelar++;
-      if (tieneFormalizados && tieneCautelar) causasAmbasSituaciones++;
-      if (tieneFormalizados || tieneCautelar) causasEsclarecidas++;
+    causasImputados.forEach((causa) => {
+      const tieneFormalizados = causa.imputados.some(imp => imp.formalizado);
+      const tieneCautelar = causa.imputados.some(imp => imp.cautelarId !== null);
+
+      // Registrar cada condición
+      if (tieneFormalizados) {
+        
+        causasFormalizadasSet.add(causa.id);
+      }
+
+      if (tieneCautelar) {
+        causasConCautelarSet.add(causa.id);
+      }
+
+      // Si tiene ambas condiciones
+      if (tieneFormalizados && tieneCautelar) {
+        causasAmbasSituacionesSet.add(causa.id);
+      }
+
+      // Si tiene al menos una de las condiciones
+      if (tieneFormalizados || tieneCautelar) {
+        console.log('causa.id', causa.id);
+        causasEsclarecidasSet.add(causa.id);
+      }
     });
 
-    const porcentaje = totalCausas > 0 ? (causasEsclarecidas / totalCausas) * 100 : 0;
+    const porcentaje = totalCausas > 0 
+      ? (causasEsclarecidasSet.size / totalCausas) * 100 
+      : 0;
 
     return NextResponse.json({
       totalCausas,
-      causasEsclarecidas,
+      causasEsclarecidas: causasEsclarecidasSet.size,
       porcentaje,
       detalles: {
-        causasFormalizadas,
-        causasConCautelar,
-        causasAmbasSituaciones
+        causasFormalizadas: causasFormalizadasSet.size,
+        causasConCautelar: causasConCautelarSet.size,
+        causasAmbasSituaciones: causasAmbasSituacionesSet.size
       }
     });
   } catch (error) {

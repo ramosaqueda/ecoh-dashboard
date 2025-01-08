@@ -232,8 +232,10 @@ model Telefono {
   idProveedorServicio Int
   imei                String
   abonado             String
-  solicitaTrafico     Boolean
-  solicitaImei        Boolean
+  solicitaTrafico     Boolean?
+  solicitaImei        Boolean?
+  extraccionForense   Boolean?
+  
   observacion         String?
   telefonosCausa      TelefonoCausa[]
 

@@ -61,6 +61,7 @@ export async function POST(request: Request) {
         abonado: body.abonado,
         solicitaTrafico: Boolean(body.solicitaTrafico),
         solicitaImei: Boolean(body.solicitaImei),
+        extraccionForense: Boolean(body.xtraccionForense),
         observacion: body.observacion || null
       },
       select: {
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
         abonado: true,
         solicitaTrafico: true,
         solicitaImei: true,
+        extraccionForense: true,
         observacion: true,
         proveedorServicio: {
           select: {

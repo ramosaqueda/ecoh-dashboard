@@ -69,9 +69,20 @@ export const navItems: NavItem[] = [
   },
   {
     title: 'Telefonos',
-    href: '/dashboard/telefonos',
     icon: 'Smartphone',
-    label: 'login'
+    label: 'Telefonos',
+    subItems: [
+      {
+        title: 'Gestión de Telefonos',
+        href: '/dashboard/telefonos',
+        icon: 'Smartphone'
+      },
+      {
+        title: 'Grafo de Telefonos',
+        href: '/dashboard/telefonos/grafo',
+        icon: 'Share'
+      }
+    ]
   },
   {
     title: 'Login',

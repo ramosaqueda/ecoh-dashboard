@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft,ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -210,6 +210,7 @@ export default function CausaViewPage() {
   });
   
   const datosCausa = {
+    id: causa.id, // Agregamos el ID
     RUC: causa.ruc,
     denominacion: causa.denominacionCausa,
     fiscal: causa.fiscal?.nombre ?? null,
@@ -226,6 +227,7 @@ export default function CausaViewPage() {
     nombre_imputado: imputados.map(causaImputado => causaImputado.imputado.nombreSujeto) || null,
     rut_imputado: imputados.map(causaImputado => causaImputado.imputado.docId) || null
 };
+ 
 
   return (
     <div className="container mx-auto space-y-6 py-10">
@@ -239,6 +241,15 @@ export default function CausaViewPage() {
           <div>
             <h1 className="text-2xl font-bold">Detalles de la Causa</h1>
             <p className="text-muted-foreground">RUC: {causa.ruc}</p>
+            <a 
+            href={`${process.env.NEXT_PUBLIC_FICHACASORUC}?ruc=${causa.ruc}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              <ExternalLink className="h-4 w-4 text-blue-600" />
+            </Button>
+          </a>
           </div>
           <div className="hidden items-center space-x-2 md:flex ml-10">
               <GeneratePdf pdfData={datosCausa} />

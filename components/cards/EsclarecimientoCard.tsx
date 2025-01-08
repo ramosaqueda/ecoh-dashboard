@@ -9,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { Loader2, AlertCircle } from 'lucide-react';
 import {
@@ -42,14 +44,12 @@ export function EsclarecimientoCard() {
     new Date().getFullYear().toString()
   );
   const [selectedTipoDelito, setSelectedTipoDelito] = useState('todos');
+  const [soloHomicidiosConsumados, setSoloHomicidiosConsumados] = useState(false);
 
   const years = Array.from({ length: 5 }, (_, i) =>
     (new Date().getFullYear() - i).toString()
   );
 
-  const [soloHomicidiosConsumados, setSoloHomicidiosConsumados] = useState(false);
-
-  // Cargar tipos de delito al montar el componente
   useEffect(() => {
     const fetchTiposDelito = async () => {
       try {
@@ -70,9 +70,13 @@ export function EsclarecimientoCard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const url = `/api/analytics/tasa-esclarecimiento?year=${selectedYear}${
-          selectedTipoDelito !== 'todos' ? `&tipoDelito=${selectedTipoDelito}` : ''
-        }`;
+        const params = new URLSearchParams({
+          year: selectedYear,
+          ...(selectedTipoDelito !== 'todos' && { tipoDelito: selectedTipoDelito }),
+          ...(soloHomicidiosConsumados && { homicidioConsumado: 'true' })
+        });
+
+        const url = `/api/analytics/tasa-esclarecimiento?${params.toString()}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Error al cargar datos de esclarecimiento');
         const data = await response.json();
@@ -86,7 +90,7 @@ export function EsclarecimientoCard() {
     };
 
     fetchData();
-  }, [selectedYear, selectedTipoDelito]);
+  }, [selectedYear, selectedTipoDelito, soloHomicidiosConsumados]);
 
   const getColorByPercentage = (percentage: number) => {
     if (percentage >= 70) return 'bg-green-500';
@@ -133,32 +137,42 @@ export function EsclarecimientoCard() {
               </Tooltip>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Select value={selectedTipoDelito} onValueChange={setSelectedTipoDelito}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Tipo de delito" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los delitos</SelectItem>
-                {tiposDelito.map((tipo) => (
-                  <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                    {tipo.nombre.trim()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <Select value={selectedTipoDelito} onValueChange={setSelectedTipoDelito}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Tipo de delito" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los delitos</SelectItem>
+                  {tiposDelito.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                      {tipo.nombre.trim()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="Año" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="homicidio-consumado"
+                checked={soloHomicidiosConsumados}
+                onCheckedChange={setSoloHomicidiosConsumados}
+              />
+              <Label htmlFor="homicidio-consumado">Solo homicidios consumados</Label>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

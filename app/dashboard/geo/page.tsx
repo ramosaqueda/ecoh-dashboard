@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
@@ -21,6 +21,16 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import PageContainer from '@/components/layout/page-container';
+
+
+interface Causa {
+  id: number;
+  ruc: string;
+  denominacionCausa?: string;
+  fechaDelHecho: string;
+  delitoId?: number;
+  causaEcoh: boolean;  
+}
 
 const breadcrumbItems = [
   { title: 'Dashboard', link: '/dashboard' },
@@ -68,18 +78,19 @@ export default function MapPage() {
   ).sort((a, b) => b - a);
 
   // Filtrado de causas
-  const causasFiltradas = causas
-    .filter((causa) =>
+  // Lógica de filtrado actualizada
+    const causasFiltradas = causas
+    .filter((causa: Causa) =>
       selectedDelito === 'todos'
         ? true
         : causa.delitoId?.toString() === selectedDelito
     )
-    .filter((causa) => {
+    .filter((causa: Causa) => {
       if (selectedYear === 'todos') return true;
       const causaYear = new Date(causa.fechaDelHecho).getFullYear().toString();
       return causaYear === selectedYear;
     })
-    .filter((causa) => {
+    .filter((causa: Causa) => {
       if (!searchTerm) return true;
       const searchLower = searchTerm.toLowerCase();
       return (
@@ -87,10 +98,18 @@ export default function MapPage() {
         causa.denominacionCausa?.toLowerCase().includes(searchLower)
       );
     })
-    .filter((causa) => {
+    .filter((causa: Causa) => {
       if (!showEcohOnly) return true;
-      return causa.isEcoh === true;
+      return causa.causaEcoh === true;  // Usando el nombre correcto de la propiedad
     });
+
+    // Para debugging, puedes agregar temporalmente:
+    useEffect(() => {
+    if (showEcohOnly) {
+      console.log('Causas ECOH encontradas:', causas.filter(c => c.causaEcoh).length);
+      console.log('Primera causa ECOH:', causas.find(c => c.causaEcoh));
+    }
+    }, [showEcohOnly, causas]);
 
   if (isLoadingCausas || isLoadingDelitos) {
     return (

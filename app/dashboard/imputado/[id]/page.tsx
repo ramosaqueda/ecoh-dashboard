@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 import ImputadoPhotos from '@/components/forms/ImputadoForm/ImputadoPhotos';
+import ImputadoPdfGenerator from '@/components/ImputadoPdfGenerator';
+
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { type ImputadoDetail, type CausaImputado } from '@/types/imputado';
@@ -82,44 +84,16 @@ export default function ImputadoDetailPage({
             <p className="text-muted-foreground">Detalles del imputado</p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          className="gap-2 print:hidden"
-          onClick={handlePrint}
-        >
-          <Printer className="h-4 w-4" />
-          Imprimir
-        </Button>
+        <div className="flex items-center gap-2">
+            
+            <ImputadoPdfGenerator imputadoData={imputado} />
+          </div>
+
+
+
       </div>
 
-      <style jsx global>{`
-        @media print {
-          @page {
-            margin: 2cm;
-          }
-
-          body {
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
-          }
-
-          .print\\:hidden {
-            display: none !important;
-          }
-
-          .print\\:break-before-page {
-            break-before: page;
-          }
-
-          .print\\:break-after-page {
-            break-after: page;
-          }
-
-          .print\\:border-none {
-            border: none !important;
-          }
-        }
-      `}</style>
+      
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Datos Personales */}

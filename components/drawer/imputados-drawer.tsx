@@ -19,7 +19,7 @@ import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 //import ImputadoFormalizacionForm from '../ImputadoFormalizacionForm';
 import { SquarePen } from 'lucide-react';
-import ImputadoFormalizacionForm from '../ImputadoFormalizacionForm';
+import ImputadoFormalizacionForm from '@/components/ImputadoFormalizacionForm';
 
 import { Edit } from 'lucide-react';
 type ImputadoInfo = {

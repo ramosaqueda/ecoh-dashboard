@@ -1,15 +1,9 @@
 // components/TelefonoCausaManager.tsx
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
+import CausaSelector from '@/components/select/CausaSelector';
 
 interface Causa {
   id: number;
@@ -25,16 +19,19 @@ interface TelefonoCausa {
 interface TelefonoCausaManagerProps {
   telefonoId: number;
   initialCausas?: TelefonoCausa[];
+  onCausaChange?: () => void;
+  onUpdate?: (telefono: any) => void;
 }
 
 export function TelefonoCausaManager({
   telefonoId,
-  initialCausas = []
+  initialCausas = [],
+  onCausaChange,
+  onUpdate
 }: TelefonoCausaManagerProps) {
   const [causas, setCausas] = useState<Causa[]>([]);
   const [selectedCausaId, setSelectedCausaId] = useState<string>('');
-  const [asociaciones, setAsociaciones] =
-    useState<TelefonoCausa[]>(initialCausas);
+  const [asociaciones, setAsociaciones] = useState<TelefonoCausa[]>(initialCausas);
 
   useEffect(() => {
     const fetchCausas = async () => {
@@ -75,6 +72,10 @@ export function TelefonoCausaManager({
       setAsociaciones((prev) => [...prev, nuevaAsociacion]);
       setSelectedCausaId('');
       toast.success('Causa asociada exitosamente');
+      
+      if (onCausaChange) {
+        onCausaChange();
+      }
     } catch (error) {
       console.error('Error:', error);
       toast.error(error.message || 'Error al asociar la causa');
@@ -94,6 +95,10 @@ export function TelefonoCausaManager({
 
       setAsociaciones((prev) => prev.filter((a) => a.id !== asociacionId));
       toast.success('Causa desasociada exitosamente');
+      
+      if (onCausaChange) {
+        onCausaChange();
+      }
     } catch (error) {
       console.error('Error:', error);
       toast.error(error.message || 'Error al desasociar la causa');
@@ -111,18 +116,11 @@ export function TelefonoCausaManager({
 
       <div className="flex items-end gap-2">
         <div className="flex-1">
-          <Select value={selectedCausaId} onValueChange={setSelectedCausaId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar causa" />
-            </SelectTrigger>
-            <SelectContent>
-              {causasDisponibles.map((causa) => (
-                <SelectItem key={causa.id} value={causa.id.toString()}>
-                  {causa.ruc} - {causa.denominacionCausa}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <CausaSelector
+            value={selectedCausaId}
+            onChange={setSelectedCausaId}
+            isDisabled={causasDisponibles.length === 0}
+          />
         </div>
         <Button
           type="button"
@@ -140,9 +138,12 @@ export function TelefonoCausaManager({
               key={asociacion.id}
               className="flex items-center justify-between rounded-lg border p-2"
             >
-              <span>
-                {asociacion.causa.ruc} - {asociacion.causa.denominacionCausa}
-              </span>
+              <div className="flex flex-col">
+                <span className="font-medium">{asociacion.causa.ruc}</span>
+                <span className="text-sm text-muted-foreground">
+                  {asociacion.causa.denominacionCausa}
+                </span>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"

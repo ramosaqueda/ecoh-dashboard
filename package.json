@@ -1,10 +1,10 @@
 {
-  "name": "nextshcdndashboardstarter",
+  "name": "Ecoh",
   "version": "0.1.0",
   "private": true,
   "author": {
-    "name": "Kiran",
-    "url": "https://github.com/Kiranism"
+    "name": "Rafael Ramos",
+    "url": "https://github.com/ramosaqueda/ecoh-dashboard"
   },
   "scripts": {
     "dev": "next dev",
