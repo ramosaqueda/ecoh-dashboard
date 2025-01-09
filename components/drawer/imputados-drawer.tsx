@@ -19,7 +19,7 @@ import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 //import ImputadoFormalizacionForm from '../ImputadoFormalizacionForm';
 import { SquarePen } from 'lucide-react';
-import ImputadoFormalizacionForm from '@/components/ImputadoFormalizacionForm';
+import ImputadoFormalizacionForm, { FormalizacionFormValues } from '@/components/forms/CausaImputadoForm/ImputadoFormalizacionForm';
 
 import { Edit } from 'lucide-react';
 type ImputadoInfo = {
@@ -57,6 +57,11 @@ export default function ImputadosDrawer({
   imputados,
   causaRuc
 }: ImputadosDrawerProps) {
+
+  function handleSuccess(): void {
+    
+  }
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="sm:max-w-md">
@@ -129,7 +134,7 @@ export default function ImputadosDrawer({
                       <span className="font-medium text-foreground" style={{ display: 'flex', justifyContent: 'center', gap: '30px' }}>
                         {registro.formalizado ? 'Sí' : 'No'}
                       <span className="flex justify-right">
-                      <ImputadoFormalizacionForm causaId = {registro.causaId} imputadoId = {registro.imputadoId}/>
+                      <ImputadoFormalizacionForm causaId={registro.causaId.toString()} imputadoId={registro.imputadoId.toString()} onSuccess={handleSuccess}/>
                       </span>
                       </span>
                     </div>
