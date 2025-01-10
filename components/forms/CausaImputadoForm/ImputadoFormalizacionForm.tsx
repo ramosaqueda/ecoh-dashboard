@@ -63,6 +63,7 @@ interface FormalizacionFormProps {
 const FormalizacionSchema = z
   .object({
     causaId: z.string(),
+    imputadoId: z.string(),
     formalizado: z.boolean().default(false),
     fechaFormalizacion: z.date().nullable().optional(),
     cautelarId: z.string().optional().nullable(),
@@ -87,7 +88,7 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
       },
   });
 
-  const { control, setValue, watch, formState: { isSubmitting } } = form;
+  const { control, setValue,handleSubmit, watch, formState: { isSubmitting } } = form;
   const [cautelares, setCautelares] = useState<Cautelar[]>([]);
   const [isLoadingCautelares, setIsLoadingCautelares] = useState(true);
   const [isLoadingCausaImputado, setIsLoadingCausaImputado] = useState(true);
@@ -156,9 +157,11 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
   const watchFormalizado = form.watch('formalizado');
 
   const onSubmit = async (data: FormalizacionFormValues) => {
+    console.log('holi');
     try {
       const formData = {
-        causaId: data.causaId || null,
+        causaId: data.causaId,
+        imputadoId: data.imputadoId,
         formalizado: data.formalizado || false,
         fechaFormalizacion: data.formalizado ? data.fechaFormalizacion : null,
         cautelarId: data.cautelarId || null,
@@ -179,13 +182,13 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
       if (!response.ok) {
         throw new Error(
           responseData.error ||
-            'Error al actualizar la causa'
+            'Error al actualizar los datos del imputado'
         );
       }
 
       toast({
         title: 'Éxito',
-        description: 'Causa actualizada exitosamente'
+        description: 'Datos del imputado en la causa actualizados exitosamente'
       });
 
     } catch (error:any) {
@@ -200,157 +203,146 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
     setCautelar(value);
   };
 
-    return (
-        <Dialog>
-          <DialogTrigger>
-            <Button>
-              <SquarePen />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar Datos</DialogTitle>
-              <DialogDescription>
-                <Form {...form}>
-                <div>
-                  {isLoadingCautelares || isLoadingCausaImputado ? (
-                  <p>Cargando datos...</p>
-                  ) : (
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+  return (
+    <Dialog>
+      <DialogTrigger>
+        <SquarePen />
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Datos</DialogTitle>
+            <DialogDescription>Datos del imputado en una causa</DialogDescription>
+            <Form {...form}>
+              {isLoadingCautelares || isLoadingCausaImputado ? (
+                <Loader2>Cargando datos...</Loader2>
+              ) : (
+                <div className="space-y-6">
                   <FormField
                     control={form.control}
-                    name = "formalizado"
-                    render={({field })=> (
+                    name="formalizado"
+                    render={({ field }) => (
                       <FormItem>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        <Label htmlFor="estaFormalizado">Formalizado</Label>
+                        <Switch id="formalizado" checked={field.value} onCheckedChange={field.onChange} />
+                        <FormLabel htmlFor="formalizado">Formalizado</FormLabel>
                       </FormItem>
                     )}
                   />
                   <FormField
-                      control={form.control}
-                      name="cautelarId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Medida Cautelar</FormLabel>
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              handleCautelarChange(value);
-                            }}
-                            value={field.value ?? undefined}
-                            disabled={isLoadingCautelares}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Seleccione una medida cautelar">
-                                  {field.value
-          ? cautelares.find((c) => c.id.toString() === field.value)?.nombre
-          : 'Seleccione una medida cautelar'}
-                                </SelectValue>
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {cautelares.map((cautelar) => (
-                                <SelectItem
-                                  key={cautelar.id}
-                                  value={cautelar.id.toString()}
-                                >
-                                  {cautelar.nombre}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                  {watchFormalizado && (
-                  <>
-                    <FormField
                     control={form.control}
-                    name="fechaFormalizacion"
+                    name="cautelarId"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Fecha Formalización</FormLabel>
-                        <FormControl>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            
-                              <Button
-                                variant={"outline"}
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP")
-                                ) : (
-                                  <span>Seleccione una fecha</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              maxDate={new Date()}
-                              minDate={new Date('1900-01-01')}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        </FormControl>
+                      <FormItem>
+                        <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handleCautelarChange(value);
+                      }}
+                      value={field.value ?? undefined}
+                      disabled={isLoadingCautelares}
+                      >
+                        <FormLabel htmlFor="cautelarId">Medida Cautelar</FormLabel>
+                          <FormControl>
+                            <SelectTrigger id="cautelarId" className="w-full">
+                              <SelectValue placeholder="Seleccione una medida cautelar">
+                                {field.value
+                                  ? cautelares.find((c) => c.id.toString() === field.value)?.nombre
+                                  : 'Seleccione una medida cautelar'}
+                              </SelectValue>
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {cautelares.map((cautelar) => (
+                              <SelectItem key={cautelar.id} value={cautelar.id.toString()}>
+                                {cautelar.nombre}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
                       </FormItem>
                     )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="plazo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Plazo de Investigación</FormLabel>
-                          <FormControl>
-                            <Input
+                  />
+                  {watchFormalizado && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="fechaFormalizacion"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel htmlFor="fechaFormalizacion">Fecha Formalización</FormLabel>
+                            <FormControl>
+                              <Popover>
+                                <PopoverTrigger id="fechaFormalizacion" asChild >
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Seleccione una fecha</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value ?? undefined}
+                                  onSelect={field.onChange}
+                                  disabled={(date) =>
+                                    date > new Date() || date < new Date("1900-01-01")
+                                  }
+                                  initialFocus
+                                />
+                                </PopoverContent>
+                              </Popover>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="plazo"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel htmlFor="plazo">Plazo de Investigación</FormLabel>
+                            <FormControl>
+                              <Input
+                              id="plazo"
                               type="number"
                               min="0"
                               {...field}
-                              onChange={(e) =>
-                                field.onChange(e.target.valueAsNumber)
-                              }
+                              onChange={(e) => field.onChange(e.target.valueAsNumber)}
                               value={field.value || ''}
                               placeholder="Ingrese el plazo en días"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </>
-                  )}  
-                    <Button type="submit" disabled={isSubmitting || !form.watch('formalizado')}>
-                      {isSubmitting ? (
-                      <>
+                  )}
+                   <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       {'Actualizando...'}
-                      </>
-                      ) : ('Actualizar')}
-                    </Button>
-                  </form>
-                  ) }
-      </div>
-                
-                </Form>
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
-      );
+                    </>
+                  ) : (
+                    'Actualizar'
+                  )}
+                </Button>
+                </div>
+              )}
+            </Form>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  );
 };
 export default ImputadoFormalizacionForm;
