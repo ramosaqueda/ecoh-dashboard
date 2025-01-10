@@ -1,5 +1,4 @@
-'use client';
-
+"use client"
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -18,22 +17,13 @@ interface DayData {
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS = [
-  'Ene',
-  'Feb',
-  'Mar',
-  'Abr',
-  'May',
-  'Jun',
-  'Jul',
-  'Ago',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dic'
+  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
 ];
 
 export function CasesHeatmap() {
   const [data, setData] = useState<DayData[]>([]);
+  const [weekdayStats, setWeekdayStats] = useState<{[key: string]: number}>({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(
     new Date().getFullYear().toString()
@@ -50,8 +40,18 @@ export function CasesHeatmap() {
         const response = await fetch(
           `/api/analytics/cases-heatmap?year=${selectedYear}`
         );
-        const data = await response.json();
-        setData(data);
+        const fetchedData = await response.json();
+        setData(fetchedData);
+        
+        // Calcular estadísticas por día de la semana
+        const weekdayCounts: {[key: string]: number} = {};
+        fetchedData.forEach((day: DayData) => {
+          const date = new Date(day.date);
+          const weekday = DAYS[date.getDay()];
+          weekdayCounts[weekday] = (weekdayCounts[weekday] || 0) + day.count;
+        });
+        setWeekdayStats(weekdayCounts);
+        
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -64,7 +64,7 @@ export function CasesHeatmap() {
 
   const getColor = (count: number) => {
     const max = Math.max(...data.map((d) => d.count));
-    if (max === 0) return 'rgb(254, 242, 242)'; // rose-50 para cuando no hay datos
+    if (max === 0) return 'rgb(254, 242, 242)';
 
     const intensity = count / max;
 
@@ -84,6 +84,12 @@ export function CasesHeatmap() {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const getWeekdayHighlight = (weekday: string) => {
+    const maxWeekday = Math.max(...Object.values(weekdayStats));
+    const count = weekdayStats[weekday] || 0;
+    return count === maxWeekday ? 'font-bold text-rose-600' : '';
   };
 
   return (
@@ -110,48 +116,70 @@ export function CasesHeatmap() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-[auto_repeat(52,1fr)] gap-2">
-              <div /> {/* Espacio para alinear con la grilla */}
-              {MONTHS.map((month, i) => (
-                <div
-                  key={month}
-                  className="text-xs text-muted-foreground"
-                  style={{
-                    gridColumn: `${
-                      Math.floor((i * 52) / 12) + 2
-                    } / span ${Math.floor(52 / 12)}`
-                  }}
-                >
-                  {month}
+            <div className="space-y-2">
+              {/* Calendar header with months */}
+              <div className="flex">
+                <div className="w-8" /> {/* Espacio para los días */}
+                <div className="flex flex-1">
+                  {MONTHS.map((month) => (
+                    <div
+                      key={month}
+                      className="flex-1 text-center text-xs text-muted-foreground"
+                    >
+                      {month}
+                    </div>
+                  ))}
                 </div>
-              ))}
-              {DAYS.map((day) => (
-                <div key={day} className="text-xs text-muted-foreground">
-                  {day}
+              </div>
+              
+              {/* Calendar body */}
+              {DAYS.map((day, dayIndex) => (
+                <div key={day} className="flex">
+                  <div 
+                    className={`w-8 text-xs ${getWeekdayHighlight(day)}`}
+                    title={`${day}: ${weekdayStats[day] || 0} casos totales`}
+                  >
+                    {day}
+                  </div>
+                  <div className="flex flex-1 gap-1">
+                    {data
+                      .filter(item => new Date(item.date).getDay() === dayIndex)
+                      .map((dayData, i) => (
+                        <div
+                          key={i}
+                          className="h-3 flex-1 rounded-sm transition-all hover:ring-2 hover:ring-rose-500 hover:ring-offset-2"
+                          style={{ backgroundColor: getColor(dayData.count) }}
+                          title={`${formatDate(dayData.date)}: ${dayData.count} casos`}
+                        />
+                      ))}
+                  </div>
                 </div>
-              ))}
-              {data.map((day, i) => (
-                <div
-                  key={i}
-                  className="h-3 w-3 rounded-sm transition-all hover:ring-2 hover:ring-rose-500 hover:ring-offset-2"
-                  style={{ backgroundColor: getColor(day.count) }}
-                  title={`${formatDate(day.date)}: ${day.count} casos`}
-                />
               ))}
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <div className="text-sm font-medium">
-                Total: {data.reduce((sum, day) => sum + day.count, 0)} casos
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="text-sm font-medium">
+                  Total: {data.reduce((sum, day) => sum + day.count, 0)} casos
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex items-center gap-1">
+                    <div className="h-3 w-3 rounded-sm bg-rose-100" />
+                    Menos
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="h-3 w-3 rounded-sm bg-rose-600" />
+                    Más
+                  </div>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <div className="flex items-center gap-1">
-                  <div className="h-3 w-3 rounded-sm bg-rose-100" />
-                  Menos
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="h-3 w-3 rounded-sm bg-rose-600" />
-                  Más
-                </div>
+              <div className="text-xs text-muted-foreground">
+                {Object.entries(weekdayStats)
+                  .sort(([,a], [,b]) => b - a)
+                  .map(([day, count], index) => (
+                    <span key={day} className={index === 0 ? 'font-medium text-rose-600' : ''}>
+                      {day}: {count} casos{index < Object.keys(weekdayStats).length - 1 ? ' | ' : ''}
+                    </span>
+                  ))}
               </div>
             </div>
           </div>
@@ -160,3 +188,5 @@ export function CasesHeatmap() {
     </Card>
   );
 }
+
+export default CasesHeatmap;
