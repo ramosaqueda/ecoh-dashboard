@@ -51,6 +51,8 @@ model Causa {
  // New relations for related causes
   causasRelacionadasMadre   CausasRelacionadas[] @relation("CausaMadre")
   causasRelacionadasArista  CausasRelacionadas[] @relation("CausaArista")
+
+  MedidaIntrusiva MedidaIntrusiva[]
 }
 
 // New model to track cause relationships
@@ -123,6 +125,7 @@ model Fiscal {
   id     Int     @id @default(autoincrement())
   nombre String
   causas Causa[]
+  MedidaIntrusiva MedidaIntrusiva[]
 }
 
 model Foco {
@@ -147,6 +150,8 @@ model Tribunal {
   id     Int     @id @default(autoincrement())
   nombre String
   causas Causa[]
+
+  MedidaIntrusiva MedidaIntrusiva[]
 }
 
 model CausasImputados {
@@ -339,4 +344,84 @@ model Actividad {
   @@index([causa_id])
   @@index([tipo_actividad_id])
   @@index([usuario_id])
+}
+
+
+// Nueva entidad para registrar Medidas instrusivas. 
+model MedidaIntrusiva {
+  id                    Int            @id @default(autoincrement())
+  causa_id              Int            
+  tipo_medida_id        Int            
+  fiscal_id             Int            
+  tribunal_id           Int
+  cantidad_domicilios   Int?
+  domicilios_aprobados  Int?
+  detenidos             Int?
+  unidad_policial_id    Int	
+  fecha_solicitud       DateTime
+  nombre_juez           String?
+  id_resolucion         Int
+  fecha_resolucion      DateTime?      // Añadido: fecha en que se emitió la resolución
+  created_at            DateTime       @default(now())
+  updated_at            DateTime       @updatedAt
+  observacion           String?
+  causa                 Causa          @relation(fields: [causa_id], references: [id])
+  tipo_medida          TipoMedida     @relation(fields: [tipo_medida_id], references: [id])
+  fiscal               Fiscal         @relation(fields: [fiscal_id], references: [id])
+  tribunal             Tribunal       @relation(fields: [tribunal_id], references: [id])
+  unidad_policial      UnidadPolicial @relation(fields: [unidad_policial_id], references: [id])
+  resolucion_tribunal  ResolucionTribunal  @relation(fields: [id_resolucion], references: [id])
+  medidas_hallazgos    MedidaHallazgo[]
+
+  @@index([causa_id])
+  @@index([tipo_medida_id])
+  @@index([fiscal_id])
+  @@index([tribunal_id])
+  @@index([unidad_policial_id])
+  @@index([id_resolucion])
+}
+
+model ResolucionTribunal {
+  id                Int              @id @default(autoincrement())
+  resolucion                    String           @unique @db.VarChar(100)
+  activo            Boolean          @default(true)
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+  medidas_intrusivas MedidaIntrusiva[]
+
+  @@map("resoluciones_tribunal")
+}
+
+model UnidadPolicial {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique @db.VarChar(100)
+  MedidaIntrusiva MedidaIntrusiva[]
+}
+
+model MIHallazgos {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique @db.VarChar(100)
+
+  Medida_Hallazgo MedidaHallazgo[]
+}
+
+model MedidaHallazgo {  // Removido guión bajo
+  medida_id    Int
+  hallazgo_id  Int
+  created_at   DateTime        @default(now())
+  updated_at   DateTime        @updatedAt
+  medida       MedidaIntrusiva @relation(fields: [medida_id], references: [id])
+  hallazgo     MIHallazgos     @relation(fields: [hallazgo_id], references: [id])
+  
+  @@id([medida_id, hallazgo_id])
+  @@index([hallazgo_id]) // Añadido índice para mejorar performance en búsquedas
+}
+
+model TipoMedida {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique @db.VarChar(100)
+  activo      Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  medidasIntrusivas MedidaIntrusiva[]
 }
