@@ -136,6 +136,58 @@ export async function PATCH(req: Request, { params }: Props) {
   }
 }
 
+export async function PUT(req: Request, { params }: Props) {
+  try {
+    const imputadoId = parseInt(params.id);
+    const data = await req.json();
+    const { causaId, formalizado, fechaFormalizacion, cautelarId, plazo} = data;
+    console.log('aaaaa');
+    if (!causaId) {
+      return NextResponse.json(
+        { error: 'Se requiere el ID de la causa' },
+        { status: 400 }
+      );
+    }
+
+    const updateData = {
+      imputadoId: imputadoId,
+      formalizado: formalizado || false,
+      fechaFormalizacion: formalizado ? fechaFormalizacion : null,
+      cautelarId: cautelarId || null,
+      plazo: plazo || 0
+    };
+
+    const updated = await prisma.causasImputados.update({
+      where: {
+        causaId_imputadoId: {
+          causaId: parseInt(causaId),
+          imputadoId: imputadoId
+        }
+      },
+      data: updateData,
+      include: {
+        causa: {
+          select: {
+            ruc: true,
+            denominacionCausa: true,
+            tribunal: true,
+            delito: true
+          }
+        },
+        cautelar: true
+      }
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('Error updating causa:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
+}
+
 
 
 
