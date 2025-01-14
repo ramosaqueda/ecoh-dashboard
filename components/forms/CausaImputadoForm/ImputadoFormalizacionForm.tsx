@@ -87,13 +87,40 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
         plazo: 0
       },
   });
-
-  const { control, setValue,handleSubmit, watch, formState: { isSubmitting } } = form;
+  const [isOpen, setIsOpen] = useState(false);
+  const { control, setValue, watch }= form;
   const [cautelares, setCautelares] = useState<Cautelar[]>([]);
   const [isLoadingCautelares, setIsLoadingCautelares] = useState(true);
   const [isLoadingCausaImputado, setIsLoadingCausaImputado] = useState(true);
   const [cautelar, setCautelar] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const [plazo, setPlazo] = useState<number>(0);
+  const [formalizado, setFormalizado] = useState<boolean>(true);
+  const { register, handleSubmit, formState: { errors } } = useForm();
+  const handleSuccess = () => {
+    toast({
+      title: 'Éxito',
+      description: 'Datos del imputado en la causa actualizados exitosamente',
+    });
+    setTimeout(() => {
+      setIsOpen(false); 
+      if (onSuccess) onSuccess();
+    }, 2000);
+  };
+
+  const handlePlazoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newPlazo = Number(event.target.value);
+    setPlazo((prevPlazo) => prevPlazo + newPlazo);
+    setValue('plazo', plazo + newPlazo);
+  };
+
+  const handleFormalizadoChange =  (checked: boolean) => {
+    if(!checked) {
+      setValue('fechaFormalizacion', null);
+      setValue('plazo', 0);
+    }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,7 +137,6 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
           throw new Error(`Error al cargar los datos: ${cautelaresResponse.statusText}, ${causaimputadoResponse.statusText}`);
         }
         
-  
         const cautelaresData = await cautelaresResponse.json();
         const causaImputadoDataArray = await causaimputadoResponse.json();
         
@@ -125,9 +151,8 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
         const cautelarIndex = cautelaresData.findIndex((cautelar: {id: number}) => cautelar.id === parseInt(cautelarId));
         
         setValue('formalizado', causaImputadoData.formalizado || false);
-        
         setValue('fechaFormalizacion', causaImputadoData.fechaFormalizacion ? new Date(causaImputadoData.fechaFormalizacion) : null);
-        setValue('plazo', causaImputadoData.plazo || 0);
+        setPlazo(causaImputadoData.plazo || 0);
         console.log(cautelaresData[cautelarIndex].nombre);
         console.log(cautelarIndex);
 
@@ -157,19 +182,23 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
   const watchFormalizado = form.watch('formalizado');
 
   const onSubmit = async (data: FormalizacionFormValues) => {
-    console.log('holi');
+    console.log("Errores en el formulario:", form.formState.errors);
+    console.log("Datos enviados:", data); 
     try {
+      setIsSubmitting(true);
+
       const formData = {
-        causaId: data.causaId,
-        imputadoId: data.imputadoId,
+        //causaId: data.causaId,
+       // imputadoId: data.imputadoId,
         formalizado: data.formalizado || false,
-        fechaFormalizacion: data.formalizado ? data.fechaFormalizacion : null,
+        fechaFormalizacion: data.formalizado ? data.fechaFormalizacion?.toISOString() : null,
         cautelarId: data.cautelarId || null,
         plazo: data.plazo || 0
       };
+      console.log("fecha: ",data.fechaFormalizacion?.toISOString());
       
       const response = await fetch(
-        '/api/causas-imputados' + `/${imputadoId}`,
+        `/api/causas-imputados/${imputadoId}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -190,21 +219,27 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
         title: 'Éxito',
         description: 'Datos del imputado en la causa actualizados exitosamente'
       });
-
+      setIsOpen(false);
+      handleSuccess();
     } catch (error:any) {
       toast({
         variant: 'destructive',
         title: 'Error',
         description: error.message
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
+  
   const handleCautelarChange = (value: any) => {
     setCautelar(value);
   };
+  const watchData = form.watch();
+  console.log("fecha formalizacion:", watchData.fechaFormalizacion?.toISOString());
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen} >
       <DialogTrigger>
         <SquarePen />
       </DialogTrigger>
@@ -212,7 +247,8 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
         <DialogHeader>
           <DialogTitle>Editar Datos</DialogTitle>
             <DialogDescription>Datos del imputado en una causa</DialogDescription>
-            <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" >
+            <Form {...form }  >
               {isLoadingCautelares || isLoadingCausaImputado ? (
                 <Loader2>Cargando datos...</Loader2>
               ) : (
@@ -222,7 +258,10 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
                     name="formalizado"
                     render={({ field }) => (
                       <FormItem>
-                        <Switch id="formalizado" checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch id="formalizado" checked={field.value} onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          handleFormalizadoChange(checked);
+                        } }/>
                         <FormLabel htmlFor="formalizado">Formalizado</FormLabel>
                       </FormItem>
                     )}
@@ -316,7 +355,7 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
                               type="number"
                               min="0"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                              onChange={(e) => handlePlazoChange(e)}
                               value={field.value || ''}
                               placeholder="Ingrese el plazo en días"
                               />
@@ -327,19 +366,20 @@ const ImputadoFormalizacionForm :React.FC<FormalizacionFormProps>= ({
                       />
                     </>
                   )}
-                   <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {'Actualizando...'}
-                    </>
-                  ) : (
-                    'Actualizar'
-                  )}
-                </Button>
+                  <Button type="submit" disabled={isSubmitting} onClick={() => console.log("Botón de enviar presionado")}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {'Actualizando...'}
+                      </>
+                    ) : (
+                      'Actualizar'
+                    )}
+                  </Button>
                 </div>
               )}
             </Form>
+            </form>
         </DialogHeader>
       </DialogContent>
     </Dialog>
