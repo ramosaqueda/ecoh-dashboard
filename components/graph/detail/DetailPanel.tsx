@@ -1,292 +1,314 @@
 // components/graph/detail/DetailPanel.tsx
-'use client';
-
-import { Group, User, Calendar, Info, Shield,Camera } from 'lucide-react';
+import React from 'react';
+import { useEffect, useState } from 'react';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetTitle,
+  SheetTitle
+   
 } from "@/components/ui/sheet";
-
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Building2, User2, Image,ZoomIn } from "lucide-react";
+import { ImageGallery } from '@/components/graph/detail/ImageGallery';
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface Imputado {
-  id: number;
-  nombreSujeto: string;
-  docId: string;
-  nacionalidad?: {
-    id: number;
-    nombre: string;
-  };
-}
-
-interface Miembro {
-  id: number;
-  imputadoId: number;
-  rol: string | null;
-  fechaIngreso: string;
-  fechaSalida: string | null;
-  activo: boolean;
-  imputado: Imputado;
-}
-
-interface Organization {
-  id: number;
-  nombre: string;
-  descripcion?: string;
-  fechaIdentificacion: string;
-  createdAt: string;
-  activa: boolean;
-  tipoOrganizacion?: {
-    id: number;
-    nombre: string;
-  };
-  miembros?: Miembro[];
-}
-
-interface GraphNode {
-  id: string;
-  name: string;
-  type: 'organization' | 'imputado';
-  org?: Organization;
-  imputado?: Imputado;
-  organizaciones?: Organization[];
-}
-
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 interface DetailPanelProps {
-  node: GraphNode | null;
+  node: any | null;
   onClose: () => void;
 }
 
-interface Fotografia {
-  id: number;
-  url?: string;
-  filename: string;
-  esPrincipal: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  imputadoId: number;
-}
-
-interface Imputado {
-  id: number;
-  nombreSujeto: string;
-  docId: string;
-  nacionalidadId?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-  fotoPrincipal?: string;
-  fotografias?: Fotografia[];
-  nacionalidad?: {
-    id: number;
-    nombre: string;
-  };
-}
-
-const OrganizationDetail = ({ organization }: { organization: Organization }) => {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-sm font-medium flex items-center gap-2">
-          <Info className="h-4 w-4" />
-          Información General
-        </h3>
-        <div className="mt-2 space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Estado:</span>
-            <Badge variant={organization.activa ? "success" : "destructive"}>
-              {organization.activa ? "Activa" : "Inactiva"}
-            </Badge>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Tipo:</span>
-            <span className="text-sm">{organization.tipoOrganizacion?.nombre}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Miembros:</span>
-            <span className="text-sm">{organization.miembros?.length || 0}</span>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-medium flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          Fechas
-        </h3>
-        <div className="mt-2 space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Identificación:</span>
-            <span className="text-sm">
-              {new Date(organization.fechaIdentificacion).toLocaleDateString()}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Registro:</span>
-            <span className="text-sm">
-              {new Date(organization.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {organization.descripcion && (
-        <div>
-          <h3 className="text-sm font-medium">Descripción</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {organization.descripcion}
-          </p>
-        </div>
-      )}
-
-      <div>
-        <h3 className="text-sm font-medium flex items-center gap-2">
-          <Shield className="h-4 w-4" />
-          Miembros Activos
-        </h3>
-        <div className="mt-2 space-y-2">
-          {organization.miembros
-            ?.filter(m => m.activo)
-            .map((miembro) => (
-              <div key={miembro.id} className="flex justify-between items-center p-2 bg-secondary rounded-md">
-                <span className="text-sm">{miembro.imputado.nombreSujeto}</span>
-                <Badge variant="outline">{miembro.rol || 'Sin rol'}</Badge>
-              </div>
-            ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ImputadoDetail = ({ imputado, organizaciones }: { imputado: Imputado; organizaciones?: Organization[] }) => {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-sm font-medium flex items-center gap-2">
-          <Info className="h-4 w-4" />
-          Información General
-        </h3>
-        <div className="mt-2 space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Documento:</span>
-            <span className="text-sm">{imputado.docId}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Nacionalidad:</span>
-            <span className="text-sm">{imputado.nacionalidad?.nombre || 'No especificada'}</span>
-          </div>
-        </div>
-      </div>
-
-      {organizaciones && organizaciones.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium flex items-center gap-2">
-            <Group className="h-4 w-4" />
-            Organizaciones
-          </h3>
-          <div className="mt-2 space-y-2">
-            {organizaciones.map((org) => (
-              <div key={org.id} className="flex justify-between items-center p-2 bg-secondary rounded-md">
-                <span className="text-sm">{org.nombre}</span>
-                <Badge variant={org.activa ? "success" : "destructive"}>
-                  {org.activa ? "Activa" : "Inactiva"}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-
- 
-      {/* Sección de fotografías */}
-      {(imputado.fotoPrincipal || imputado.fotografias?.length > 0) && (
-        <div>
-          <h3 className="text-sm font-medium flex items-center gap-2 mb-3">
-            <Camera className="h-4 w-4" />
-            Fotografías
-          </h3>
-          
-          {/* Foto Principal */}
-          {imputado.fotoPrincipal && (
-            <div className="flex justify-center mb-4">
-              <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-primary/20">
-                <img
-                  src={imputado.fotoPrincipal}
-                  alt={`Foto principal de ${imputado.nombreSujeto}`}
-                  className="object-cover w-full h-full"
-                  onError={(e) => {
-                    e.currentTarget.src = "https://via.placeholder.com/128?text=Sin+Foto";
-                  }}
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1">
-                  <span className="text-xs text-white">Principal</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Galería de fotos adicionales */}
-          {imputado.fotografias && imputado.fotografias.length > 0 && (
-            <div className="grid grid-cols-3 gap-2">
-              {imputado.fotografias
-                .filter(foto => !foto.esPrincipal && foto.url)
-                .map((foto) => (
-                  <div key={foto.id} className="relative aspect-square rounded-md overflow-hidden border border-border">
-                    <img
-                      src={foto.url}
-                      alt={foto.filename}
-                      className="object-cover w-full h-full"
-                      onError={(e) => {
-                        e.currentTarget.src = "https://via.placeholder.com/100?text=Error";
-                      }}
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1 py-0.5">
-                      <span className="text-xs text-white truncate block">
-                        {new Date(foto.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export const DetailPanel = ({ node, onClose }: DetailPanelProps) => {
+export const DetailPanel: React.FC<DetailPanelProps> = ({ node, onClose }) => {
   if (!node) return null;
 
-  const isOrganization = node.type === 'organization';
-
   return (
-    <Sheet open={!!node} onOpenChange={onClose}>
-      <SheetContent className="w-[400px] sm:w-[540px]">
-        <SheetHeader>
-          <div className="flex justify-between items-center">
+    <Sheet open={!!node} onOpenChange={() => onClose()}>
+      <SheetContent className="sm:max-w-xl lg:max-w-2xl w-full overflow-y-auto">
+        <ScrollArea className="h-full pr-4">
+          <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
-              {isOrganization ? <Group className="h-5 w-5" /> : <User className="h-5 w-5" />}
-              {node.name}
+              {node.type === 'organization' ? (
+                <>
+                  <Building2 className="h-5 w-5" />
+                  Detalles de la Organización
+                </>
+              ) : (
+                <>
+                  <User2 className="h-5 w-5" />
+                  Detalles del sujeto
+                </>
+              )}
             </SheetTitle>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-6">
+            {node.type === 'organization' ? (
+              <OrganizacionDetails node={node} />
+            ) : (
+              <ImputadoDetails node={node} />
+            )}
           </div>
-        </SheetHeader>
-        <ScrollArea className="mt-6 h-[calc(100vh-120px)]">
-          {isOrganization ? (
-            <OrganizationDetail organization={node.org!} />
-          ) : (
-            <ImputadoDetail 
-              imputado={node.imputado!}
-              organizaciones={node.organizaciones}
-            />
-          )}
         </ScrollArea>
       </SheetContent>
     </Sheet>
+  );
+};
+
+const OrganizacionDetails: React.FC<{ node: any }> = ({ node }) => {
+  const org = node.org;
+  const [memberPhotos, setMemberPhotos] = useState<{ [key: number]: any[] }>({});
+  const [loadingPhotos, setLoadingPhotos] = useState<{ [key: number]: boolean }>({});
+  const [selectedMember, setSelectedMember] = useState<{
+    photos: any[];
+    name: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchMemberPhotos = async () => {
+      if (!org?.miembros) return;
+
+      const photoRequests = org.miembros.map(async (miembro: any) => {
+        try {
+          setLoadingPhotos(prev => ({
+            ...prev,
+            [miembro.imputadoId]: true
+          }));
+
+          const response = await fetch(`/api/imputado/${miembro.imputadoId}/photos`);
+          if (!response.ok) throw new Error('Error al cargar fotos');
+          
+          const photos = await response.json();
+          setMemberPhotos(prev => ({
+            ...prev,
+            [miembro.imputadoId]: photos
+          }));
+        } catch (error) {
+          console.error(`Error loading photos for member ${miembro.imputadoId}:`, error);
+          setMemberPhotos(prev => ({
+            ...prev,
+            [miembro.imputadoId]: []
+          }));
+        } finally {
+          setLoadingPhotos(prev => ({
+            ...prev,
+            [miembro.imputadoId]: false
+          }));
+        }
+      });
+
+      await Promise.all(photoRequests);
+    };
+
+    fetchMemberPhotos();
+  }, [org?.miembros]);
+
+  if (!org) return null;
+
+  const handlePhotoClick = (miembro: any) => {
+    const photos = memberPhotos[miembro.imputadoId] || [];
+    if (photos.length > 0) {
+      setSelectedMember({
+        photos,
+        name: miembro.imputado?.nombreSujeto || 'Imputado'
+      });
+    }
+  };
+
+  return (
+    <>
+      <Card className="p-4 space-y-4">
+        {/* ... otros elementos se mantienen igual ... */}
+
+        {org.miembros && org.miembros.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">
+              Miembros
+            </h3>
+            <div className="space-y-3">
+              {org.miembros.map((miembro: any) => (
+                <div
+                  key={miembro.imputadoId}
+                  className="flex items-start gap-3 p-2 bg-muted rounded-md"
+                >
+                  {/* Contenedor de la foto modificado */}
+                  <div className="relative h-12 w-12 rounded-md overflow-hidden flex-shrink-0">
+                    {loadingPhotos[miembro.imputadoId] ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-900" />
+                      </div>
+                    ) : memberPhotos[miembro.imputadoId]?.length > 0 ? (
+                      <div 
+                        className="cursor-pointer group w-full h-full"
+                        onClick={() => handlePhotoClick(miembro)}
+                      >
+                        <img
+                          src={memberPhotos[miembro.imputadoId][0].url}
+                          alt={`Foto de ${miembro.imputado?.nombreSujeto}`}
+                          className="w-full h-full object-cover object-center transition-transform group-hover:scale-105"
+                        />
+                        {memberPhotos[miembro.imputadoId].length > 1 && (
+                          <div className="absolute bottom-0 right-0 bg-black/70 text-white text-[10px] px-1 rounded-tl">
+                            +{memberPhotos[miembro.imputadoId].length - 1}
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <ZoomIn className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <User2 className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contenido del miembro */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">
+                      {miembro.imputado?.nombreSujeto}
+                    </p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {miembro.rol || "Sin rol especificado"}
+                    </p>
+                  </div>
+                  <Badge variant={miembro.activo ? "outline" : "secondary"} className="flex-shrink-0">
+                    {miembro.activo ? "Activo" : "Inactivo"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {selectedMember && (
+        <Dialog 
+          open={!!selectedMember} 
+          onOpenChange={(open) => !open && setSelectedMember(null)}
+        >
+          <DialogContent className="max-w-[90vw] max-h-[90vh]">
+            <ImageGallery 
+              images={selectedMember.photos}
+              title={`Fotos de ${selectedMember.name}`}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+};
+
+const ImputadoDetails: React.FC<{ node: any }> = ({ node }) => {
+  const imputado = node.imputado;
+  const [fotos, setFotos] = useState<any[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFotos = async () => {
+      if (!imputado?.id) return;
+      
+      try {
+        setLoadingPhotos(true);
+        const response = await fetch(`/api/imputado/${imputado.id}/photos`);
+        
+        if (!response.ok) {
+          throw new Error('Error al cargar las fotos');
+        }
+        
+        const data = await response.json();
+        setFotos(data);
+      } catch (err) {
+        console.error('Error cargando fotos:', err);
+        setError('No se pudieron cargar las fotos');
+      } finally {
+        setLoadingPhotos(false);
+      }
+    };
+
+    fetchFotos();
+  }, [imputado?.id]);
+
+  if (!imputado) return null;
+
+  return (
+    <>
+      <Card className="p-4 space-y-4">
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground">Nombre</h3>
+          <p className="text-lg font-semibold">{imputado.nombreSujeto}</p>
+        </div>
+
+        {imputado.alias && (
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground">Alias</h3>
+            <p>{imputado.alias}</p>
+          </div>
+        )}
+
+        {imputado.caracterisiticas && (
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground">Características</h3>
+            <p>{imputado.caracterisiticas}</p>
+          </div>
+        )}
+
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+            <Image className="h-4 w-4" />
+            Galería de fotos
+          </h3>
+          <div className="mt-2">
+            {loadingPhotos ? (
+              <div className="flex justify-center items-center h-32">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+              </div>
+            ) : error ? (
+              <div className="text-sm text-red-500 p-2">{error}</div>
+            ) : fotos.length === 0 ? (
+              <div className="text-sm text-muted-foreground p-2">
+                No hay fotos disponibles
+              </div>
+            ) : (
+              <ImageGallery 
+                images={fotos}
+                title={`Fotos de ${imputado.nombreSujeto}`}
+              />
+            )}
+          </div>
+        </div>
+
+        {node.organizaciones && node.organizaciones.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">
+              Organizaciones
+            </h3>
+            <div className="space-y-2">
+              {node.organizaciones.map((org: any) => (
+                <div
+                  key={org.id}
+                  className="flex items-center justify-between p-2 bg-muted rounded-md"
+                >
+                  <div>
+                    <p className="font-medium">{org.nombre}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {org.miembros?.find((m: any) => m.imputadoId === imputado.id)?.rol || "Sin rol especificado"}
+                    </p>
+                  </div>
+                  <Badge variant={org.activa ? "outline" : "secondary"}>
+                    {org.activa ? "Activa" : "Inactiva"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+    </>
   );
 };
 

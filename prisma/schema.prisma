@@ -240,12 +240,23 @@ model Telefono {
   solicitaTrafico     Boolean?
   solicitaImei        Boolean?
   extraccionForense   Boolean?
+  enviar_custodia     Boolean?
   
   observacion         String?
   telefonosCausa      TelefonoCausa[]
-
+  id_ubicacion        Int
+  ubicacion           ubicacionTelefono @relation(fields: [id_ubicacion], references: [id])
+  
   @@map("telefonos")
 }
+
+model ubicacionTelefono {
+  id        Int        @id @default(autoincrement())
+  nombre    String
+  telefonos Telefono[]
+   @@map("ubicacion_telefono")
+}
+
 
 model Proveedor {
   id        Int        @id @default(autoincrement())

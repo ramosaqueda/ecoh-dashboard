@@ -5,6 +5,7 @@ import { GraphControls } from './controls/GraphControls';
 import { DetailPanel } from './detail/DetailPanel';
 import * as d3 from 'd3';
 
+// Interfaces
 interface Organization {
   id: number;
   nombre: string;
@@ -44,12 +45,20 @@ interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
   rol?: string;
 }
 
+interface TipoOrganizacion {
+  id: number;
+  nombre: string;
+}
+
 const OrganizationNetworkGraph: React.FC = () => {
+  // Referencias y estados
   const svgRef = useRef<SVGSVGElement>(null);
+  const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-  const [tipos, setTipos] = useState<any[]>([]);
+  const [tipos, setTipos] = useState<TipoOrganizacion[]>([]);
+  const [originalData, setOriginalData] = useState<{ nodes: GraphNode[]; links: GraphLink[] } | null>(null);
   const [dimensions, setDimensions] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth - 100 : 800,
     height: typeof window !== 'undefined' ? window.innerHeight - 250 : 600
@@ -57,20 +66,23 @@ const OrganizationNetworkGraph: React.FC = () => {
 
   const [filters, setFilters] = useState({
     tipoOrganizacion: 'all',
-    showActiveOnly: false
+    showActiveOnly: false,
+    searchTerm: ''
   });
 
   const [visualConfig, setVisualConfig] = useState({
-    linkDistance: 100,
+    linkDistance: 150,
     nodeSize: 20,
     charge: -400
   });
 
+  // Funciones de utilidad
   const generateUniqueColor = (index: number) => {
     const hue = (index * 137.508) % 360;
     return d3.hsl(hue, 0.7, 0.5).toString();
   };
 
+  // Inicialización y actualización del grafo
   const initializeGraph = (data: { nodes: GraphNode[]; links: GraphLink[] }) => {
     if (!svgRef.current) return;
 
@@ -103,6 +115,8 @@ const OrganizationNetworkGraph: React.FC = () => {
       .force('center', d3.forceCenter(dimensions.width / 2, dimensions.height / 2))
       .force('collision', d3.forceCollide().radius(visualConfig.nodeSize * 1.5));
 
+    simulationRef.current = simulation;
+
     // Crear las líneas para los enlaces
     const link = g.append('g')
       .selectAll('line')
@@ -119,9 +133,9 @@ const OrganizationNetworkGraph: React.FC = () => {
       .join('g')
       .attr('class', 'node')
       .call(d3.drag<SVGGElement, GraphNode>()
-        .on('start', dragstarted)
+        .on('start', dragStarted)
         .on('drag', dragged)
-        .on('end', dragended));
+        .on('end', dragEnded));
 
     // Añadir formas de nodos
     node.each(function(d) {
@@ -143,7 +157,6 @@ const OrganizationNetworkGraph: React.FC = () => {
           .attr('stroke-width', 2);
       }
 
-      // Añadir etiquetas
       element.append('text')
         .attr('dy', visualConfig.nodeSize)
         .attr('text-anchor', 'middle')
@@ -167,12 +180,10 @@ const OrganizationNetworkGraph: React.FC = () => {
             .attr('stroke-width', 2);
         }
       })
-      .on('click', async (event, d) => {
-        handleNodeClick(d);
-      });
+      .on('click', (event, d) => handleNodeClick(d));
 
     // Funciones de arrastre
-    function dragstarted(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
+    function dragStarted(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
       if (!event.active) simulation.alphaTarget(0.3).restart();
       event.subject.fx = event.subject.x;
       event.subject.fy = event.subject.y;
@@ -183,7 +194,7 @@ const OrganizationNetworkGraph: React.FC = () => {
       event.subject.fy = event.y;
     }
 
-    function dragended(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
+    function dragEnded(event: d3.D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
       if (!event.active) simulation.alphaTarget(0);
       event.subject.fx = null;
       event.subject.fy = null;
@@ -197,8 +208,7 @@ const OrganizationNetworkGraph: React.FC = () => {
         .attr('x2', d => (d.target as GraphNode).x!)
         .attr('y2', d => (d.target as GraphNode).y!);
 
-      node
-        .attr('transform', d => `translate(${d.x},${d.y})`);
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
     });
 
     // Centrar el grafo inicialmente
@@ -209,6 +219,69 @@ const OrganizationNetworkGraph: React.FC = () => {
       .translate(-dimensions.width / 2, -dimensions.height / 2);
     
     svg.call(zoom.transform, transform);
+  };
+
+  const processGraphData = (nodes: GraphNode[], links: GraphLink[]) => {
+    // Primero identificamos los nodos que coinciden con la búsqueda directamente
+    const matchingNodes = nodes.filter(node => {
+      const matchesSearch = !filters.searchTerm || 
+        node.name.toLowerCase().includes(filters.searchTerm.toLowerCase());
+      
+      if (node.type === 'organization') {
+        const matchesTipo = filters.tipoOrganizacion === 'all' || 
+          node.org?.tipoOrganizacionId.toString() === filters.tipoOrganizacion;
+        const matchesActive = !filters.showActiveOnly || node.org?.activa;
+        return matchesSearch && matchesTipo && matchesActive;
+      }
+      
+      return matchesSearch;
+    });
+
+    // Crear un conjunto de IDs de nodos que coinciden directamente
+    const matchingNodeIds = new Set(matchingNodes.map(n => n.id));
+
+    // Si estamos buscando, incluir también los nodos relacionados
+    if (filters.searchTerm) {
+      // Encontrar todos los nodos relacionados a través de enlaces
+      links.forEach(link => {
+        const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
+        const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+        
+        if (matchingNodeIds.has(sourceId)) {
+          // Si el nodo fuente coincide, incluir el nodo objetivo
+          const targetNode = nodes.find(n => n.id === targetId);
+          if (targetNode) {
+            matchingNodeIds.add(targetId);
+          }
+        }
+        
+        if (matchingNodeIds.has(targetId)) {
+          // Si el nodo objetivo coincide, incluir el nodo fuente
+          const sourceNode = nodes.find(n => n.id === sourceId);
+          if (sourceNode) {
+            matchingNodeIds.add(sourceId);
+          }
+        }
+      });
+    }
+
+    // Filtrar nodos basados en el conjunto expandido de IDs
+    const filteredNodes = nodes.filter(node => matchingNodeIds.has(node.id));
+
+    // Filtrar enlaces que conectan los nodos filtrados
+    const filteredLinks = links.filter(link => {
+      const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
+      const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+      return matchingNodeIds.has(sourceId) && matchingNodeIds.has(targetId);
+    });
+
+    return { nodes: filteredNodes, links: filteredLinks };
+  };
+
+  const updateVisualizations = () => {
+    if (!originalData || !svgRef.current) return;
+    const filteredData = processGraphData(originalData.nodes, originalData.links);
+    initializeGraph(filteredData);
   };
 
   const handleNodeClick = async (node: GraphNode) => {
@@ -234,63 +307,11 @@ const OrganizationNetworkGraph: React.FC = () => {
     }
   };
 
-  const processGraphData = (data: Organization[], searchTerm: string) => {
-    const nodes: GraphNode[] = [];
-    const links: GraphLink[] = [];
-    let colorIndex = 0;
-    
-    data.filter(org => {
-      const matchesSearch = !searchTerm || 
-        org.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTipo = filters.tipoOrganizacion === 'all' || 
-        org.tipoOrganizacionId.toString() === filters.tipoOrganizacion;
-      const matchesActive = !filters.showActiveOnly || org.activa;
-      
-      return matchesSearch && matchesTipo && matchesActive;
-    })
-    .forEach(org => {
-      const orgColor = generateUniqueColor(colorIndex);
-      colorIndex++;
-
-      nodes.push({
-        id: `org-${org.id}`,
-        name: org.nombre,
-        val: visualConfig.nodeSize,
-        type: 'organization',
-        color: orgColor,
-        org
-      });
-
-      org.miembros?.forEach(member => {
-        if (!member.imputado) return;
-
-        const imputadoNodeId = `imp-${member.imputadoId}`;
-        
-        if (!nodes.find(n => n.id === imputadoNodeId)) {
-          nodes.push({
-            id: imputadoNodeId,
-            name: member.imputado.nombreSujeto,
-            val: visualConfig.nodeSize,
-            type: 'imputado',
-            color: orgColor,
-            imputado: member.imputado,
-            organizaciones: []
-          });
-        }
-
-        links.push({
-          source: `org-${org.id}`,
-          target: imputadoNodeId,
-          value: visualConfig.linkDistance,
-          rol: member.rol || 'Sin rol'
-        });
-      });
-    });
-
-    return { nodes, links };
+  const handleSearch = (searchTerm: string) => {
+    setFilters(prev => ({ ...prev, searchTerm }));
   };
 
-  const handleSearch = async (searchTerm: string) => {
+  const loadInitialData = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -307,8 +328,58 @@ const OrganizationNetworkGraph: React.FC = () => {
       const tiposData = await tiposResponse.json();
       
       setTipos(tiposData);
-      const graphData = processGraphData(orgData.data, searchTerm);
-      initializeGraph(graphData);
+
+      // Procesar nodos y enlaces
+      const nodes: GraphNode[] = [];
+      const links: GraphLink[] = [];
+      let colorIndex = 0;
+
+      orgData.data.forEach((org: Organization) => {
+        const orgColor = generateUniqueColor(colorIndex++);
+        nodes.push({
+          id: `org-${org.id}`,
+          name: org.nombre,
+          val: visualConfig.nodeSize,
+          type: 'organization',
+          color: orgColor,
+          org: org
+        });
+
+        if (org.miembros?.length) {
+          org.miembros.forEach(member => {
+            if (member.imputado) {
+              const imputadoId = `imp-${member.imputadoId}`;
+              
+              if (!nodes.find(n => n.id === imputadoId)) {
+                nodes.push({
+                  id: imputadoId,
+                  name: member.imputado.nombreSujeto,
+                  val: visualConfig.nodeSize,
+                  type: 'imputado',
+                  color: orgColor,
+                  imputado: member.imputado
+                });
+              }
+
+              links.push({
+                source: `org-${org.id}`,
+                target: imputadoId,
+                value: visualConfig.linkDistance,
+                rol: member.rol || 'Sin rol'
+              });
+            }
+          });
+        }
+      });
+
+      const initialGraphData = { nodes, links };
+      setOriginalData(initialGraphData);
+
+      // Inicializar el grafo inmediatamente después de procesar los datos
+      requestAnimationFrame(() => {
+        initializeGraph(initialGraphData);
+      });
+
     } catch (error) {
       console.error('Error:', error);
       setError('Error al cargar los datos. Por favor, intente nuevamente.');
@@ -317,6 +388,7 @@ const OrganizationNetworkGraph: React.FC = () => {
     }
   };
 
+  // Efectos
   useEffect(() => {
     const handleResize = () => {
       setDimensions({
@@ -326,15 +398,39 @@ const OrganizationNetworkGraph: React.FC = () => {
     };
 
     window.addEventListener('resize', handleResize);
-    handleSearch('');
+    
+    // Cargar datos iniciales
+    loadInitialData();
 
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      // Limpiar la simulación al desmontar
+      if (simulationRef.current) {
+        simulationRef.current.stop();
+      }
+    };
   }, []);
 
+  // Efecto para manejar actualizaciones de filtros y configuración visual
   useEffect(() => {
-    handleSearch('');
-  }, [filters.tipoOrganizacion, filters.showActiveOnly]);
+    if (originalData && !loading) {
+      requestAnimationFrame(() => {
+        updateVisualizations();
+      });
+    }
+  }, [filters, visualConfig, loading]);
 
+  // Efecto para actualizar el grafo cuando cambian las dimensiones
+  useEffect(() => {
+    if (originalData && !loading) {
+      const timer = setTimeout(() => {
+        updateVisualizations();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [dimensions]);
+
+  // Renderizado de estados de carga y error
   if (loading) {
     return (
       <Card className="p-4">
@@ -354,6 +450,7 @@ const OrganizationNetworkGraph: React.FC = () => {
     );
   }
 
+  // Renderizado principal
   return (
     <div className="space-y-4">
       <GraphControls
@@ -366,14 +463,13 @@ const OrganizationNetworkGraph: React.FC = () => {
         linkDistance={visualConfig.linkDistance}
         onLinkDistanceChange={(value) => {
           setVisualConfig(prev => ({ ...prev, linkDistance: value }));
-          handleSearch('');
         }}
         nodeSize={visualConfig.nodeSize}
         onNodeSizeChange={(value) => {
           setVisualConfig(prev => ({ ...prev, nodeSize: value }));
-          handleSearch('');
         }}
         className="mb-4"
+        svgRef={svgRef}
       />
 
       <Card className="p-4 bg-white">

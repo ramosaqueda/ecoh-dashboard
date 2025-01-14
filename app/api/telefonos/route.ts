@@ -12,6 +12,12 @@ export async function GET() {
             nombre: true
           }
         },
+        ubicacion: {
+          select: {
+            id: true,
+            nombre: true
+          }
+        },
         telefonosCausa: {
           include: {
             causa: {
@@ -40,12 +46,12 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Validación de datos de entrada
     if (
       !body.numeroTelefonico ||
       !body.idProveedorServicio ||
       !body.imei ||
-      !body.abonado
+      !body.abonado ||
+      !body.id_ubicacion
     ) {
       return NextResponse.json(
         { error: 'Faltan campos requeridos' },
@@ -55,26 +61,25 @@ export async function POST(request: Request) {
 
     const telefono = await prisma.telefono.create({
       data: {
-        numeroTelefonico: (body.numeroTelefonico),
+        numeroTelefonico: body.numeroTelefonico,
         idProveedorServicio: parseInt(body.idProveedorServicio),
         imei: body.imei,
         abonado: body.abonado,
+        id_ubicacion: parseInt(body.id_ubicacion),
         solicitaTrafico: Boolean(body.solicitaTrafico),
         solicitaImei: Boolean(body.solicitaImei),
-        extraccionForense: Boolean(body.xtraccionForense),
+        extraccionForense: Boolean(body.extraccionForense),
+        enviar_custodia: Boolean(body.enviar_custodia),
         observacion: body.observacion || null
       },
-      select: {
-        id: true,
-        numeroTelefonico: true,
-        idProveedorServicio: true,
-        imei: true,
-        abonado: true,
-        solicitaTrafico: true,
-        solicitaImei: true,
-        extraccionForense: true,
-        observacion: true,
+      include: {
         proveedorServicio: {
+          select: {
+            id: true,
+            nombre: true
+          }
+        },
+        ubicacion: {
           select: {
             id: true,
             nombre: true

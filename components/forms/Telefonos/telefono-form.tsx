@@ -23,17 +23,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
+ 
+ 
 const formSchema = z.object({
   numeroTelefonico: z.string()
     .min(9, 'El número debe tener al menos 9 dígitos')
     .max(12, 'El número no debe exceder 12 dígitos')
     .regex(/^\+?[0-9]+$/, 'El número solo puede contener dígitos y opcionalmente el símbolo +'),
   idProveedorServicio: z.string().min(1, 'Seleccione un proveedor'),
+  id_ubicacion: z.string().min(1, 'Seleccione una ubicación'),
   imei: z.string().min(1, 'IMEI es requerido'),
   abonado: z.string().min(1, 'Abonado es requerido'),
   solicitaTrafico: z.boolean().nullable(),
   solicitaImei: z.boolean().nullable(),
   extraccionForense: z.boolean().nullable(),
+  enviar_custodia: z.boolean().nullable(),
   observacion: z.string().optional()
 });
 
@@ -43,6 +47,7 @@ export function TelefonoForm({
   onCancel
 }) {
   const [proveedores, setProveedores] = useState([]);
+  const [ubicaciones, setUbicaciones] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Preparación de valores iniciales
@@ -54,9 +59,13 @@ export function TelefonoForm({
     idProveedorServicio: initialData?.idProveedorServicio 
       ? initialData.idProveedorServicio.toString()
       : '',
+    id_ubicacion: initialData?.id_ubicacion
+      ? initialData.id_ubicacion.toString()
+      : '',
     solicitaTrafico: initialData?.solicitaTrafico ?? null,
     solicitaImei: initialData?.solicitaImei ?? null,
     extraccionForense: initialData?.extraccionForense ?? null,
+    enviar_custodia: initialData?.enviar_custodia ?? null,
     imei: initialData?.imei || '',
     abonado: initialData?.abonado || '',
     observacion: initialData?.observacion || ''
@@ -68,22 +77,31 @@ export function TelefonoForm({
   });
 
   useEffect(() => {
-    const fetchProveedores = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/proveedores');
-        if (!response.ok) throw new Error('Error al cargar proveedores');
-        const data = await response.json();
-        setProveedores(data);
+        const [proveedoresResponse, ubicacionesResponse] = await Promise.all([
+          fetch('/api/proveedores'),
+          fetch('/api/ubicaciones-telefono')
+        ]);
+
+        if (!proveedoresResponse.ok) throw new Error('Error al cargar proveedores');
+        if (!ubicacionesResponse.ok) throw new Error('Error al cargar ubicaciones');
+
+        const proveedoresData = await proveedoresResponse.json();
+        const ubicacionesData = await ubicacionesResponse.json();
+
+        setProveedores(proveedoresData);
+        setUbicaciones(ubicacionesData);
       } catch (error) {
-        toast.error('Error al cargar los proveedores');
+        toast.error('Error al cargar los datos');
         console.error('Error:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProveedores();
+    fetchData();
   }, []);
 
   const handleSubmit = async (values) => {
@@ -253,7 +271,61 @@ export function TelefonoForm({
               </FormItem>
             )}
           />
+
+
+        <FormField
+            control={form.control}
+            name="enviar_custodia"
+            render={({ field }) => (
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value ?? false}
+                    onCheckedChange={(checked) => handleCheckboxChange(field, checked)}
+                  />
+                </FormControl>
+                <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Enviar a custodia
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+
         </div>
+
+        <FormField
+          control={form.control}
+          name="id_ubicacion"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Ubicación Física</FormLabel>
+              <Select 
+                value={field.value} 
+                onValueChange={field.onChange}
+                disabled={isLoading}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione una ubicación">
+                      {ubicaciones.find(u => u.id.toString() === field.value)?.nombre}
+                    </SelectValue>
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {ubicaciones.map((ubicacion) => (
+                    <SelectItem
+                      key={ubicacion.id}
+                      value={ubicacion.id.toString()}
+                    >
+                      {ubicacion.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

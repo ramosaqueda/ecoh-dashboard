@@ -21,6 +21,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
+import { useState, useCallback, useRef } from 'react';
+import debounce from 'lodash/debounce';
 
 interface TipoOrganizacion {
   id: number;
@@ -39,6 +41,7 @@ interface GraphControlsProps {
   onLinkDistanceChange: (value: number) => void;
   nodeSize: number;
   onNodeSizeChange: (value: number) => void;
+  svgRef: React.RefObject<SVGSVGElement>;
 }
 
 export const GraphControls = ({
@@ -52,37 +55,94 @@ export const GraphControls = ({
   linkDistance,
   onLinkDistanceChange,
   nodeSize,
-  onNodeSizeChange
+  onNodeSizeChange,
+  svgRef
 }: GraphControlsProps) => {
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const searchTerm = formData.get('search') as string;
-    onSearch(searchTerm);
+  const [searchValue, setSearchValue] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce((value: string) => {
+      onSearch(value);
+    }, 300),
+    [onSearch]
+  );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchValue(value);
+    debouncedSearch(value);
   };
+
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onSearch(searchValue);
+  };
+
+  const handleClearSearch = () => {
+    setSearchValue('');
+    onSearch('');
+    if (formRef.current) {
+      formRef.current.reset();
+    }
+  };
+
+  const handleTipoChange = (value: string) => {
+    onTipoChange(value);
+  };
+
+  // Configurar cambios visuales con debounce para mejor rendimiento
+  const debouncedLinkDistanceChange = useCallback(
+    debounce((value: number) => {
+      onLinkDistanceChange(value);
+    }, 300),
+    [onLinkDistanceChange]
+  );
+
+  const debouncedNodeSizeChange = useCallback(
+    debounce((value: number) => {
+      onNodeSizeChange(value);
+    }, 300),
+    [onNodeSizeChange]
+  );
 
   return (
     <Card className={`p-4 ${className}`}>
       <div className="flex flex-wrap items-center gap-4">
         <form 
-          onSubmit={handleSearch} 
+          ref={formRef}
+          onSubmit={handleSearchSubmit} 
           className="flex-1 min-w-[200px] lg:max-w-sm flex gap-2"
         >
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              name="search"
               placeholder="Buscar organización o imputado..."
               className="pl-8"
+              value={searchValue}
+              onChange={handleSearchChange}
             />
           </div>
+          {searchValue && (
+            <Button 
+              type="button" 
+              variant="ghost"
+              onClick={handleClearSearch}
+            >
+              Limpiar
+            </Button>
+          )}
           <Button type="submit" variant="secondary">
             Buscar
           </Button>
         </form>
 
         <div className="flex items-center gap-4">
-          <Select value={tipoOrganizacion} onValueChange={onTipoChange}>
+          <Select 
+            value={tipoOrganizacion} 
+            onValueChange={handleTipoChange}
+          >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Tipo de organización" />
             </SelectTrigger>
@@ -124,7 +184,7 @@ export const GraphControls = ({
                   </div>
                   <Slider
                     value={[linkDistance]}
-                    onValueChange={([value]) => onLinkDistanceChange(value)}
+                    onValueChange={([value]) => debouncedLinkDistanceChange(value)}
                     min={100}
                     max={400}
                     step={50}
@@ -144,7 +204,7 @@ export const GraphControls = ({
                   </div>
                   <Slider
                     value={[nodeSize]}
-                    onValueChange={([value]) => onNodeSizeChange(value)}
+                    onValueChange={([value]) => debouncedNodeSizeChange(value)}
                     min={10}
                     max={30}
                     step={5}
