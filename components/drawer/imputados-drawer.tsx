@@ -18,7 +18,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { SquarePen } from 'lucide-react';
-import ImputadoFormalizacionForm, { FormalizacionFormValues } from '@/components/forms/CausaImputadoForm/ImputadoFormalizacionForm';
+import ImputadoFormalizacionForm from '@/components/forms/CausaImputadoForm/ImputadoFormalizacionForm';
 
 import { Edit } from 'lucide-react';
 type ImputadoInfo = {
@@ -132,7 +132,6 @@ export default function ImputadosDrawer({
                       <ImputadoFormalizacionForm
                         causaId={registro.causaId.toString()}
                         imputadoId={registro.imputadoId.toString()}
-                        
                       />
                     
                       </span>

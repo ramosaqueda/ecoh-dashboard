@@ -141,7 +141,6 @@ export async function PUT(req: Request, { params }: Props) {
     const imputadoId = parseInt(params.id);
     const data = await req.json();
     const { causaId, formalizado, fechaFormalizacion, cautelarId, plazo} = data;
-    console.log('aaaaa');
     if (!causaId) {
       return NextResponse.json(
         { error: 'Se requiere el ID de la causa' },
