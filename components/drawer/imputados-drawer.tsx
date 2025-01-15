@@ -57,8 +57,15 @@ export default function ImputadosDrawer({
   causaRuc
 }: ImputadosDrawerProps) {
 
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
+    onClose();
+  };
+
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
+    <Sheet open={isOpen} onOpenChange={onClose} >
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Imputados de la Causa</SheetTitle>
@@ -132,6 +139,7 @@ export default function ImputadosDrawer({
                       <ImputadoFormalizacionForm
                         causaId={registro.causaId.toString()}
                         imputadoId={registro.imputadoId.toString()}
+                        onSuccess={handleDrawerClose}
                       />
                     
                       </span>
