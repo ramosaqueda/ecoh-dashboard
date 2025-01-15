@@ -212,7 +212,10 @@ export default function MapPage() {
 
           {/* Mapa */}
 
-          <div className="h-[calc(100vh-400px)] min-h-[600px] w-full rounded-lg border">
+          <div 
+            key="leaflet-map-container" 
+            className="h-[calc(100vh-400px)] min-h-[600px] w-full rounded-lg border"
+          >
 
 
             <LeafletMap causas={causasFiltradas} />

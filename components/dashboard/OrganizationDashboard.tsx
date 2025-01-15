@@ -1,7 +1,7 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, Users } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Users,Network } from 'lucide-react';
+import Link from 'next/link';
 import {
   Card,
   CardHeader,
@@ -405,30 +405,40 @@ const OrganizationDashboard = () => {
                           </span>
                         </TableCell>
                         <TableCell>{org.miembros?.length || 0}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedOrg(org);
-                                setShowOrgForm(true);
-                              }}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedOrg(org);
-                                setShowMembersDialog(true);
-                              }}
-                            >
-                              <Users className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                      
+<TableCell>
+  <div className="flex space-x-2">
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => {
+        setSelectedOrg(org);
+        setShowOrgForm(true);
+      }}
+    >
+      <Edit2 className="h-4 w-4" />
+    </Button>
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => {
+        setSelectedOrg(org);
+        setShowMembersDialog(true);
+      }}
+    >
+      <Users className="h-4 w-4" />
+    </Button>
+    <Button
+      variant="outline"
+      size="icon"
+      asChild
+    >
+      <Link href={`/organizaciones/${org.id}/network`}>
+        <Network className="h-4 w-4 text-blue-600" />
+      </Link>
+    </Button>
+  </div>
+</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

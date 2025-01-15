@@ -1,22 +1,17 @@
 'use client';
 
 import React from 'react';
-
 import { useUser } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
-
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { DashboardNav } from '@/components/dashboard-nav';
 import { navItems } from '@/constants/data';
 import { cn } from '@/lib/utils';
-import { Menu, ChevronLeft } from 'lucide-react';
+import { Menu, ChevronLeft, Users } from 'lucide-react';
 import { useSidebar } from '@/hooks/useSidebar';
-
-import { Role, hasPermission } from '@/utils/roles';
-import { Users } from 'lucide-react'; // Agregar esta importación
-import Link from 'next/link'; // También asegúrate de importar Link
+import Link from 'next/link';
 
 type SidebarProps = {
   className?: string;
@@ -24,7 +19,6 @@ type SidebarProps = {
 
 const Sidebar = ({ className }: SidebarProps) => {
   const { isMinimized, toggle } = useSidebar();
-
   const { user } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -34,9 +28,10 @@ const Sidebar = ({ className }: SidebarProps) => {
         try {
           const response = await fetch('/api/usuarios/me');
           const userData = await response.json();
-          setIsAdmin(hasPermission(userData.rol as Role, Role.ADMIN));
+          setIsAdmin(userData.rol === 'ADMIN');
         } catch (error) {
           console.error('Error checking admin status:', error);
+          setIsAdmin(false);
         }
       }
     };
@@ -61,6 +56,22 @@ const Sidebar = ({ className }: SidebarProps) => {
               </Link>
             </div>
             <DashboardNav items={navItems} />
+            {isAdmin && (
+              <div className="px-3 py-2">
+                <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+                  Administración
+                </h2>
+                <div className="space-y-1">
+                  <Link
+                    href="/admin/users/sync"
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-gray-600 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
+                  >
+                    <Users className="h-4 w-4" />
+                    Sincronizar Usuarios
+                  </Link>
+                </div>
+              </div>
+            )}
           </ScrollArea>
         </SheetContent>
       </Sheet>
@@ -73,7 +84,7 @@ const Sidebar = ({ className }: SidebarProps) => {
           className
         )}
       >
-        {/* Toggle Button - Moved outside the content area */}
+        {/* Toggle Button */}
         <Button
           variant="ghost"
           size="icon"
@@ -93,7 +104,7 @@ const Sidebar = ({ className }: SidebarProps) => {
               'w-full transition-all duration-300 ease-in-out',
               isMinimized ? 'opacity-0' : 'opacity-100'
             )}
-          ></div>
+          />
         </div>
 
         {/* Navigation */}
@@ -107,23 +118,38 @@ const Sidebar = ({ className }: SidebarProps) => {
                 isMinimized ? 'items-center' : ''
               )}
             />
+            
+            {/* Admin Section */}
+            {isAdmin && !isMinimized && (
+              <div className="px-3 py-2">
+                <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+                  Administración
+                </h2>
+                <div className="space-y-1">
+                  <Link
+                    href="/admin/users/sync"
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-gray-600 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Sincronizar Usuarios</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+            
+            {/* Admin Section for minimized state */}
+            {isAdmin && isMinimized && (
+              <div className="px-3 py-2">
+                <Link
+                  href="/admin/users/sync"
+                  className="flex justify-center rounded-lg py-2 text-gray-600 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
+                >
+                  <Users className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
           </nav>
         </ScrollArea>
-
-        <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-            Administración
-          </h2>
-          <div className="space-y-1">
-            <Link
-              href="/admin/users/sync"
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-gray-600 transition-all hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50"
-            >
-              <Users className="h-4 w-4" />
-              Sincronizar Usuarios
-            </Link>
-          </div>
-        </div>
 
         {/* User Profile Section */}
         <div
@@ -140,9 +166,11 @@ const Sidebar = ({ className }: SidebarProps) => {
                 isMinimized ? 'w-0 opacity-0' : 'w-auto opacity-100'
               )}
             >
-              <span className="truncate text-sm font-medium">Usuario</span>
+              <span className="truncate text-sm font-medium">
+                {user?.username || 'Usuario'}
+              </span>
               <span className="truncate text-xs text-muted-foreground">
-                admin@example.com
+                {user?.emailAddresses[0]?.emailAddress || 'email@example.com'}
               </span>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -20,7 +20,6 @@ import { Badge } from '@/components/ui/badge';
 import { SquarePen } from 'lucide-react';
 import ImputadoFormalizacionForm from '@/components/forms/CausaImputadoForm/ImputadoFormalizacionForm';
 
-import { Edit } from 'lucide-react';
 type ImputadoInfo = {
   id: string;
   causaId: number;
@@ -48,14 +47,22 @@ interface ImputadosDrawerProps {
   onClose: () => void;
   imputados: ImputadoInfo[];
   causaRuc: string;
+  onUpdate?: () => void; // Nuevo prop para manejar actualizaciones
 }
 
 export default function ImputadosDrawer({
   isOpen,
   onClose,
   imputados,
-  causaRuc
+  causaRuc,
+  onUpdate
 }: ImputadosDrawerProps) {
+  // Función para actualizar los datos
+  const handleUpdateSuccess = useCallback(() => {
+    if (onUpdate) {
+      onUpdate();
+    }
+  }, [onUpdate]);
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -128,13 +135,13 @@ export default function ImputadosDrawer({
                       <span>Formalizado:</span>
                       <span className="font-medium text-foreground" style={{ display: 'flex', justifyContent: 'center', gap: '30px' }}>
                         {registro.formalizado ? 'Sí' : 'No'}
-                      <span className="flex justify-right">
-                      <ImputadoFormalizacionForm
-                        causaId={registro.causaId.toString()}
-                        imputadoId={registro.imputadoId.toString()}
-                      />
-                    
-                      </span>
+                        <span className="flex justify-right">
+                          <ImputadoFormalizacionForm
+                            causaId={registro.causaId.toString()}
+                            imputadoId={registro.imputadoId.toString()}
+                            onSuccess={handleUpdateSuccess} // Agregamos el callback
+                          />
+                        </span>
                       </span>
                     </div>
                     {registro.fechaFormalizacion && (
