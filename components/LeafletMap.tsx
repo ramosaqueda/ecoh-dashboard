@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef,useMemo } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -137,7 +137,8 @@ interface LeafletMapProps {
 
 function LeafletMap({ causas }: LeafletMapProps) {
   const mapRef = useRef<L.Map | null>(null);
-
+  const memoizedCausas = useMemo(() => causas, [causas]);
+  if (memoizedCausas.length === 0) return null;
   const getPosicion = (coordStr: string | null) => {
     const defaultCoords = {
       lat: -33.4489,
@@ -323,6 +324,7 @@ function LeafletMap({ causas }: LeafletMapProps) {
         ref={(map) => {
           mapRef.current = map;
         }}
+         key="unique-map-container"  // Añade una key única
         center={[centroInicial.lat, centroInicial.lng]}
         zoom={12}
         className="h-full w-full rounded-lg shadow-lg"

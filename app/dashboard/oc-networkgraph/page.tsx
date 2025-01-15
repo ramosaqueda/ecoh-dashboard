@@ -1,6 +1,6 @@
 'use client';
-
 import OrganizationNetworkGraph from '@/components/graph/OrganizationNetworkGraph';
+ 
 import PageContainer from '@/components/layout/page-container';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 

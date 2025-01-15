@@ -1,7 +1,14 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Network } from 'lucide-react';
 import { format } from 'date-fns';
+import Link from 'next/link';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type Organization = {
   id: string;
@@ -48,6 +55,25 @@ export const columns: ColumnDef<Organization>[] = [
 
       return (
         <div className="flex gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                >
+                  <Link href={`/organizaciones/${organization.id}/network`}>
+                    <Network className="h-4 w-4 text-blue-600" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Ver estructura organizacional</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <Button
             variant="ghost"
             size="icon"
