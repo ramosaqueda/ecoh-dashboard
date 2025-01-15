@@ -3,9 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { unlink } from 'fs/promises';
 import { join } from 'path';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string; photoId: string } }

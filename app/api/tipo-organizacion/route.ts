@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-
-const prisma = new PrismaClient();
 
 const TipoOrganizacionSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido'),

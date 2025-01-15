@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-// Mejor manejo de la instancia de Prisma
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Función helper para manejar errores
 const handleError = (error: unknown, message: string) => {

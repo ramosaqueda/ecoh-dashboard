@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, CausasImputados } from '@prisma/client';
 import { z } from 'zod';
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 const CausaImputadoSchema = z.object({
   causaId: z.string().min(1, 'Debe seleccionar una causa'),
