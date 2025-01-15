@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import {prisma} from '@/lib/prisma';
 
 interface Props {
   params: { id: string };
 }
 
-export async function GET(req: Request, { params }: Props) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
+
     const imputadoId = parseInt(params.id);
 
-    if (isNaN(imputadoId)) {
+    if (!imputadoId || isNaN(imputadoId)) {
       return NextResponse.json(
         { error: 'ID de imputado inválido' },
         { status: 400 }
@@ -138,8 +138,10 @@ export async function PATCH(req: Request, { params }: Props) {
 
 export async function PUT(req: Request, { params }: Props) {
   try {
-    const imputadoId = parseInt(params.id);
+
     const data = await req.json();
+    const imputadoId = parseInt(params.id);
+    
     const { causaId, formalizado, fechaFormalizacion, cautelarId, plazo} = data;
     if (!causaId) {
       return NextResponse.json(

@@ -98,6 +98,7 @@ const ImputadoFormalizacionForm: React.FC<FormalizacionFormProps> = ({
       setIsLoadingCausaImputado(true);
       
       try {
+
         const [cautelaresResponse, causaimputadoResponse] = await Promise.all([
           fetch('/api/cautelar'),
           fetch(`/api/causas-imputados/${imputadoId}`)
@@ -333,6 +334,7 @@ const ImputadoFormalizacionForm: React.FC<FormalizacionFormProps> = ({
                               type="number"
                               min="0"
                               {...field}
+                              value={field.value ?? ''}
                               onChange={(e) => {
                                 const value = e.target.value ? parseInt(e.target.value) : 0;
                                 field.onChange(value);
