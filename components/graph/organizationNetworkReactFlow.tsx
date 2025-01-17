@@ -15,7 +15,7 @@ import {
   Edge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Card } from '@/components/ui/card';
+import  DownloadButton from '@/components/DownloadButton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -197,21 +197,19 @@ const OrganizationNetworkReactFlow = ({ organizationId }: OrganizationNetworkRea
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
           fitView
+          fitViewOptions={{ padding: 0.2 }}
           attributionPosition="bottom-left"
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-          minZoom={0.2}
+          className="react-flow"
+
+          minZoom={0.1}
           maxZoom={4}
         >
           <Background color="#aaa" gap={16} />
           <Controls />
-          <MiniMap 
-            nodeStrokeColor={(n) => {
-              return n.data?.type === 'organization' ? '#2563eb' : '#10b981';
-            }}
-            nodeColor={(n) => {
-              return n.data?.type === 'organization' ? '#dbeafe' : '#d1fae5';
-            }}
-          />
+          <DownloadButton />
+
+          
         </ReactFlow>
       </div>
 
