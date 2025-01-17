@@ -436,3 +436,20 @@ model TipoMedida {
   updatedAt   DateTime     @updatedAt
   medidasIntrusivas MedidaIntrusiva[]
 }
+
+model CrimenOrganizadoParams {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique @db.VarChar(100)
+  descripcion String       @db.VarChar(100)
+}
+
+model CausasCrimenOrganizado {
+  causaId   Int
+  parametroId Int
+  causa     Causa   @relation(fields: [causaId], references: [id])
+  parametro CrimenOrganizadoParams @relation(fields: [parametroId], references: [id])
+  estado    Boolean? 
+
+  @@id([causaId, parametroId])
+
+}
