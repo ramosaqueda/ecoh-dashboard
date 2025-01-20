@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-interface Props {
-    params: { id: string };
-  }
-
 export async function GET(
     req: Request, 
     { params }: {params: { id: string} }
@@ -22,11 +18,14 @@ export async function GET(
         const causaCrimenOrg = await prisma.causasCrimenOrganizado.findMany({
             where: { causaId: causaId}, 
             include: {
-                parametro: true
+                parametro: true,
+                causa: {
+                    select: {
+                       esCrimenOrganizado: true
+                    }
+                }
             }
-            
         });
-        console.log(causaCrimenOrg);
 
         if(!causaCrimenOrg) {
             return NextResponse.json(
@@ -34,8 +33,6 @@ export async function GET(
                 { status: 404 }
             )
         }
-
-        
 
         return NextResponse.json(causaCrimenOrg);
     } catch (error) {
