@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Square } from 'lucide-react';
 
 import FormField from './FormField';
 import SwitchField from './SwitchField';
@@ -20,6 +21,8 @@ import FocoSelect from '@/components/select/FocoSelect';
 
 import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
+import CrimenOrgParamsSelect from '@/components/select/CrimenOrgParamsSelect';
+
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
@@ -324,6 +327,26 @@ const CausaForm: React.FC<CausaFormProps> = ({
                   placeholder="Ingrese observaciones adicionales..."
                 />
               </FormField>
+            </div>
+
+            {/* Sección de Parámetros de Crimen Organizado */}
+            <div className="space-y-4">
+              <h3 className="font-medium">Parámetros Crimen Organizado</h3>
+              <FormField form={form} name="co" label="Crimen Organizado">
+                <CrimenOrgParamsSelect/>
+              </FormField>
+              <div className="items-top flex space-x-2">
+      <Checkbox id="terms1" className="w-4 h-4 border-2 border-gray-500 rounded-none" />
+      <div className="grid gap-1.5 leading-none">
+        <label
+          htmlFor="terms1"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Crimen Organizado
+        </label>
+        
+      </div>
+    </div>
             </div>
 
             <Separator />

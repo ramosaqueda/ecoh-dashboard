@@ -11,8 +11,8 @@ import {
 import { Loader2 } from 'lucide-react';
 
 interface Cautelar {
-    id: number;
-    nombre: string;
+  id: number;
+  nombre: string;
 }
 
 interface CautelarSelectProps {

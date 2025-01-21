@@ -435,8 +435,8 @@ model TipoMedida {
 }
 
 model CrimenOrganizadoParams {
-  id                     Int                      @id @default(autoincrement())
-  nombre                 String                   @unique @db.VarChar(100)
+  value                    Int                      @id @default(autoincrement())
+  label                 String                   @unique @db.VarChar(100)
   descripcion            String                   @db.VarChar(100)
   CausasCrimenOrganizado CausasCrimenOrganizado[]
 }
@@ -445,7 +445,7 @@ model CausasCrimenOrganizado {
   causaId     Int
   parametroId Int
   causa       Causa                  @relation(fields: [causaId], references: [id])
-  parametro   CrimenOrganizadoParams @relation(fields: [parametroId], references: [id])
+  parametro   CrimenOrganizadoParams @relation(fields: [parametroId], references: [value])
   estado      Boolean?
 
   @@id([causaId, parametroId])
