@@ -51,20 +51,15 @@ export async function PUT(
 ) {
     try {
         const data = await req.json();
-        const id = params.id;
+        const causaId = parseInt(params.id);
 
-        const { causaId, paramId, estado } = data;
-
-        console.log('Received data:', data);
-        console.log('Updating causa with ID:', id);
+        const { paramId, estado } = data;
 
         const updateData = {
-            paramId: paramId || null,
             estado: estado || null,
-
         };
 
-        const updatedCausa = await prisma.causasCrimenOrganizado.update({
+        const causaCrimenOrg = await prisma.causasCrimenOrganizado.update({
             where: {
                 causaId_parametroId: {
                     causaId: causaId,
@@ -72,9 +67,9 @@ export async function PUT(
                 }
             },
             data: updateData,
-
-
         })
+        
+        return NextResponse.json(causaCrimenOrg);
     } catch (error) {
         console.error('Error updating causa: ', error);
         return NextResponse.json(
@@ -84,3 +79,32 @@ export async function PUT(
     }
 }
 
+export async function POST(request: NextRequest) {
+    try {
+        const data = await request.json();
+
+        const { causaId, paramId, estado } = data;
+
+        const causaCrimenOrg = await prisma.causasCrimenOrganizado.create({
+            data: {
+                causaId: parseInt(causaId),
+                parametroId: parseInt(paramId),
+                estado: estado ?? null
+
+            },
+            include: {
+                causa: true,
+                parametro: true
+            }
+        });
+
+        return NextResponse.json(causaCrimenOrg, {status: 201});
+    } catch (error) {
+        console.error('Error:', error);
+        return NextResponse.json(
+            { message: 'Error al agregar parámetro a causa', error },
+            { status: 500 }
+        );
+    }
+
+}
