@@ -30,6 +30,6 @@ export interface CausaFormData {
   nacionalidadVictima: number;
   observacion: string;
 
-  esCrimenOrganizado: boolean;
+  esCrimenOrganizado: boolean | null;
   crimenOrgParams: CausasCrimenOrganizado[];
 }

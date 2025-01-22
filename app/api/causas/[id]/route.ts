@@ -23,6 +23,7 @@ export async function GET(
             nombre: true
           }
         }
+        
       }
       
     });
@@ -72,7 +73,8 @@ export async function PUT(
         tribunalId: data.tribunalId,
         fiscalId: data.fiscalId,
         abogadoId: data.abogadoId,
-        analistaId: data.analistaId
+        analistaId: data.analistaId,
+        esCrimenOrganizado: data.esCrimenOrganizado
       },
       include: {
         delito: true,

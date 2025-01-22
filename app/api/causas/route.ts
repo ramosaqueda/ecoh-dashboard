@@ -115,7 +115,8 @@ export async function POST(req: NextRequest) {
       abogado: undefined,
       analistaId: data.analista ? parseInt(data.analista) : null,
       analista: undefined,
-      homicidioConsumado: data.homicidioConsumado ?? false // Aseguramos valor por defecto
+      homicidioConsumado: data.homicidioConsumado ?? false, // Aseguramos valor por defecto
+      esCrimenOrganizado: data.esCrimenOrganizado ?? null
     };
 
     const newCausa = await prisma.causa.create({
