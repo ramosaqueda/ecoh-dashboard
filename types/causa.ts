@@ -1,3 +1,5 @@
+import { CausasCrimenOrganizado, CrimenOrganizadoParams } from "@prisma/client";
+
 export interface CausaFormData {
   causaEcoh: boolean;
   causaLegada: boolean;
@@ -27,4 +29,7 @@ export interface CausaFormData {
   rut: string;
   nacionalidadVictima: number;
   observacion: string;
+
+  esCrimenOrganizado: boolean;
+  crimenOrgParams: CausasCrimenOrganizado[];
 }

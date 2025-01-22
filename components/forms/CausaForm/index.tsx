@@ -6,9 +6,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Square } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from "@/components/ui/label"
 
 import FormField from './FormField';
 import SwitchField from './SwitchField';
@@ -22,6 +23,7 @@ import FocoSelect from '@/components/select/FocoSelect';
 import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
 import CrimenOrgParamsSelect from '@/components/select/CrimenOrgParamsSelect';
+import { ZodBoolean } from 'zod';
 
 
 interface CausaFormProps {
@@ -45,6 +47,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
       causaLegada: false,
       constituyeSs: false,
       homicidioConsumado: false,
+      esCrimenOrganizado: initialValues.esCrimenOrganizado,
       // Sobrescribir con los valores iniciales si existen
       ...initialValues
     }
@@ -104,6 +107,8 @@ const CausaForm: React.FC<CausaFormProps> = ({
   const selectedDelito = form.watch('delito');
   const isHomicidio = selectedDelito === "1";
   const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
+  const esCrimenOrg = form.watch('esCrimenOrganizado');
+
 
   return (
     <Card className="mx-auto w-full max-w-[1200px]">
@@ -336,17 +341,26 @@ const CausaForm: React.FC<CausaFormProps> = ({
                 <CrimenOrgParamsSelect/>
               </FormField>
               <div className="items-top flex space-x-2">
-      <Checkbox id="terms1" className="w-4 h-4 border-2 border-gray-500 rounded-none" />
-      <div className="grid gap-1.5 leading-none">
-        <label
-          htmlFor="terms1"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          Crimen Organizado
-        </label>
-        
-      </div>
-    </div>
+                <RadioGroup value={esCrimenOrg === true ? 'esCO' : esCrimenOrg === false ? 'noCO' : 'desconoce'} onValueChange={(value) => {
+                  form.setValue(
+                    'esCrimenOrganizado',
+                    value === 'esCO' ? true : value === 'noCO' ? false : null
+                  );
+                }}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="esCO" id="esCO" />
+                    <Label htmlFor="esCO">Es Crimen Organizado</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="noCO" id="noCO" />
+                    <Label htmlFor="noCO">No es Crimen Organizado</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="desconoce" id="desconoce" />
+                    <Label htmlFor="desconoce">Se desconoce</Label>
+                  </div>
+                </RadioGroup>
+              </div>
             </div>
 
             <Separator />
