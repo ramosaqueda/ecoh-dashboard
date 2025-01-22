@@ -42,6 +42,7 @@ model Causa {
   foco                      Foco?             @relation(fields: [focoId], references: [id])
   nacionalidadVictima       Nacionalidad?     @relation(fields: [nacionalidadVictimaId], references: [id])
   tribunal                  Tribunal?         @relation(fields: [tribunalId], references: [id])
+  esCrimenOrganizado        Boolean?
   imputados                 CausasImputados[]
   actividades              Actividad[]        // Relación con Actividad
 
@@ -51,8 +52,24 @@ model Causa {
  // New relations for related causes
   causasRelacionadasMadre   CausasRelacionadas[] @relation("CausaMadre")
   causasRelacionadasArista  CausasRelacionadas[] @relation("CausaArista")
-
+  causasCrimenOrg CausasCrimenOrganizado[]
   MedidaIntrusiva MedidaIntrusiva[]
+}
+
+model CrimenOrganizadoParams {
+  value                    Int                      @id @default(autoincrement())
+  label                 String                   @unique @db.VarChar(100)
+  descripcion            String                   @db.VarChar(100)
+  CausasCrimenOrganizado CausasCrimenOrganizado[]
+}
+model CausasCrimenOrganizado {
+  causaId     Int
+  parametroId Int
+  causa       Causa                  @relation(fields: [causaId], references: [id])
+  parametro   CrimenOrganizadoParams @relation(fields: [parametroId], references: [value])
+  estado      Boolean?
+
+  @@id([causaId, parametroId])
 }
 
 // New model to track cause relationships

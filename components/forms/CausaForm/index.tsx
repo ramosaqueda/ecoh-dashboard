@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
-
+import { Checkbox } from '@/components/ui/checkbox';
 import FormField from './FormField';
 import SwitchField from './SwitchField';
 import AnalistaSelect from '@/components/select/AnalistaSelect';
@@ -20,6 +20,8 @@ import FocoSelect from '@/components/select/FocoSelect';
 
 import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
+import CrimenOrgParamsSelect from '@/components/select/CrimenOrgParamsSelect';
+import CrimenOrgGauge from '@/components/CrimenorgGauge';
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
@@ -74,8 +76,8 @@ const CausaForm: React.FC<CausaFormProps> = ({
         // Asegurarse de que las fechas estén en el formato correcto
         fechaHoraTomaConocimiento: initialValues.fechaHoraTomaConocimiento
           ? new Date(initialValues.fechaHoraTomaConocimiento)
-              .toISOString()
-              .slice(0, 16)
+            .toISOString()
+            .slice(0, 16)
           : '',
         fechaDelHecho: initialValues.fechaDelHecho
           ? new Date(initialValues.fechaDelHecho).toISOString().slice(0, 10)
@@ -138,8 +140,8 @@ const CausaForm: React.FC<CausaFormProps> = ({
                 />
 
                 {isHomicidio && (
-                    <SwitchField form={form} name="homicidioConsumado" label="Homicidio Consumado" />
-                  )}
+                  <SwitchField form={form} name="homicidioConsumado" label="Homicidio Consumado" />
+                )}
               </div>
             </div>
 
@@ -315,6 +317,38 @@ const CausaForm: React.FC<CausaFormProps> = ({
               </div>
             </div>
 
+            {/* Sección de Parámetros de Crimen Organizado */}
+            <div className="space-y-2">
+              <h3 className="font-medium">Parámetros Crimen Organizado</h3>
+              <div className="grid grid-cols-3 gap-6">
+                {/* Select ocupando 2 columnas */}
+                <div className="col-span-2">
+                  <FormField
+                    form={form}
+                    name="co"
+                    label="Crimen Organizado"
+                  >
+                    <CrimenOrgParamsSelect />
+                  </FormField>
+                </div>
+
+                {/* Checkbox ocupando 1 columna */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="terms1"
+                    className="w-4 h-4 border-2 border-gray-500 rounded-none"
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="terms1"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Crimen Organizado
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* Sección de Observaciones */}
             <div className="space-y-4">
               <h3 className="font-medium">Observaciones</h3>
@@ -325,6 +359,8 @@ const CausaForm: React.FC<CausaFormProps> = ({
                 />
               </FormField>
             </div>
+
+
 
             <Separator />
 
@@ -360,7 +396,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
           </form>
         </Form>
       </CardContent>
-    </Card>
+    </Card >
   );
 };
 
