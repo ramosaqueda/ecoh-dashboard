@@ -24,6 +24,7 @@ import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
 import CrimenOrgParamsSelect from '@/components/select/CrimenOrgParamsSelect';
 import { ZodBoolean } from 'zod';
+import DatosRelato from '@/components/relato-hecho/datos-relato';
 
 
 interface CausaFormProps {
@@ -323,17 +324,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
               </div>
             </div>
 
-            {/* Sección de Observaciones */}
-            <div className="space-y-4">
-              <h3 className="font-medium">Observaciones</h3>
-              <FormField form={form} name="observacion" label="Observación">
-                <Textarea
-                  className="min-h-[100px]"
-                  placeholder="Ingrese observaciones adicionales..."
-                />
-              </FormField>
-            </div>
-
             {/* Sección de Parámetros de Crimen Organizado */}
             <div className="space-y-4">
               <h3 className="font-medium">Parámetros Crimen Organizado</h3>
@@ -361,6 +351,20 @@ const CausaForm: React.FC<CausaFormProps> = ({
                   </div>
                 </RadioGroup>
               </div>
+            </div>
+
+            {/* Sección de Observaciones */}
+            <div className="space-y-4">
+              <h3 className="font-medium">Observaciones</h3>
+              <FormField form={form} name="datosRelevantes" label="datosRelevantes">
+                <DatosRelato causaId={'17'}/>
+              </FormField>
+              <FormField form={form} name="observacion" label="Observación">
+                <Textarea
+                  className="min-h-[100px]"
+                  placeholder="Ingrese observaciones adicionales..."
+                />
+              </FormField>
             </div>
 
             <Separator />
