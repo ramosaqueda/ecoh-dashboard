@@ -28,6 +28,7 @@ model Causa {
   fechaHoraTomaConocimiento DateTime?
   comunaId                  Int?
   analistaId                Int?
+  atvtId                    Int?
   fiscalId                  Int?
   focoId                    Int?
   delitoId                  Int?
@@ -457,4 +458,10 @@ model RelatoHecho {
   causaId     Int                    @unique
   causa       Causa                  @relation(fields: [causaId], references: [id])
   relato      String 
+}
+
+model Atvt {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  causas Causa[]
 }
