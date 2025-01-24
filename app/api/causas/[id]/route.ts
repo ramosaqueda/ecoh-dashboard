@@ -11,6 +11,7 @@ export async function GET(
       where: { id: parseInt(id) },
       include: {
         analista: true,
+        atvt: true,
         tribunal: true,
         delito: {
           select: {
@@ -74,12 +75,14 @@ export async function PUT(
         fiscalId: data.fiscalId,
         abogadoId: data.abogadoId,
         analistaId: data.analistaId,
+        atvtId: data.atvtId,
         esCrimenOrganizado: data.esCrimenOrganizado
       },
       include: {
         delito: true,
         abogado: true,
         analista: true,
+        atvt: true,
         tribunal: true,
         foco: true,
         fiscal: {

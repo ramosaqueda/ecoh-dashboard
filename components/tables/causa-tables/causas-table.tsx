@@ -67,28 +67,33 @@ export function CausasDataTable<TData, TValue>({
   const [globalFilter, setGlobalFilter] = useState('');
   const [abogados, setAbogados] = useState<Professional[]>([]);
   const [analistas, setAnalistas] = useState<Professional[]>([]);
+  const [atvts, setAtvts] = useState<Professional[]>([]);
   const [selectedAbogado, setSelectedAbogado] = useState<string>('all');
   const [selectedAnalista, setSelectedAnalista] = useState<string>('all');
+  const [selectedAtvt, setSelectedAtvt] = useState<string>('all');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     rit: false,
     observacion: false,
     foliobw: false
   });
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  // Fetch abogados and analistas
+  // Fetch abogados, analistas y atvts
   useEffect(() => {
     const fetchProfessionals = async () => {
       try {
-        const [abogadosRes, analistasRes] = await Promise.all([
+        const [abogadosRes, analistasRes, atvtsRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/abogado`),
-          fetch(`${API_BASE_URL}/apii/analista`)
+          fetch(`${API_BASE_URL}/api/analista`),
+          fetch(`${API_BASE_URL}/api/atvt`)
         ]);
 
-        if (abogadosRes.ok && analistasRes.ok) {
+        if (abogadosRes.ok && analistasRes.ok && atvtsRes.ok) {
           const abogadosData = await abogadosRes.json();
           const analistasData = await analistasRes.json();
+          const atvtsData = await atvtsRes.json();
           setAbogados(abogadosData);
           setAnalistas(analistasData);
+          setAtvts(atvtsData);
         }
       } catch (error) {
         console.error('Error fetching professionals:', error);
@@ -107,9 +112,12 @@ export function CausasDataTable<TData, TValue>({
       const analistaMatch =
         selectedAnalista === 'all' ||
         item.analista?.id.toString() === selectedAnalista;
-      return abogadoMatch && analistaMatch;
+      const atvtMatch = 
+        selectedAtvt === 'all' ||
+        item.atvt?.id.toString() === selectedAtvt;
+      return abogadoMatch && analistaMatch && atvtMatch;
     });
-  }, [data, selectedAbogado, selectedAnalista]);
+  }, [data, selectedAbogado, selectedAnalista, selectedAtvt]);
 
   const table = useReactTable({
     data: filteredData,
@@ -230,6 +238,19 @@ export function CausasDataTable<TData, TValue>({
               {analistas.map((analista) => (
                 <SelectItem key={analista.id} value={analista.id.toString()}>
                   {analista.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedAtvt} onValueChange={setSelectedAtvt}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Filtrar por atvt" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los atvts</SelectItem>
+              {atvts.map((atvt) => (
+                <SelectItem key={atvt.id} value={atvt.id.toString()}>
+                  {atvt.nombre}
                 </SelectItem>
               ))}
             </SelectContent>

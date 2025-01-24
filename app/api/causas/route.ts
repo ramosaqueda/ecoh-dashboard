@@ -115,6 +115,8 @@ export async function POST(req: NextRequest) {
       abogado: undefined,
       analistaId: data.analista ? parseInt(data.analista) : null,
       analista: undefined,
+      atvtId: data.atvt ? parseInt(data.atvt) : null,
+      atvt: undefined,
       homicidioConsumado: data.homicidioConsumado ?? false, // Aseguramos valor por defecto
       esCrimenOrganizado: data.esCrimenOrganizado ?? null
     };
@@ -126,6 +128,7 @@ export async function POST(req: NextRequest) {
         fiscal: true,
         abogado: true,
         analista: true,
+        atvt: true,
         _count: {
           select: {
             imputados: true

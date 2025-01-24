@@ -77,7 +77,16 @@ export const causaSchema = z.object({
       z.null()
     ])
     .optional()
-    .nullable()
+    .nullable(),
+
+  atvt: z
+    .union([
+      z.number(),
+      z.string().transform((val) => parseInt(val, 10)),
+      z.null()
+    ])
+  .optional()
+  .nullable() 
 });
 
 export type CausaFormData = z.infer<typeof causaSchema>;

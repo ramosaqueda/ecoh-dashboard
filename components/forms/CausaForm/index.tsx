@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import FormField from './FormField';
 import SwitchField from './SwitchField';
 import AnalistaSelect from '@/components/select/AnalistaSelect';
+import AtvtSelect from '@/components/select/AtvtSelect';
 import AbogadoSelect from '@/components/select/AbogadoSelect';
 import DelitoSelect from '@/components/select/DelitoSelect';
 import TribunalSelect from '@/components/select/TribunalSelect';
@@ -74,6 +75,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
         ...initialValues,
         abogado: initialValues.abogado?.toString(),
         analista: initialValues.analista?.toString(),
+        atvt: initialValues.atvt?.toString(),
         fiscalACargo: initialValues.fiscalACargo?.toString(),
         tribunal: initialValues.tribunal?.toString(),
         delito: initialValues.delito?.toString(),
@@ -280,6 +282,18 @@ const CausaForm: React.FC<CausaFormProps> = ({
                     value={form.watch('analista')}
                     onValueChange={(value) =>
                       form.setValue('analista', value, {
+                        shouldValidate: true,
+                        shouldDirty: true
+                      })
+                    }
+                  />
+                </FormField>
+
+                <FormField form={form} name="atvt" label="Atvt">
+                  <AtvtSelect
+                    value={form.watch('atvt')}
+                    onValueChange={(value) =>
+                      form.setValue('atvt', value, {
                         shouldValidate: true,
                         shouldDirty: true
                       })

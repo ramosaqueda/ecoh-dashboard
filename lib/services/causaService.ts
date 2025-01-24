@@ -168,6 +168,7 @@ export const causaService = {
       causaLegada: data.causaLegada,
       constituyeSs: data.constituyeSs,
       homicidioConsumado: data.homicidioConsumado,
+      esCrimenOrganizado: data.esCrimenOrganizado,
 
       // Campos de texto
       denominacionCausa: data.denominacionCausa,
@@ -201,7 +202,8 @@ export const causaService = {
         ? parseInt(data.fiscalACargo.toString())
         : null,
       abogadoId: data.abogado ? parseInt(data.abogado.toString()) : null,
-      analistaId: data.analista ? parseInt(data.analista.toString()) : null
+      analistaId: data.analista ? parseInt(data.analista.toString()) : null,
+      atvtId: data.atvt ? parseInt(data.atvt.toString()) : null
     };
 
     // Eliminar campos nulos o undefined
@@ -233,6 +235,7 @@ export const causaService = {
       rit: data.rit || '',
       numeroIta: data.numeroIta || '',
       numeroPpp: data.numeroPpp || '',
+      esCrimenOrganizado: data.esCrimenOrganizado || false,
       observacion: data.observacion || '',
 
       // Formateo de fechas para los inputs
@@ -255,7 +258,8 @@ export const causaService = {
       tribunal: data.tribunalId || null,
       fiscalACargo: data.fiscalId || null,
       abogado: data.abogadoId || null,
-      analista: data.analistaId || null
+      analista: data.analistaId || null,
+      atvt: data.atvtId || null
     };
   },
 

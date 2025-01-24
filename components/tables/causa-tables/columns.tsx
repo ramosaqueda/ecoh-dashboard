@@ -167,6 +167,10 @@ export const columns: ColumnDef<Causa>[] = [
     header: 'Analista'
   },
   {
+    accessorKey: 'atvt.nombre',
+    header: 'Atvt'
+  },
+  {
     id: 'imputados',
     header: 'Imputados',
     cell: ({ row }) => <ImputadosCell causa={row.original} />

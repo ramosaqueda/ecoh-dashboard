@@ -49,6 +49,10 @@ export const columns: ColumnDef<Causa>[] = [
     header: 'ANALISTA'
   },
   {
+    accessorKey: 'ATVT',
+    header: 'ATVT'
+  },
+  {
     accessorKey: 'ABOGADO',
     header: 'ABOGADO'
   },

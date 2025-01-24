@@ -37,6 +37,7 @@ model Causa {
   nacionalidadVictimaId     Int?
   abogado                   Abogado?          @relation(fields: [abogadoId], references: [id])
   analista                  Analista?         @relation(fields: [analistaId], references: [id])
+  atvt                      Atvt?             @relation(fields: [atvtId], references: [id])
   comuna                    Comuna?           @relation(fields: [comunaId], references: [id])
   delito                    Delito?           @relation(fields: [delitoId], references: [id])
   fiscal                    Fiscal?           @relation(fields: [fiscalId], references: [id])
