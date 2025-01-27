@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, Square } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from "@/components/ui/label"
+import { Option } from '@/components/ui/multiple-selector';
 
 import FormField from './FormField';
 import SwitchField from './SwitchField';
@@ -26,7 +27,8 @@ import type { CausaFormData } from '@/types/causa';
 import CrimenOrgParamsSelect from '@/components/select/CrimenOrgParamsSelect';
 import { ZodBoolean } from 'zod';
 import DatosRelato from '@/components/relato-hecho/datos-relato';
-
+import CrimenOrganizadoParams from '@/components/select/CrimenOrgParamsSelect';
+import { CausasCrimenOrganizado } from '@prisma/client';
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
@@ -41,6 +43,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
   isSubmitting,
   isEditing = false
 }) => {
+  const [initialSelectedValues, setInitialSelectedValues] = useState<Option[]>([]);
   const form = useForm<CausaFormData>({
     resolver: zodResolver(causaSchema),
     defaultValues: {
@@ -80,6 +83,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
         tribunal: initialValues.tribunal?.toString(),
         delito: initialValues.delito?.toString(),
         foco: initialValues.foco?.toString(),
+        crimenOrgParams: initialValues.crimenOrgParams || [],
         // Asegurarse de que las fechas estén en el formato correcto
         fechaHoraTomaConocimiento: initialValues.fechaHoraTomaConocimiento
           ? new Date(initialValues.fechaHoraTomaConocimiento)
@@ -342,7 +346,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
             <div className="space-y-4">
               <h3 className="font-medium">Parámetros Crimen Organizado</h3>
               <FormField form={form} name="co" label="Crimen Organizado">
-                <CrimenOrgParamsSelect/>
+                <CrimenOrgParamsSelect causaId={'4'}/>
               </FormField>
               <div className="items-top flex space-x-2">
                 <RadioGroup value={esCrimenOrg === true ? 'esCO' : esCrimenOrg === false ? 'noCO' : 'desconoce'} onValueChange={(value) => {

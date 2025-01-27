@@ -47,15 +47,15 @@ model Causa {
   esCrimenOrganizado        Boolean?
   imputados                 CausasImputados[]
   actividades               Actividad[] // Relación con Actividad
-  victimas  CausasVictimas[]
-  telefonos TelefonoCausa[] // Nueva relación agregada
+  victimas                  CausasVictimas[]
+  telefonos                 TelefonoCausa[] // Nueva relación agregada
 
   // New relations for related causes
   causasRelacionadasMadre  CausasRelacionadas[] @relation("CausaMadre")
   causasRelacionadasArista CausasRelacionadas[] @relation("CausaArista")
 
-  MedidaIntrusiva        MedidaIntrusiva[]
-  causasCrimenOrg CausasCrimenOrganizado[]
+  MedidaIntrusiva           MedidaIntrusiva[]
+  causasCrimenOrg           CausasCrimenOrganizado[]
   relato                    RelatoHecho?
 }
 
@@ -449,7 +449,7 @@ model CausasCrimenOrganizado {
   parametroId Int
   causa       Causa                  @relation(fields: [causaId], references: [id])
   parametro   CrimenOrganizadoParams @relation(fields: [parametroId], references: [value])
-  estado      Boolean?
+  estado      Boolean                @default(false)
 
   @@id([causaId, parametroId])
 }

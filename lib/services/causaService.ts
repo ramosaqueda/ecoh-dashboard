@@ -173,7 +173,7 @@ export const causaService = {
       // Campos de texto
       denominacionCausa: data.denominacionCausa,
       ruc: data.ruc,
-      foliobw: data.foliobw,
+      foliobw: data.folioBw,
       coordenadasSs: data.coordenadasSs,
       rit: data.rit,
       numeroIta: data.numeroIta,
@@ -259,7 +259,9 @@ export const causaService = {
       fiscalACargo: data.fiscalId || null,
       abogado: data.abogadoId || null,
       analista: data.analistaId || null,
-      atvt: data.atvtId || null
+      atvt: data.atvtId || null,
+      causasCrimenOrg: data.causasCrimenOrg || []
+
     };
   },
 

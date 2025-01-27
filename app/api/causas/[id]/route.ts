@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import CrimenOrganizadoParams from '@/components/select/CrimenOrgParamsSelect';
 
 export async function GET(
   req: NextRequest,
@@ -23,8 +24,8 @@ export async function GET(
           select: {
             nombre: true
           }
-        }
-        
+        },
+        causasCrimenOrg: true
       }
       
     });
@@ -76,7 +77,8 @@ export async function PUT(
         abogadoId: data.abogadoId,
         analistaId: data.analistaId,
         atvtId: data.atvtId,
-        esCrimenOrganizado: data.esCrimenOrganizado
+        esCrimenOrganizado: data.esCrimenOrganizado,
+        causasCrimenOrg: data.causasCrimenOrg ?? []
       },
       include: {
         delito: true,
@@ -85,6 +87,7 @@ export async function PUT(
         atvt: true,
         tribunal: true,
         foco: true,
+        causasCrimenOrg: true,
         fiscal: {
           select: {
             nombre: true

@@ -1,4 +1,5 @@
 // schemas/causaSchema.ts
+import CrimenOrganizadoParams from '@/components/select/CrimenOrgParamsSelect';
 import * as z from 'zod';
 
 export const causaSchema = z.object({
@@ -86,7 +87,16 @@ export const causaSchema = z.object({
       z.null()
     ])
   .optional()
-  .nullable() 
+  .nullable(), 
+
+  crimenOrgParams: z
+  .union([
+    z.number(),
+    z.string().transform((val) => parseInt(val, 10)),
+    z.null()
+  ])
+.optional()
+.nullable(),
 });
 
 export type CausaFormData = z.infer<typeof causaSchema>;

@@ -57,13 +57,20 @@ export async function GET(req: NextRequest) {
               nombre: true
             }
           },
+          atvt: {
+            select: {
+              id: true,
+              nombre: true
+            }
+          },
           _count: {
             select: {
               imputados: true,
               causasRelacionadasMadre: true,
               causasRelacionadasArista: true
             }
-          }
+          },
+          causasCrimenOrg: true
         }
       });
 
@@ -118,7 +125,8 @@ export async function POST(req: NextRequest) {
       atvtId: data.atvt ? parseInt(data.atvt) : null,
       atvt: undefined,
       homicidioConsumado: data.homicidioConsumado ?? false, // Aseguramos valor por defecto
-      esCrimenOrganizado: data.esCrimenOrganizado ?? null
+      esCrimenOrganizado: data.esCrimenOrganizado ?? null,
+      causasCrimenOrg: data.causasCrimenOrg ?? []
     };
 
     const newCausa = await prisma.causa.create({
@@ -129,6 +137,7 @@ export async function POST(req: NextRequest) {
         abogado: true,
         analista: true,
         atvt: true,
+        causasCrimenOrg: true,
         _count: {
           select: {
             imputados: true
