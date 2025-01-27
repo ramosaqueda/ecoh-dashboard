@@ -49,10 +49,13 @@ export async function PUT(
     req: NextRequest,
     { params }: { params: { id: string}}
 ) {
+    console.log('Entró al controlador PUT');
     try {
         const data = await req.json();
         const causaId = parseInt(params.id);
         const { paramId, estado } = data;
+
+        console.log('Datos recibidos: ', {paramId, estado});
        
         if (isNaN(causaId) || isNaN(paramId)) {
             return NextResponse.json (
@@ -62,7 +65,7 @@ export async function PUT(
         }
 
         const updateData = {
-            estado: estado !== undefined ? estado : null,
+            estado: estado,
         };
         console.log(estado);
         const causaCrimenOrg = await prisma.causasCrimenOrganizado.update({

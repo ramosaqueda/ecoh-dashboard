@@ -56,12 +56,13 @@ const CrimenOrganizadoParams= ({ causaId }: {causaId: string }) => {
   };
   const updateParams = async (causaId: string, paramId: string, nuevoEstado: boolean) => {
     try {
+      console.log('Datos enviados al server: ', {causaId, paramId, nuevoEstado});
       const response = await fetch(
         `${API_BASE_URL}/api/causas-crimenorganizado/${causaId}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({causaId, paramId, nuevoEstado})
+          body: JSON.stringify({paramId: paramId, estado: nuevoEstado})
           
         }
       );
