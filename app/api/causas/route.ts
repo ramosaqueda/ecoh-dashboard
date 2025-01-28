@@ -98,11 +98,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(formattedCausas);
     }
   } catch (error) {
-    console.error('Error fetching causas:', error);
-    return NextResponse.json(
-      { error: 'Error fetching causas' },
-      { status: 500 }
-    );
+    console.error('Error fetching causas:', error instanceof Error ? error.message : error);
+  return NextResponse.json(
+    { error: 'Error fetching causas' },
+    { status: 500 }
+  );
   }
 }
 

@@ -445,13 +445,13 @@ model CrimenOrganizadoParams {
 }
 
 model CausasCrimenOrganizado {
-  causaId     Int
+  id    Int                   
   parametroId Int
-  causa       Causa                  @relation(fields: [causaId], references: [id])
+  causa       Causa                  @relation(fields: [id], references: [id])
   parametro   CrimenOrganizadoParams @relation(fields: [parametroId], references: [value])
   estado      Boolean                @default(false)
 
-  @@id([causaId, parametroId])
+  @@id([id, parametroId])
 }
 
 model RelatoHecho {

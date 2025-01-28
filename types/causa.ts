@@ -1,6 +1,7 @@
 import { CausasCrimenOrganizado, CrimenOrganizadoParams } from "@prisma/client";
 
 export interface CausaFormData {
+  causaId: string;
   causaEcoh: boolean;
   causaLegada: boolean;
   constituyeSs: boolean;

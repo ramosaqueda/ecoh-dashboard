@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import CrimenOrganizadoParams from '@/components/select/CrimenOrgParamsSelect';
 
 export async function GET(
   req: NextRequest,
@@ -8,6 +7,12 @@ export async function GET(
 ) {
   try {
     const id = params.id;
+    if (!id || isNaN(parseInt(id))) {
+      return NextResponse.json(
+        { error: 'Invalid id parameter' },
+        { status: 400}
+      );
+    }
     const causa = await prisma.causa.findUnique({
       where: { id: parseInt(id) },
       include: {

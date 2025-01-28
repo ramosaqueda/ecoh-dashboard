@@ -223,7 +223,7 @@ export const causaService = {
     if (!data) return {};
 
     return {
-      id: data.id,
+      causaId: data.id,
       causaEcoh: data.causaEcoh || false,
       causaLegada: data.causaLegada || false,
       constituyeSs: data.constituyeSs || false,

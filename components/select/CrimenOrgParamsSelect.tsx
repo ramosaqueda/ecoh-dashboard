@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import MultipleSelector, { Option } from '@/components/ui/multiple-selector';
 import { useParams } from 'next/navigation';
+import { useStoreApi } from 'reactflow';
 
 interface Param {
-  id: string;
+  parametroId: string;
   name: string;
   estado: boolean;
 }
@@ -19,68 +20,119 @@ interface ParamAPI {
   parametroId: string;
 }
 
-const CrimenOrganizadoParams= ({ causaId }: {causaId: string }) => {
-  const [isTriggered, setIsTriggered] = React.useState(false);
+const CrimenOrganizadoParams= ({ id }: {id: string }) => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  const [params, setParams] = useState<Param[]>([]);
+  const [params, setParams] = useState<Option[]>([]);
+  const [selectedVal, setSelectedValues] = useState<Param[]>([]);
   const [value, setValue] = useState<Option[]>();
 
   const fetchParams = async () => {
+    console.log('id: ',id);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/causas-crimenorganizado/${causaId}`);
+      const response = await fetch(`${API_BASE_URL}/api/causas-crimenorganizado/${id}`);
+      const response2 = await fetch(`${API_BASE_URL}/api/crimenorganizadoparams/`);
 
-      if(!response.ok) {
+      if(!response.ok || !response2.ok) {
           throw new Error('Error al cargar los párametros');
       }
 
       const data: ParamAPI[] = await response.json();
+      const params: Option[] = await response2.json();
 
-      const paramsOptions: Param[] = data.map((item) => ({
-        id: item.parametroId,
-        name: item.parametro.label,
-        estado: item.estado,
+      const paramsOptions: Option[] = params.map((item) => ({
+        label: item.label,
+        value: item.value,
       }));
 
       setParams(paramsOptions);
 
       console.log(paramsOptions);
+      
+      const selectedValues: Param[] = data.filter((param) => param.estado === true).map((param) => ({
+        parametroId: param.parametroId,
+        name: param.parametro.label,
+        estado: param.estado,
+      }));
 
-      const selectedValues: Option[] = paramsOptions.filter((param) => param.estado).map((param) => ({
-        value: param.id,
-        label: param.name,
-      }))
-      setValue(selectedValues);
+      setSelectedValues(selectedValues);
+
+      const selectedParams: Option[] = paramsOptions
+      .filter((param) => selectedValues.some((selected) => selected.parametroId === param.value))
+      .map((param) => ({
+      value: param.value,
+      label: param.label,
+  }));
+      setValue(selectedParams);
     } catch (error) {
       console.error('Error fetching Parámetros de Crimen Organizado: ', error);
     } 
   };
-  const updateParams = async (causaId: string, paramId: string, nuevoEstado: boolean) => {
+  const updateParamsRelation = async (id: string, parametroId: string, nuevoEstado: boolean) => {
+    console.log('Datos enviados al server: ', {id, parametroId, nuevoEstado});
     try {
-      console.log('Datos enviados al server: ', {causaId, paramId, nuevoEstado});
-      const response = await fetch(
-        `${API_BASE_URL}/api/causas-crimenorganizado/${causaId}`,
+      console.log(typeof(id));
+      const checkResponse = await fetch(
+        `${API_BASE_URL}/api/causas-crimenorganizado/${id.toString()}`,
         {
-          method: 'PUT',
+          method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({paramId: paramId, estado: nuevoEstado})
+        });
+
+      if (checkResponse.ok) {
+        const checkRelationResponse = await checkResponse.json();
+          console.log('respuesta del get: ', checkRelationResponse);
+        const relationExists = checkRelationResponse.some((param: Param) => {
+          if (param.parametroId) {
+            return param.parametroId === parametroId;
+          }
+          console.error('param.id no encontrado en el objeto', param);
+          return false;
+        });
+        if (relationExists) {
           
+          const putResponse = await fetch(
+            `${API_BASE_URL}/api/causas-crimenorganizado/${id}`,
+            {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({paramId: parametroId, estado: nuevoEstado})
+            });
+  
+            if (!putResponse.ok) {
+              throw new Error(`Error al actualizar el estado del parámetro: ${putResponse.statusText}`);
+            }
+  
+            const updatedData = await putResponse.json();
+            console.log('datos actualizados: ', updatedData);
+            return updatedData;
+        } else {
+          console.log('no existe la relación asi que hay que crearla');
+            const postResponse = await fetch(
+              `${API_BASE_URL}/api/causas-crimenorganizado/${id}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({paramId: parametroId, estado: nuevoEstado})
+              });
+              console.log(parametroId, nuevoEstado);
+    
+            if (!postResponse.ok) {
+              throw new Error(`Error al agregar el parámetro: ${postResponse.statusText}`);
+            }
+    
+            const createdData = await postResponse.json();
+            return createdData;
         }
-      );
-      console.log(nuevoEstado);
+        
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al actualizar el parámetro');
+      } else {
+        throw new Error(`Error al verificar la exsistencia del parámetro: ${checkResponse.statusText}`);
       }
-
-      const updatedParam = await response.json();
-      //setParams((prev) => prev.map((param) => (param.id === paramId ? updatedParam : param)));
-      console.log(' this is the updated param : ', updatedParam);
       
     } catch (error) {
-      console.error('Error actualizando parámetro:', error);
+      console.error('Error gestionando parámetro:', error);
+      throw error;
     }
-    console.log(params);
   };
 
   useEffect(() => {
@@ -91,22 +143,19 @@ const CrimenOrganizadoParams= ({ causaId }: {causaId: string }) => {
   const handleSelectorChange = (selected: Option[]) => {
     setValue(selected);
 
-    selected.forEach((option) => {
-      const param = params.find((p) => p.id === option.value);
-      if (param && !param.estado) {
-        updateParams(causaId,option.value as string, true);
-        
-      } params.forEach((param) => {
-        if (!selected.some((option) => option.value === param.id) && param.estado) {
-          setTimeout(() => {
-            updateParams(causaId, param.id, false);
-          }, 100000);
-         
-        }
-      });
-    });
-   
-  }
+    const newlySelected = selected.filter((param) => selectedVal.some((selected) => selected.parametroId !== param.value))
+    .map((param) => ({
+    value: param.value,
+    label: param.label,
+    }));
+
+    const deselected = params
+      .filter((param) => param.estado)
+      .filter((param) => !selected.some((option) => option.value === param.id));
+
+    newlySelected.forEach((option) => updateParamsRelation(id, option.value, true));
+    deselected.forEach((param) => updateParamsRelation(id, param.value, false));
+  };
     return (
         
       <div className="flex w-full flex-col gap-5 px-10">
@@ -114,8 +163,8 @@ const CrimenOrganizadoParams= ({ causaId }: {causaId: string }) => {
           value={value}
           onChange={handleSelectorChange}
           options={params.map((param) => ({
-            value: param.id,
-            label: param.name,
+            value: param.value,
+            label: param.label,
           }))}
           placeholder="Seleccione un parámetro"
           emptyIndicator={

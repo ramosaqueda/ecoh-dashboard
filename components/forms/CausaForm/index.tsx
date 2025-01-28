@@ -27,8 +27,6 @@ import type { CausaFormData } from '@/types/causa';
 import CrimenOrgParamsSelect from '@/components/select/CrimenOrgParamsSelect';
 import { ZodBoolean } from 'zod';
 import DatosRelato from '@/components/relato-hecho/datos-relato';
-import CrimenOrganizadoParams from '@/components/select/CrimenOrgParamsSelect';
-import { CausasCrimenOrganizado } from '@prisma/client';
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
@@ -73,6 +71,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
   React.useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
       console.log('VALORES INICIALES:', initialValues);
+      console.log(initialValues.causaId);
       // Asegurarse de que los IDs sean strings para los selects
       const formattedValues = {
         ...initialValues,
@@ -84,6 +83,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
         delito: initialValues.delito?.toString(),
         foco: initialValues.foco?.toString(),
         crimenOrgParams: initialValues.crimenOrgParams || [],
+        causaId: initialValues.causaId?.toString() || '',
         // Asegurarse de que las fechas estén en el formato correcto
         fechaHoraTomaConocimiento: initialValues.fechaHoraTomaConocimiento
           ? new Date(initialValues.fechaHoraTomaConocimiento)
@@ -116,7 +116,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
   const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
   const esCrimenOrg = form.watch('esCrimenOrganizado');
 
-
+  console.log('causa Id: ',initialValues.causaId);
   return (
     <Card className="mx-auto w-full max-w-[1200px]">
       <CardHeader className="space-y-1">
@@ -346,7 +346,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
             <div className="space-y-4">
               <h3 className="font-medium">Parámetros Crimen Organizado</h3>
               <FormField form={form} name="co" label="Crimen Organizado">
-                <CrimenOrgParamsSelect causaId={'4'}/>
+                <CrimenOrgParamsSelect id={initialValues.causaId || ''}/>
               </FormField>
               <div className="items-top flex space-x-2">
                 <RadioGroup value={esCrimenOrg === true ? 'esCO' : esCrimenOrg === false ? 'noCO' : 'desconoce'} onValueChange={(value) => {
@@ -375,7 +375,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
             <div className="space-y-4">
               <h3 className="font-medium">Observaciones</h3>
               <FormField form={form} name="datosRelevantes" label="datosRelevantes">
-                <DatosRelato causaId={'17'}/>
+                <DatosRelato causaId={initialValues.causaId || ''}/>
               </FormField>
               <FormField form={form} name="observacion" label="Observación">
                 <Textarea
