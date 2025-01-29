@@ -441,17 +441,17 @@ model CrimenOrganizadoParams {
   value                    Int                      @id @default(autoincrement())
   label                 String                   @unique @db.VarChar(100)
   descripcion            String                   @db.VarChar(100)
-  CausasCrimenOrganizado CausasCrimenOrganizado[]
+  causas CausasCrimenOrganizado[]
 }
 
 model CausasCrimenOrganizado {
-  id    Int                   
+  causaId    Int                   
   parametroId Int
-  causa       Causa                  @relation(fields: [id], references: [id])
+  causa       Causa                  @relation(fields: [causaId], references: [id])
   parametro   CrimenOrganizadoParams @relation(fields: [parametroId], references: [value])
   estado      Boolean                @default(false)
 
-  @@id([id, parametroId])
+  @@id([causaId, parametroId])
 }
 
 model RelatoHecho {

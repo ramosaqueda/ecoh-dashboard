@@ -30,7 +30,18 @@ export async function GET(
             nombre: true
           }
         },
-        causasCrimenOrg: true
+        causasCrimenOrg: {
+          select: {
+            causaId: true,
+            parametroId: true,
+            estado: true,
+            parametro: {
+              select: {
+                label: true
+              }
+            }
+          }
+        }
       }
       
     });

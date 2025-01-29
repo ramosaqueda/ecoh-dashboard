@@ -1,41 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { integer } from 'aws-sdk/clients/cloudfront';
 
-export async function GET(
-    req: Request, 
-    { params }: {params: { id: string} }
-) {
-    console.log(params.id);
+interface Props {
+    params: { id: string };
+  }
+
+export async function GET(req: Request, { params }: { params: { id: string } }) {
     try {
-        const id = parseInt(params.id);
 
-        if(!id || isNaN(id)) {
+        const causaId = parseInt(params.id);
+
+        if(!causaId || isNaN(causaId)) {
             return NextResponse.json(
                 { error: 'ID de causa inválido' },
                 { status: 400}
             );
         }
 
-        const causaCrimenOrg = await prisma.causasCrimenOrganizado.findMany({
-            where: { id: id}, 
+        const causa = await prisma.causa.findUnique({
+            where: { id: causaId }, 
             include: {
-                parametro: true,
-                causa: {
+                causasCrimenOrg: {
                     select: {
-                       esCrimenOrganizado: true
-                    }
+                        causaId: true,
+                        parametroId: true,
+                        estado: true,
+                        parametro: {
+                            select: {
+                                label: true,
+                            }
+                        }
+                    },
                 }
             }
         });
 
-        if(!causaCrimenOrg) {
+        if(!causa) {
             return NextResponse.json(
                 { error: 'Datos no encontrados' },
                 { status: 404 }
-            )
+            );
         }
 
-        return NextResponse.json(causaCrimenOrg);
+        const causaCrimOrgFormateada = causa.causasCrimenOrg.map((cco) => ({
+            id: `${cco.causaId}-${cco.parametroId}`,
+            causaId: cco.causaId,
+            parametroId: cco.parametroId,
+            estado: cco.estado,
+            label: cco.parametro.label
+        }));
+
+        return NextResponse.json(causaCrimOrgFormateada);
     } catch (error) {
         console.error('Error fetching causa: ', error);
         return NextResponse.json(
@@ -46,42 +62,38 @@ export async function GET(
     
 }
 
-export async function PUT(
-    req: NextRequest,
-    { params }: { params: { id: string }}
-) {
+export async function PUT(req: Request, { params }: Props) {
     console.log('Entró al controlador PUT');
     try {
         const data = await req.json();
-        const id = params.id;
+        const causaId =  parseInt(params.id);
+
         const { parametroId, estado } = data;
-       
-        if (!id) {
-            return NextResponse.json(
-                { error: 'Se requiere el ID de la causa' },
-                { status: 400 }
-            );
+
+        if (!parametroId || isNaN(parametroId)) {
+            return NextResponse.json({ error: "parametroId es inválido o está ausente" }, { status: 400 });
         }
 
         const updateData = {
-            estado: estado || false,
+            parametroId: parametroId,
+            estado: estado || false
         };
 
-        const causaCrimenOrg = await prisma.causasCrimenOrganizado.update({
+        const updated = await prisma.causasCrimenOrganizado.update({
             where: {
-                id_parametroId : {
-                    id: parseInt(id),
-                    parametroId: parseInt(parametroId)
+                causaId_parametroId : {
+                    causaId: causaId,
+                    parametroId: parametroId,
                 }
             },
-            data: updateData,
+            data: { estado },
             include: {
                 parametro: true,
                 causa: true,
             }
         });
         
-        return NextResponse.json(causaCrimenOrg);
+        return NextResponse.json(updated);
     } catch (error) {
         console.error('Error updating causa: ', error);
         return NextResponse.json(
@@ -93,7 +105,7 @@ export async function PUT(
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string }}) {
+    { params }: Props) {
     try {
         const data = await req.json();
         console.log(data);
@@ -104,7 +116,7 @@ export async function POST(
         console.log(estado);
         const causaCrimenOrg = await prisma.causasCrimenOrganizado.create({
             data: {
-                id: id,
+                causaId: id,
                 parametroId: paramId,
                 estado: estado ?? null
 

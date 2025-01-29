@@ -24,9 +24,9 @@ import FocoSelect from '@/components/select/FocoSelect';
 
 import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
-import CrimenOrgParamsSelect from '@/components/select/CrimenOrgParamsSelect';
-import { ZodBoolean } from 'zod';
 import DatosRelato from '@/components/relato-hecho/datos-relato';
+import CrimenOrgParamsSelect from "@/components/select/CrimenOrgParamsSelect"
+import ParamsField from './ParamsField';
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
