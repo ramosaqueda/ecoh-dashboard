@@ -16,6 +16,11 @@ const DatosRelato = ({ causaId }: RelatoProps) => {
   const [armasBlanca, setArmasBlanca] = useState(false);
 
   useEffect(() => {
+
+    if(!causaId) {
+      console.error('causaId no definido');
+    }
+
     const fetchRelato = async () => {
       try {
         const response = (await axios.get(`/api/relato-hecho/${causaId}`));

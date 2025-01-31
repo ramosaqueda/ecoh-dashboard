@@ -89,14 +89,6 @@ export const causaSchema = z.object({
   .optional()
   .nullable(), 
 
-  crimenOrgParams: z
-  .union([
-    z.number(),
-    z.string().transform((val) => parseInt(val, 10)),
-    z.null()
-  ])
-.optional()
-.nullable(),
 });
 
 export type CausaFormData = z.infer<typeof causaSchema>;

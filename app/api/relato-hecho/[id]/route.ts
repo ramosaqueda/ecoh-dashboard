@@ -6,10 +6,17 @@ export async function GET(
     { params }: { params: {id: string } }
   ) {
     try {
-      const {id} = await params;
-      
+      const id = params.id;
+
+      if (!id || isNaN(parseInt(id))) {
+        return NextResponse.json(
+          { error: 'Invalid causaId' },
+          { status: 400 }
+        );
+      }
+
       const relatoHecho = await prisma.relatoHecho.findUnique({
-        where: { causaId: parseInt(id) },
+        where: { causaId: parseInt(id)},
         include: {
           causa: {
             select: {
@@ -17,10 +24,9 @@ export async function GET(
               denominacionCausa: true
             }
           }
-          
         }
       });
-
+      console.log('Relato: ', relatoHecho);
       return NextResponse.json(relatoHecho);
     } catch (error) {
       console.error('Error fetching relato:', error);

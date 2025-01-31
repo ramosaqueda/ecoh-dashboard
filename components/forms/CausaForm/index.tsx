@@ -26,7 +26,6 @@ import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
 import DatosRelato from '@/components/relato-hecho/datos-relato';
 import CrimenOrgParamsSelect from "@/components/select/CrimenOrgParamsSelect"
-import ParamsField from './ParamsField';
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
@@ -39,9 +38,8 @@ const CausaForm: React.FC<CausaFormProps> = ({
   initialValues = {},
   onSubmit,
   isSubmitting,
-  isEditing = false
+  isEditing
 }) => {
-  const [initialSelectedValues, setInitialSelectedValues] = useState<Option[]>([]);
   const form = useForm<CausaFormData>({
     resolver: zodResolver(causaSchema),
     defaultValues: {
@@ -56,7 +54,9 @@ const CausaForm: React.FC<CausaFormProps> = ({
     }
   });
 
-  const handleSubmit = async (data: CausaFormData) => {
+  const handleSubmit = async (data) => {
+    const { ...form } = data ;
+    console.log('dAOTS DEL FOMRULARIO: ', data);
     try {
       await onSubmit(data);
 
@@ -65,13 +65,14 @@ const CausaForm: React.FC<CausaFormProps> = ({
       }
     } catch (error) {
       console.error('Error en el formulario:', error);
+    } finally {
+
     }
   };
 
   React.useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
       console.log('VALORES INICIALES:', initialValues);
-      console.log(initialValues.causaId);
       // Asegurarse de que los IDs sean strings para los selects
       const formattedValues = {
         ...initialValues,
@@ -82,7 +83,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
         tribunal: initialValues.tribunal?.toString(),
         delito: initialValues.delito?.toString(),
         foco: initialValues.foco?.toString(),
-        crimenOrgParams: initialValues.crimenOrgParams || [],
         causaId: initialValues.causaId?.toString() || '',
         // Asegurarse de que las fechas estén en el formato correcto
         fechaHoraTomaConocimiento: initialValues.fechaHoraTomaConocimiento
@@ -115,8 +115,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
   const isHomicidio = selectedDelito === "1";
   const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
   const esCrimenOrg = form.watch('esCrimenOrganizado');
-
-  console.log('causa Id: ',initialValues.causaId);
+  console.log('Errores del formulario:', form.formState.errors);
   return (
     <Card className="mx-auto w-full max-w-[1200px]">
       <CardHeader className="space-y-1">
