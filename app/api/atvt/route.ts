@@ -1,7 +1,8 @@
-// app/api/analista/route.ts
+// app/api/atvt/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
 
 
 export async function GET(request: NextRequest) {
@@ -10,26 +11,27 @@ export async function GET(request: NextRequest) {
 
   try {
     if (id) {
-      // Obtener un analista específico
-      const analista = await prisma.analista.findUnique({
+      // Obtener un  Atvt específico
+      const  atvt = await prisma.atvt.findUnique({
+ 
         where: { id: Number(id) }
       });
-      if (analista) {
-        return NextResponse.json(analista);
+      if ( atvt) {
+        return NextResponse.json(atvt);
       } else {
         return NextResponse.json(
-          { message: 'Analista no encontrado' },
+          { message: ' Atvt no encontrado' },
           { status: 404 }
         );
       }
     } else {
-      // Obtener todos los analistas
-      const analistas = await prisma.analista.findMany();
-      return NextResponse.json(analistas);
+      // Obtener todos los  Atvts
+      const  atvts = await prisma.atvt.findMany(); 
+      return NextResponse.json(atvts);
     }
   } catch (error) {
     return NextResponse.json(
-      { message: 'Error al obtener analista(s)', error },
+      { message: 'Error al obtener  Atvt(s)', error },
       { status: 500 }
     );
   }
@@ -38,13 +40,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { nombre } = await request.json();
-    const analista = await prisma.analista.create({
+    const  Atvt = await prisma. Atvt.create({
       data: { nombre }
     });
-    return NextResponse.json(analista, { status: 201 });
+    return NextResponse.json( Atvt, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { message: 'Error al crear analista', error },
+      { message: 'Error al crear  Atvt', error },
       { status: 500 }
     );
   }
@@ -63,14 +65,14 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { nombre } = await request.json();
-    const analista = await prisma.analista.update({
+    const  Atvt = await prisma. Atvt.update({
       where: { id: Number(id) },
       data: { nombre }
     });
-    return NextResponse.json(analista);
+    return NextResponse.json( Atvt);
   } catch (error) {
     return NextResponse.json(
-      { message: 'Error al actualizar analista', error },
+      { message: 'Error al actualizar  Atvt', error },
       { status: 500 }
     );
   }
@@ -88,13 +90,13 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.analista.delete({
+    await prisma. Atvt.delete({
       where: { id: Number(id) }
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return NextResponse.json(
-      { message: 'Error al eliminar analista', error },
+      { message: 'Error al eliminar  Atvt', error },
       { status: 500 }
     );
   }

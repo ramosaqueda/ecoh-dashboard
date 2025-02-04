@@ -28,14 +28,17 @@ model Causa {
   fechaHoraTomaConocimiento DateTime?
   comunaId                  Int?
   analistaId                Int?
+  atvtId                    Int?
   fiscalId                  Int?
   focoId                    Int?
   delitoId                  Int?
   abogadoId                 Int?
+
   tribunalId                Int?
   nacionalidadVictimaId     Int?
   abogado                   Abogado?          @relation(fields: [abogadoId], references: [id])
   analista                  Analista?         @relation(fields: [analistaId], references: [id])
+  atvt                      Atv?              @relation(fields: [atvtId], references: [id])
   comuna                    Comuna?           @relation(fields: [comunaId], references: [id])
   delito                    Delito?           @relation(fields: [delitoId], references: [id])
   fiscal                    Fiscal?           @relation(fields: [fiscalId], references: [id])
@@ -137,6 +140,14 @@ model Analista {
   nombre String
   causas Causa[]
 }
+
+model Atv {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  causas Causa[]
+    @@map("Atvt")
+}	
+
 
 model Fiscal {
   id     Int     @id @default(autoincrement())

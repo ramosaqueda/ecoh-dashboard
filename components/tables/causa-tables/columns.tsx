@@ -22,6 +22,10 @@ export type Causa = {
   causaEcoh: boolean;
   fiscalId: string;
   delitoId: string;
+  delito: {
+    id: number;
+    nombre: string;
+  };
   _count?: {
     imputados: number;
     causasRelacionadasMadre?: number;
@@ -124,6 +128,20 @@ export const columns: ColumnDef<Causa>[] = [
             </Button>
           </a>
         </div>
+      );
+    }
+  },
+  {
+    accessorKey: 'delito.nombre',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Delito
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
       );
     }
   },

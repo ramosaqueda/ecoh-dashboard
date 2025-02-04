@@ -78,6 +78,16 @@ export function CausasDrawer({
                           <FileText className="h-5 w-5" />
                           RUC: {causa.causa?.ruc || 'No disponible'}
                         </h3>
+                        {causa.causa?.denominacionCausa && (
+                        <div className="space-y-1">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            Denominación:
+                          </span>
+                          <p className="text-sm">
+                            {causa.causa.denominacionCausa}
+                          </p>
+                        </div>
+                      )}
                         <div className="flex gap-2">
                           {causa.esImputado && (
                             <Badge className="bg-blue-500">
