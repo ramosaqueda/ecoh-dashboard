@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MultipleSelector, { Option } from '@/components/ui/multiple-selector';
+import CrimenOrgGauge from '@/components/CrimengorgGauge';
 
 interface Param {
   parametroId: string;
@@ -152,9 +153,11 @@ const CrimenOrganizadoParams= ({ id }: {id: string }) => {
 };
 
     return (
+      <div className="space-y-2 flex flex-col items-center w-full">
+      <div className="grid grid-cols-2  gap-4 md:grid-cols-1 lg:grid-cols-2 w-full mx-auto place-items-center ">
         
-      <div className="flex w-full flex-col gap-5 px-10">
         <MultipleSelector
+        className='w-full'
           value={value}
           onChange={handleSelectorChange}
           options={params.map((param) => ({
@@ -167,9 +170,16 @@ const CrimenOrganizadoParams= ({ id }: {id: string }) => {
               no results found.
             </p>
           }
-          
         />
+    
+        <div >
+          <CrimenOrgGauge selectedParams={value} totalParams={params} />
+        </div>
+    
       </div>
+    </div>
+    
+        
     );
   };
 

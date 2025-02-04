@@ -79,7 +79,7 @@ export const causaService = {
   async create(data: CausaFormData): Promise<Causa> {
     try {
       const transformedData = this.transformFormData(data);
-
+      console.log('valor nuevo de co: ',data.esCrimenOrganizado);
       const response = await fetch('/api/causas', {
         method: 'POST',
         headers: {
@@ -223,7 +223,7 @@ export const causaService = {
    */
   transformInitialData(data: any) {
     if (!data) return {};
-    console.log('valor a enviar a la db',data.esCrimenOrganizado);
+    console.log('valor de crimen organizado: ',data.esCrimenOrganizado);
     return {
       causaId: data.id,
       causaEcoh: data.causaEcoh || false,

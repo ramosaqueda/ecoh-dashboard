@@ -376,7 +376,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
               <div className='relative'>
                 <FormField form={form} name="datosRelevantes" label={
                   <div className='flex items-center gap-2'>
-                    <span>Datos Relevantes</span>
+                    <h3 className="text-[16px] ">Datos Relevantes</h3>
                     <TriangleAlert size={20} className='text-red-500'/>
                   </div>
                 } >

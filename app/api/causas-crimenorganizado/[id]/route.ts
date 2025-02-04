@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { integer } from 'aws-sdk/clients/cloudfront';
 
 interface Props {
     params: { id: string };
@@ -108,16 +107,16 @@ export async function POST(
     { params }: Props) {
     try {
         const data = await req.json();
-        console.log(data);
+        console.log('data: ',data);
         const id = await parseInt(params.id);
-        const paramId = parseInt(data.paramId);
-        const estado = data.estado;
-        console.log(paramId);
+        const { parametroId, estado } = data;
+
+        console.log(parametroId);
         console.log(estado);
         const causaCrimenOrg = await prisma.causasCrimenOrganizado.create({
             data: {
                 causaId: id,
-                parametroId: paramId,
+                parametroId: parametroId,
                 estado: estado ?? false
 
             },
