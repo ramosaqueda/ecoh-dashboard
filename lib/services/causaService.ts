@@ -109,7 +109,7 @@ export const causaService = {
   async update(id: number, data: CausaFormData): Promise<Causa> {
     try {
       const transformedData = this.transformFormData(data);
-
+      console.log(transformedData);
       const response = await fetch(`/api/causas/${id}`, {
         method: 'PUT',
         headers: {
@@ -168,7 +168,6 @@ export const causaService = {
       causaLegada: data.causaLegada,
       constituyeSs: data.constituyeSs,
       homicidioConsumado: data.homicidioConsumado,
-      esCrimenOrganizado: data.esCrimenOrganizado,
 
       // Campos de texto
       denominacionCausa: data.denominacionCausa,
@@ -179,6 +178,9 @@ export const causaService = {
       numeroIta: data.numeroIta,
       numeroPpp: data.numeroPpp,
       observacion: data.observacion,
+
+      //Campo numérico
+      esCrimenOrganizado: data.esCrimenOrganizado ? parseInt(data.esCrimenOrganizado.toString()) : 2,
 
       // Fechas - con validación y manejo de nulos
       fechaHoraTomaConocimiento: data.fechaHoraTomaConocimiento
@@ -221,7 +223,7 @@ export const causaService = {
    */
   transformInitialData(data: any) {
     if (!data) return {};
-
+    console.log('valor a enviar a la db',data.esCrimenOrganizado);
     return {
       causaId: data.id,
       causaEcoh: data.causaEcoh || false,
@@ -235,7 +237,7 @@ export const causaService = {
       rit: data.rit || '',
       numeroIta: data.numeroIta || '',
       numeroPpp: data.numeroPpp || '',
-      esCrimenOrganizado: data.esCrimenOrganizado || false,
+      esCrimenOrganizado: data.esCrimenOrganizado ?? 2,
       observacion: data.observacion || '',
 
       // Formateo de fechas para los inputs
@@ -260,9 +262,9 @@ export const causaService = {
       abogado: data.abogadoId || null,
       analista: data.analistaId || null,
       atvt: data.atvtId || null,
-      causasCrimenOrg: data.causasCrimenOrg || []
-
+      causasCrimenOrg: data.causasCrimenOrg || [],
     };
+  
   },
 
   /**

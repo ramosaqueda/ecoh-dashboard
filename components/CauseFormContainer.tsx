@@ -74,10 +74,8 @@ const CauseFormContainer: React.FC<CauseFormContainerProps> = ({
   };
 
   const handleSubmit = async (data: CausaFormData) => {
-    console.log('olaaa');
     try {
       setIsSubmitting(true);
-      console.log(isSubmitting);
       setError(null);
 
       if (isEditing && initialData?.id) {
@@ -99,7 +97,6 @@ const CauseFormContainer: React.FC<CauseFormContainerProps> = ({
       toast.error(message);
     } finally {
       setIsSubmitting(false);
-      console.log(isSubmitting);
     }
   };
 

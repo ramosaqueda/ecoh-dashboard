@@ -109,7 +109,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    console.log(data);
     
     // Aseguramos que homicidioConsumado sea booleano
     const transformedData = {
@@ -125,8 +124,8 @@ export async function POST(req: NextRequest) {
       atvtId: data.atvt ? parseInt(data.atvt) : null,
       atvt: undefined,
       homicidioConsumado: data.homicidioConsumado ?? false, // Aseguramos valor por defecto
-      esCrimenOrganizado: data.esCrimenOrganizado ?? null,
-      causasCrimenOrg: data.causasCrimenOrg ?? []
+      causasCrimenOrg: data.causasCrimenOrg ?? [],
+      esCrimenOrganizado: data.esCrimenOrganizado ? parseInt(data.esCrimenOrganizado) : 2
     };
 
     const newCausa = await prisma.causa.create({

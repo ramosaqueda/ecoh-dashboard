@@ -61,12 +61,10 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+
   try {
     const data = await req.json();
     const id = params.id;
-
-    console.log('Received data:', data);
-    console.log('Updating causa with ID:', id);
 
     const updatedCausa = await prisma.causa.update({
       where: { id: parseInt(id) },
@@ -145,29 +143,5 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const { id } = req.query;
-
-  if (req.method === 'PUT') {
-    try {
-      console.log('Datos recibidos:', req.body); // Log de los datos recibidos
-      const updatedCausa = await prisma.causa.update({
-        where: { id: parseInt(id as string) },
-        data: req.body,
-      });
-      console.log('Causa actualizada:', updatedCausa); // Log de la causa actualizada
-      return res.status(200).json(updatedCausa);
-    } catch (error) {
-      console.error('Error al actualizar la causa:', error); // Log del error
-      return res.status(500).json({ error: 'Error al actualizar la causa' });
-    }
-  }
-
-  return res.status(405).json({ error: 'Método no permitido' });
 }
 

@@ -24,7 +24,6 @@ const DatosRelato = ({ causaId }: RelatoProps) => {
     const fetchRelato = async () => {
       try {
         const response = (await axios.get(`/api/relato-hecho/${causaId}`));
-        console.log(response.data.relato);
         setRelato(response.data.relato);
         tokenizeAndDetect(response.data.relato);
       } catch (error) {
@@ -88,10 +87,6 @@ const DatosRelato = ({ causaId }: RelatoProps) => {
 
   return (
     <div>
-      <h2>Relato</h2>
-      <pre>{JSON.stringify(relato, null, 2)}</pre>
-      <h3>Tokenización y Detección</h3>
-      <p>Tokens: {tokens.join(', ')}</p>
       <p>Armas de Fuego: {armasFuego ? 'Sí' : 'No'}</p>
       <p>Armas Blancas: {armasBlanca ? 'Sí' : 'No'}</p>
     </div>

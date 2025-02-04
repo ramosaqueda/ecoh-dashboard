@@ -29,6 +29,36 @@ export interface CausaFormData {
   nacionalidadVictima: number;
   observacion: string;
 
-  esCrimenOrganizado: boolean | null;
+  esCrimenOrganizado: number;
 
+}
+
+export interface Causa {
+  id: number;
+  denominacionCausa: string;
+  ruc: string;
+  rit: string;
+  fiscal: {
+    id: string;
+    nombre: string;
+  } | null;
+  delito: {
+    id: string;
+    nombre: string;
+  } | null;
+  fechaDelHecho: string | null;
+  fechaHoraTomaConocimiento: string | null;
+  esCrimenOrganizado: number;
+  causaEcoh: boolean;
+  foliobw: string | null;
+  observacion: string | null;
+  causasImputados: Array<{
+    id: string;
+    imputado: Imputado;
+  }>;
+  victimas: Array<{
+    id: string;
+    nombre: string;
+    rut: string;
+  }>;
 }

@@ -8,8 +8,8 @@ export const causaSchema = z.object({
   causaLegada: z.boolean().default(false),
   constituyeSs: z.boolean().default(false),
   homicidioConsumado: z.boolean().optional(),
-  esCrimenOrganizado: z.boolean().nullable().default(null),
   // Campos requeridos
+  esCrimenOrganizado: z.number().default(2),
   fechaHoraTomaConocimiento: z
     .string()
     .min(1, 'La fecha y hora de toma de conocimiento es requerida'),

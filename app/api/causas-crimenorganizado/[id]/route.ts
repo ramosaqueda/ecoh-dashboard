@@ -118,7 +118,7 @@ export async function POST(
             data: {
                 causaId: id,
                 parametroId: paramId,
-                estado: estado ?? null
+                estado: estado ?? false
 
             },
             include: {

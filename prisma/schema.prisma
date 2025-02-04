@@ -44,7 +44,7 @@ model Causa {
   foco                      Foco?             @relation(fields: [focoId], references: [id])
   nacionalidadVictima       Nacionalidad?     @relation(fields: [nacionalidadVictimaId], references: [id])
   tribunal                  Tribunal?         @relation(fields: [tribunalId], references: [id])
-  esCrimenOrganizado        Boolean?
+  esCrimenOrganizado        Int              
   imputados                 CausasImputados[]
   actividades               Actividad[] // Relación con Actividad
   victimas                  CausasVictimas[]

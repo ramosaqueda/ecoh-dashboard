@@ -11,6 +11,7 @@ import { Loader2, Square } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from "@/components/ui/label"
 import { Option } from '@/components/ui/multiple-selector';
+import { TriangleAlert } from 'lucide-react';
 
 import FormField from './FormField';
 import SwitchField from './SwitchField';
@@ -26,6 +27,7 @@ import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
 import DatosRelato from '@/components/relato-hecho/datos-relato';
 import CrimenOrgParamsSelect from "@/components/select/CrimenOrgParamsSelect"
+import { icon } from 'leaflet';
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
@@ -48,10 +50,10 @@ const CausaForm: React.FC<CausaFormProps> = ({
       causaLegada: false,
       constituyeSs: false,
       homicidioConsumado: false,
-      esCrimenOrganizado: initialValues.esCrimenOrganizado,
       // Sobrescribir con los valores iniciales si existen
       ...initialValues
     }
+    
   });
 
   const handleSubmit = async (data) => {
@@ -59,7 +61,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
     console.log('dAOTS DEL FOMRULARIO: ', data);
     try {
       await onSubmit(data);
-
       if (!isEditing) {
         form.reset();
       }
@@ -72,6 +73,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
 
   React.useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
+      console.log('valor es crimen organizado: ', initialValues?.esCrimenOrganizado);
       console.log('VALORES INICIALES:', initialValues);
       // Asegurarse de que los IDs sean strings para los selects
       const formattedValues = {
@@ -84,6 +86,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
         delito: initialValues.delito?.toString(),
         foco: initialValues.foco?.toString(),
         causaId: initialValues.causaId?.toString() || '',
+        esCrimenOrganizado: initialValues.esCrimenOrganizado,
         // Asegurarse de que las fechas estén en el formato correcto
         fechaHoraTomaConocimiento: initialValues.fechaHoraTomaConocimiento
           ? new Date(initialValues.fechaHoraTomaConocimiento)
@@ -114,8 +117,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
   const selectedDelito = form.watch('delito');
   const isHomicidio = selectedDelito === "1";
   const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
-  const esCrimenOrg = form.watch('esCrimenOrganizado');
-  console.log('Errores del formulario:', form.formState.errors);
   return (
     <Card className="mx-auto w-full max-w-[1200px]">
       <CardHeader className="space-y-1">
@@ -348,22 +349,21 @@ const CausaForm: React.FC<CausaFormProps> = ({
                 <CrimenOrgParamsSelect id={initialValues.causaId || ''}/>
               </FormField>
               <div className="items-top flex space-x-2">
-                <RadioGroup value={esCrimenOrg === true ? 'esCO' : esCrimenOrg === false ? 'noCO' : 'desconoce'} onValueChange={(value) => {
-                  form.setValue(
-                    'esCrimenOrganizado',
-                    value === 'esCO' ? true : value === 'noCO' ? false : null
-                  );
+                <RadioGroup value={form.watch('esCrimenOrganizado') === 1 ? '1' : form.watch('esCrimenOrganizado') === 0 ? '0' : '2'} onValueChange={(value) => {
+                  const newValue = value === '1' ? 1 : value === '0' ? 0 : 2;
+                  form.setValue('esCrimenOrganizado', newValue);
+                  console.log('nuevo valor: ', newValue);
                 }}>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="esCO" id="esCO" />
+                    <RadioGroupItem value="0" id="esCO" />
                     <Label htmlFor="esCO">Es Crimen Organizado</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="noCO" id="noCO" />
+                    <RadioGroupItem value="1" id="noCO" />
                     <Label htmlFor="noCO">No es Crimen Organizado</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="desconoce" id="desconoce" />
+                    <RadioGroupItem value="2" id="desconoce" />
                     <Label htmlFor="desconoce">Se desconoce</Label>
                   </div>
                 </RadioGroup>
@@ -373,9 +373,19 @@ const CausaForm: React.FC<CausaFormProps> = ({
             {/* Sección de Observaciones */}
             <div className="space-y-4">
               <h3 className="font-medium">Observaciones</h3>
-              <FormField form={form} name="datosRelevantes" label="datosRelevantes">
-                <DatosRelato causaId={initialValues.causaId || ''}/>
-              </FormField>
+              <div className='relative'>
+                <FormField form={form} name="datosRelevantes" label={
+                  <div className='flex items-center gap-2'>
+                    <span>Datos Relevantes</span>
+                    <TriangleAlert size={20} className='text-red-500'/>
+                  </div>
+                } >
+                  <DatosRelato causaId={initialValues.causaId || ''}/>
+                </FormField>
+              </div>
+              
+      
+              
               <FormField form={form} name="observacion" label="Observación">
                 <Textarea
                   className="min-h-[100px]"

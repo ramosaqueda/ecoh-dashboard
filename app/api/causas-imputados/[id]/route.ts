@@ -79,7 +79,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         delito: ci.causa.delito
       },
       cautelar: ci.cautelar
-    }));
+    } ));
 
     return NextResponse.json(causasFormateadas);
   } catch (error) {
