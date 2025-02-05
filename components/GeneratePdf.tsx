@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
 import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
+
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-if (pdfMake && pdfFonts && pdfFonts.pdfMake?.vfs) {
-    (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
-} else {
-    console.error('No se pudo asignar las fuentes vfs a pdfMake');
-}
+import { TDocumentDefinitions } from 'pdfmake/interfaces';
 
 interface Actividad {
     id: number;
@@ -49,7 +44,7 @@ interface CausaImputado {
 }
 
 interface DatosCausa {
-    id: number;
+    id: string;
     RUC: string;
     denominacion: string;
     fiscal: string | null;
@@ -138,7 +133,7 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
                 fetchActividadesData()
             ]);
 
-            const documentDefinition = {
+            const documentDefinition: TDocumentDefinitions = {
                 pageSize: 'A4',
                 pageMargins: [40, 60, 40, 60],
                 header: {

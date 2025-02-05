@@ -14,7 +14,7 @@ import {
 import { useSession } from '@clerk/clerk-react';
 
 export function UserNav() {
-  const { isLoaded, session, isSignedIn } = useSession();
+  const { session } = useSession();
 
   if (session) {
     return (

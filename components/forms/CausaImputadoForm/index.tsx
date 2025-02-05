@@ -32,7 +32,6 @@ import {
   Check,
   ChevronsUpDown,
   Loader2,
-  Calendar as CalendarIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 

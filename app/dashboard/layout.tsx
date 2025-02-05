@@ -1,7 +1,5 @@
 import Sidebar from '@/components/layout/sidebar';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Metadata } from 'next';
-import Header from '@/components/layout/header';
 export const metadata: Metadata = {
   title: 'Ecoh Tools',
   description: 'Set de herramientas ECOH'

@@ -8,15 +8,7 @@ import { ImputadosFlow } from '@/components/charts/ImputadosFlow';
 import { Button } from '@/components/ui/button';
 import { currentUser } from '@clerk/nextjs/server';
 import  CauseTimeline  from '@/components/CauseTimeline';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
 import CausasEcohCard from '@/components/cards/CausasEcohCard';
 import CausasCard from '@/components/cards/CausasCard';
 import CausasLegadaCard from '@/components/cards/CausasLegadaCard';

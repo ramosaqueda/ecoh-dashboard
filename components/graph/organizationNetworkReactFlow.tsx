@@ -5,11 +5,9 @@ import dynamic from 'next/dynamic';
 import { 
   Background, 
   Controls, 
-  MiniMap,
   useNodesState, 
   useEdgesState, 
   addEdge,
-  Position,
   MarkerType,
   Node,
   Edge,

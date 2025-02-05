@@ -13,7 +13,6 @@ import { es } from 'date-fns/locale';
 import { type CausaImputado } from '@/types/causaimputado';
 import {
   CalendarDays,
-  GavelIcon,
   FileText,
   User,
   Scale,

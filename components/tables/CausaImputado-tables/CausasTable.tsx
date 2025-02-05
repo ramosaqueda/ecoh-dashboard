@@ -14,7 +14,6 @@ import { format } from 'date-fns';
 import { CausaImputado } from '@/types/causaimputado';
 import {
   CalendarDays,
-  GavelIcon,
   FileText,
   AlertCircle,
   Scale

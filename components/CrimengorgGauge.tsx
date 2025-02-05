@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Option } from '@/components/ui/multiple-selector';
 import { RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
-import { Label } from "@/components/ui/label"
 
 interface CrimenOrgGaugeProps {
   selectedParams: Option[];

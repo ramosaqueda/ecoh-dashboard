@@ -20,14 +20,6 @@ import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
-interface MedidaCautelar {
-  id: string;
-  tipo: string;
-  descripcion: string;
-  fechaInicio: string;
-  fechaTermino: string | null;
-}
-
 interface Imputado {
   id: string;
   nombre: string;

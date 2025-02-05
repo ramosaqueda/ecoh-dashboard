@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
@@ -7,10 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Square } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from "@/components/ui/label"
-import { Option } from '@/components/ui/multiple-selector';
+import { Label } from "@/components/ui/label";
 import { TriangleAlert } from 'lucide-react';
 
 import FormField from './FormField';
@@ -27,7 +26,6 @@ import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
 import DatosRelato from '@/components/relato-hecho/datos-relato';
 import CrimenOrgParamsSelect from "@/components/select/CrimenOrgParamsSelect"
-import { icon } from 'leaflet';
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;

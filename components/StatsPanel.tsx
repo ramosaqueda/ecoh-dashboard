@@ -8,7 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { PieChart, Activity, Users, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 interface StatsPanelProps {
   causas: Array<{

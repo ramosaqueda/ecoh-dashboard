@@ -1,10 +1,8 @@
 import {
   AlertTriangle,
   ArrowRight,
-  Check,
   ChevronLeft,
   ChevronRight,
-  CircuitBoardIcon,
   Command,
   CreditCard,
   File,
@@ -40,8 +38,6 @@ import {
   UserRound,
   FolderCheckIcon,
   SquareDashedKanbanIcon,
-  ListCheckIcon,
-  LucideListCheck,
   ListChecksIcon,
   
 

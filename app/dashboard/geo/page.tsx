@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,

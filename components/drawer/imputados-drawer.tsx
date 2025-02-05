@@ -17,10 +17,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
-import { SquarePen } from 'lucide-react';
+
 import ImputadoFormalizacionForm from '@/components/forms/CausaImputadoForm/ImputadoFormalizacionForm';
 
-import { Edit } from 'lucide-react';
 type ImputadoInfo = {
   id: string;
   causaId: number;
