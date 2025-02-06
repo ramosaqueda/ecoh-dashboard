@@ -27,7 +27,6 @@ const CrimenOrganizadoParams= ({ id }: {id: string }) => {
 
   const fetchParams = async () => {
     try {
-      console.log(`${API_BASE_URL}/api/causas-crimenorganizado/${id}`);
       const response = await fetch(`${API_BASE_URL}/api/causas-crimenorganizado/${id}`);
       const response2 = await fetch(`${API_BASE_URL}/api/crimenorganizadoparams/`);
 
@@ -37,7 +36,6 @@ const CrimenOrganizadoParams= ({ id }: {id: string }) => {
 
       const data: ParamAPI[] = await response.json();
       const params: Option[] = await response2.json();
-      console.log(data);
       const paramsOptions: Option[] = params.map((item) => ({
         label: item.label,
         value: item.value,
@@ -52,7 +50,6 @@ const CrimenOrganizadoParams= ({ id }: {id: string }) => {
       }));
 
       setSelectedValues(selectedValues);
-      console.log(selectedValues);
       const selectedParams: Option[] = paramsOptions
       .filter((param) => selectedValues.some((selected) => selected.parametroId === param.value))
       .map((param) => ({
@@ -85,12 +82,8 @@ const CrimenOrganizadoParams= ({ id }: {id: string }) => {
       if (parametroExistente) {
           // Comparar estados, si son iguales, no hacer nada
           if (parametroExistente.estado === nuevoEstado) {
-              console.log(`El estado del parámetro ${parametroId} no ha cambiado, no se enviará actualización.`);
               return;
           }
-
-          console.log(`Actualizando el estado del parámetro ${parametroId} de ${parametroExistente.estado} a ${nuevoEstado}`);
-
           // Si el estado ha cambiado, enviar actualización
           const putResponse = await fetch(`${API_BASE_URL}/api/causas-crimenorganizado/${id}`, {
               method: 'PUT',
@@ -103,11 +96,8 @@ const CrimenOrganizadoParams= ({ id }: {id: string }) => {
           }
 
           const updatedData = await putResponse.json();
-          console.log('Datos actualizados:', updatedData);
           return updatedData;
       } else {
-          console.log('La relación no existe, se creará un nuevo registro.');
-
           // Si la relación no existe, la creamos con un POST
           const postResponse = await fetch(`${API_BASE_URL}/api/causas-crimenorganizado/${id}`, {
               method: 'POST',
@@ -120,7 +110,6 @@ const CrimenOrganizadoParams= ({ id }: {id: string }) => {
           }
 
           const createdData = await postResponse.json();
-          console.log('Datos creados:', createdData);
           return createdData;
       }
   } catch (error) {

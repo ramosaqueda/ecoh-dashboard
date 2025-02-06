@@ -8,9 +8,42 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function TelefonosGrafoPage() {
-  const [graphData, setGraphData] = useState(null);
+  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCausa, setSelectedCausa] = useState('');
+
+  interface Telefono {
+    id: number;
+    numeroTelefonico: string;
+    telefonosCausa: TelefonoCausa[];
+  }
+  
+  interface TelefonoCausa {
+    causa: Causa;
+  }
+  
+  interface Causa {
+    id: number;
+    ruc: string;
+    denominacionCausa: string;
+  }
+  
+  interface Node {
+    id: string;
+    label: string;
+    type: 'telefono' | 'causa';
+    denominacion?: string; // Optional for causa nodes
+  }
+  
+  interface Link {
+    source: string;
+    target: string;
+  }
+  
+  interface GraphData {
+    nodes: Node[];
+    links: Link[];
+  }
 
   const fetchData = async (causaId = '') => {
     setIsLoading(true);
@@ -22,12 +55,12 @@ export default function TelefonosGrafoPage() {
       }
 
       const response = await fetch(url);
-      const telefonos = await response.json();
+      const telefonos: Telefono[] = await response.json();
 
       // Preparar los datos para el grafo
-      const nodes = [];
-      const links = [];
-      const causasSet = new Set();
+      const nodes: Node[] = [];
+      const links: Link[] = [];
+      const causasSet = new Set<string>();
 
       // Procesar teléfonos y sus causas
       telefonos.forEach(telefono => {
@@ -83,7 +116,7 @@ export default function TelefonosGrafoPage() {
   }, []);
 
   // Manejar cambio de causa seleccionada
-  const handleCausaChange = (causaId) => {
+  const handleCausaChange = (causaId: string) => {
     setSelectedCausa(causaId);
     fetchData(causaId);
   };

@@ -120,7 +120,6 @@ const ImputadoFormalizacionForm: React.FC<FormalizacionFormProps> = ({
         setCautelares(cautelaresData);
 
         if (causaImputadoData) {
-          console.log(causaImputadoData);
           form.reset({
             causaId: causaId,
             imputadoId: imputadoId,

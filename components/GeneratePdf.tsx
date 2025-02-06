@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import pdfMake from 'pdfmake/build/pdfmake';
-
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
+
+if (pdfMake && pdfFonts && pdfFonts.vfs) {
+    (pdfMake as any).vfs = pdfFonts.vfs;
+} else {
+    console.error('No se pudo asignar las fuentes vfs a pdfMake');
+}
 
 interface Actividad {
     id: number;
@@ -91,11 +97,9 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
 
     const fetchImputadosData = async (): Promise<CausaImputado[]> => {
         try {
-            console.log('Fetching imputados for causa ID:', pdfData.id);
             const response = await fetch(`/api/causas-imputados/${pdfData.id}`);
             if (!response.ok) throw new Error('Error fetching imputados');
             const data = await response.json();
-            console.log('Imputados data:', data);
             return data;
         } catch (error) {
             console.error('Error fetching imputados:', error);
@@ -105,11 +109,9 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
 
     const fetchActividadesData = async (): Promise<Actividad[]> => {
         try {
-            console.log('Fetching actividades for causa ID:', pdfData.id);
             const response = await fetch(`/api/actividades/causa/${pdfData.id}`);
             if (!response.ok) throw new Error('Error fetching actividades');
             const data = await response.json();
-            console.log('Actividades data:', data);
             return data;
         } catch (error) {
             console.error('Error fetching actividades:', error);
@@ -125,8 +127,6 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
         
         setIsLoading(true);
         try {
-            console.log('Generating PDF for causa:', pdfData);
-            
             // Fetch additional data
             const [imputadosData, actividadesData] = await Promise.all([
                 fetchImputadosData(),

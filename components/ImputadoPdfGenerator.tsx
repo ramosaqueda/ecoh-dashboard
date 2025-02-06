@@ -7,9 +7,10 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { type ImputadoDetail, type CausaImputado } from '@/types/imputado';
+import { Content, TDocumentDefinitions, ContentText } from 'pdfmake/interfaces';
 
-if (pdfMake && pdfFonts && pdfFonts.pdfMake?.vfs) {
-    (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
+if (pdfMake && pdfFonts && pdfFonts.vfs) {
+    (pdfMake as any).vfs = pdfFonts.vfs;
 }
 
 interface ImputadoPdfProps {
@@ -66,7 +67,7 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
         ];
     };
 
-    const getCausasContent = (causas: CausaImputado[]) => {
+    const getCausasContent = (causas: CausaImputado[]): Content[] => {
         return causas.map(causa => {
             const badges = [];
             
@@ -74,49 +75,61 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
             if (causa.esimputado) badges.push('Imputado');
             if (causa.essujetoInteres) badges.push('Sujeto de interés');
             if (causa.causa.delito?.nombre) badges.push(causa.causa.delito.nombre);
-
-            return [
+    
+            const causaContent: Content[] = [
                 {
-                    stack: [
-                        {
-                            text: [
-                                { text: causa.causa.ruc || 'RUC no disponible', bold: true },
-                                ' • ',
-                                causa.causa.denominacionCausa
-                            ]
-                        },
-                        {
-                            text: badges.join(' | '),
-                            fontSize: 8,
-                            color: '#4B5563',
-                            margin: [0, 5, 0, 5]
-                        },
-                        causa.causa.tribunal?.nombre ? {
-                            text: causa.causa.tribunal.nombre,
-                            fontSize: 8,
-                            color: '#6B7280'
-                        } : {},
-                        causa.fechaFormalizacion ? {
-                            text: `Formalizado el ${formatDate(causa.fechaFormalizacion)}`,
-                            fontSize: 8,
-                            color: '#6B7280',
-                            margin: [0, 5, 0, 0]
-                        } : {},
-                        causa.plazo ? {
-                            text: `Plazo: ${causa.plazo} días`,
-                            fontSize: 8,
-                            color: '#6B7280'
-                        } : {},
-                        causa.cautelar ? {
-                            text: `Medida cautelar: ${causa.cautelar.nombre}`,
-                            fontSize: 8,
-                            color: '#166534',
-                            margin: [0, 5, 0, 0]
-                        } : {}
-                    ],
-                    margin: [0, 0, 0, 15]
+                    text: [
+                        { text: causa.causa.ruc || 'RUC no disponible', bold: true },
+                        ' • ',
+                        causa.causa.denominacionCausa
+                    ]
+                },
+                {
+                    text: badges.join(' | '),
+                    fontSize: 8,
+                    color: '#4B5563',
+                    margin: [0, 5, 0, 5]
                 }
             ];
+    
+            if (causa.causa.tribunal?.nombre) {
+                causaContent.push({
+                    text: causa.causa.tribunal.nombre,
+                    fontSize: 8,
+                    color: '#6B7280'
+                });
+            }
+    
+            if (causa.fechaFormalizacion) {
+                causaContent.push({
+                    text: `Formalizado el ${formatDate(causa.fechaFormalizacion.toString())}`,
+                    fontSize: 8,
+                    color: '#6B7280',
+                    margin: [0, 5, 0, 0]
+                });
+            }
+    
+            if (causa.plazo) {
+                causaContent.push({
+                    text: `Plazo: ${causa.plazo} días`,
+                    fontSize: 8,
+                    color: '#6B7280'
+                });
+            }
+    
+            if (causa.cautelar) {
+                causaContent.push({
+                    text: `Medida cautelar: ${causa.cautelar.nombre}`,
+                    fontSize: 8,
+                    color: '#166534',
+                    margin: [0, 5, 0, 0]
+                });
+            }
+    
+            return {
+                stack: causaContent,
+                margin: [0, 0, 0, 15]
+            };
         });
     };
 
@@ -125,12 +138,12 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
         try {
             // Obtener las fotos
             const photos = await fetchImputadoPhotos(imputadoData.id.toString());
-            let photosContent = [];
+            let photosContent: Content = [];
             
             if (photos && photos.length > 0) {
                 const photoRows = [];
                 for (let i = 0; i < photos.length; i += 2) {
-                    const row = {
+                    const row: Content = {
                         columns: []
                     };
                     
@@ -180,7 +193,10 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
                         }
                     } else {
                         // Si no hay segunda foto, agregar un espacio vacío
-                        row.columns.push({});
+                        row.columns.push({
+                            text: '',
+                            width: 250,
+                        });
                     }
                     
                     photoRows.push(row);
@@ -195,7 +211,17 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
                     ...photoRows
                 ];
             }
-            const documentDefinition = {
+
+            const causasContent: Content[] = imputadoData.causas && imputadoData.causas.length > 0 
+                ? getCausasContent(imputadoData.causas)
+                : [{
+                    text: 'No hay causas asociadas', // Este objeto es ahora un ContentText
+                    color: '#6B7280',
+                    alignment: 'center', // Esto es ahora correcto
+                    margin: [0, 20]
+            }];
+
+            const documentDefinition: TDocumentDefinitions = {
                 pageSize: 'A4',
                 pageMargins: [40, 60, 40, 60],
                 header: {
@@ -234,12 +260,7 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
                     // Texto de confidencialidad
                     {
                         text: 'INFORMACIÓN CONFIDENCIAL Y RESERVADA\nEste documento contiene información sensible y debe ser tratado con estricta confidencialidad.',
-                        style: {
-                            fontSize: 8,
-                            color: '#ef4444',
-                            alignment: 'center',
-                            italics: true
-                        },
+                        style: 'confidential',
                         margin: [0, 0, 0, 20]
                     },
 
@@ -255,7 +276,7 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
                                 ['Nombre:', { text: imputadoData.nombreSujeto, bold: true }],
                                 ['RUN:', imputadoData.docId || '-'],
                                 ['Nacionalidad:', imputadoData.nacionalidad?.nombre || '-'],
-                                ['Fecha de registro:', formatDate(imputadoData.createdAt || null)]
+                                ['Fecha de registro:', formatDate(imputadoData.createdAt?.toString() || null)]
                             ]
                         },
                         layout: 'noBorders',
@@ -283,17 +304,11 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
                         style: 'subheader',
                         margin: [0, 20, 0, 10]
                     },
-                    ...(imputadoData.causas && imputadoData.causas.length > 0
-                        ? getCausasContent(imputadoData.causas)
-                        : [{
-                            text: 'No hay causas asociadas',
-                            color: '#6B7280',
-                            alignment: 'center',
-                            margin: [0, 20]
-                        }]),
+
+                     ...causasContent,
 
                     // Sección de fotos
-                    ...photosContent
+                    ...photosContent,
                 ],
                 styles: {
                     header: {
@@ -311,6 +326,12 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
                     footer: {
                         fontSize: 8,
                         color: '#6b7280'
+                    },
+                    confidential: {
+                        fontSize: 8,
+                        color: '#ef4444',
+                        alignment: 'center',
+                        italics: true
                     }
                 },
                 defaultStyle: {

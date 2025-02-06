@@ -103,11 +103,6 @@ export function ImputadosFlow() {
               }}
               animate={true}
               motionConfig="gentle"
-              tooltip={({ node, value }) => (
-                <div className="rounded-lg border bg-white p-2 shadow-lg">
-                  <strong>{node.id}</strong>: {value}
-                </div>
-              )}
             />
           </div>
         ) : null}

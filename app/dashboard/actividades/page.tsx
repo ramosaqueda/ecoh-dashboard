@@ -52,7 +52,7 @@ interface Actividad {
 }
 
 interface ActividadEditing {
-  id: number;
+  id?: number;
   causaId: string;
   tipoActividadId: string;
   fechaInicio: string;

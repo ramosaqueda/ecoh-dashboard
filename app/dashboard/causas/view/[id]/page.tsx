@@ -103,8 +103,6 @@ export default function CausaViewPage() {
         if (!causaResponse.ok) throw new Error('Error al cargar la causa');
         const causaData = await causaResponse.json();
         setCausa(causaData);
-        
-        console.log(causaData);
 
         // 2. Obtener los imputados de la causa
         const imputadosResponse = await fetch(

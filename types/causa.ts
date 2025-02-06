@@ -1,3 +1,5 @@
+import { Imputado } from '@/types/imputado';
+
 export interface CausaFormData {
   causaId: string;
   causaEcoh: boolean;
@@ -34,7 +36,7 @@ export interface CausaFormData {
 }
 
 export interface Causa {
-  id: number;
+  id: string;
   denominacionCausa: string;
   ruc: string;
   rit: string;

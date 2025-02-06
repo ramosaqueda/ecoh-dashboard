@@ -62,7 +62,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 export async function PUT(req: Request, { params }: Props) {
-    console.log('Entró al controlador PUT');
     try {
         const data = await req.json();
         const causaId =  parseInt(params.id);
@@ -107,12 +106,9 @@ export async function POST(
     { params }: Props) {
     try {
         const data = await req.json();
-        console.log('data: ',data);
         const id = await parseInt(params.id);
         const { parametroId, estado } = data;
 
-        console.log(parametroId);
-        console.log(estado);
         const causaCrimenOrg = await prisma.causasCrimenOrganizado.create({
             data: {
                 causaId: id,

@@ -60,7 +60,7 @@ interface ActividadFormProps {
     fechaTermino: string;
     estado: 'inicio' | 'en_proceso' | 'terminado';
     observacion?: string;
-  };
+  } | null;
 }
 
 export default function ActividadForm({

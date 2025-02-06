@@ -19,7 +19,7 @@ interface CauseFormContainerProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  initialData?: Partial<Causa> | null;
+  initialData?: Partial<Causa | null>;
   isEditing?: boolean;
 }
 
@@ -42,7 +42,7 @@ const CauseFormContainer: React.FC<CauseFormContainerProps> = ({
         try {
           setIsLoading(true);
           setError(null);
-          const causa = await causaService.getById(initialData.id);
+          const causa = await causaService.getById(parseInt(initialData.id));
           const transformedData = causaService.transformInitialData(causa);
           setFormData(transformedData);
         } catch (err) {
@@ -79,7 +79,7 @@ const CauseFormContainer: React.FC<CauseFormContainerProps> = ({
       setError(null);
 
       if (isEditing && initialData?.id) {
-        await causaService.update(initialData.id, data);
+        await causaService.update(parseInt(initialData.id), data);
         toast.success('Causa actualizada exitosamente');
       } else {
         await causaService.create(data);

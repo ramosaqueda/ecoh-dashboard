@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 interface DelitoData {
   name: string;
   value: number;
+  total: number;
 }
 
 const COLORS = [
@@ -54,7 +55,9 @@ export function DelitosDistribution() {
   const years = Array.from({ length: 5 }, (_, i) =>
     (new Date().getFullYear() - i).toString()
   );
-
+  interface rawData {
+    [key: string] : number;
+  }
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -64,7 +67,7 @@ export function DelitosDistribution() {
         );
         if (!response.ok) throw new Error('Error al cargar datos');
 
-        const rawData = await response.json();
+        const rawData: rawData = await response.json();
         const total = Object.values(rawData).reduce(
           (a: number, b: number) => a + b,
           0

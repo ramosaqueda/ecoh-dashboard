@@ -17,10 +17,10 @@ import {
   User,
   Scale,
   AlertCircle,
-  Handcuffs,
   UserRoundSearch,
   Loader2
 } from 'lucide-react';
+import { GiHandcuffed } from "react-icons/gi";
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -41,8 +41,6 @@ export function CausasDrawer({
   onClose,
   causas = [], // Valor por defecto
   nombreSujeto = '',
-  onUpdateCausa,
-  onRefresh
 }: CausasDrawerProps) {
   const isLoading = !causas;
 
@@ -80,7 +78,7 @@ export function CausasDrawer({
                         <div className="flex gap-2">
                           {causa.esImputado && (
                             <Badge className="bg-blue-500">
-                              <Handcuffs className="mr-1 h-3 w-3" />
+                              <GiHandcuffed className="mr-1 h-3 w-3" />
                               Imputado
                             </Badge>
                           )}

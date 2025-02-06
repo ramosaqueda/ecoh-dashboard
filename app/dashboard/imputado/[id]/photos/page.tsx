@@ -3,10 +3,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Imputado,
-  columns
-} from '@/components/tables/imputados-tables/columns';
+import { columns } from '@/components/tables/imputados-tables/columns';
+import { type Imputado } from '@/types/causaimputado';
 import { ImputadosDataTable } from '@/components/tables/imputados-tables/imputados-table';
 import ImputadoFormContainer from '@/components/ImputadoFormContainer';
 import { toast } from 'sonner';

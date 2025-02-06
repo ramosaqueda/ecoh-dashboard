@@ -42,7 +42,6 @@ const DatosRelato = ({ causaId }: RelatoProps) => {
 
   const tokenizeAndDetect = (data: any) => {
     const text = data.toLowerCase();
-    console.log(text);
     const tokenizer = new Tokenizr();
 
     tokenizer.rule(/\s+/, (ctx) => { ctx.ignore(); }); // Ignorar espacios en blanco

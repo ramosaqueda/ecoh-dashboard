@@ -127,11 +127,29 @@ export default function CaseTimelineChart() {
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
-                  dataKey="month"
-                  height={60}
-                  tick={{ angle: -45, textAnchor: 'end' }}
+                   dataKey="month"
+                   height={60}
+                   tick={({ x, y, payload }) => {
+                     const words = payload.value.split(" ");
+                     const offset = 20; 
+                     return (
+                       <>
+                         {words.map((word: string, index: number) => (
+                           <text
+                             key={index}
+                             x={x + index * 15}
+                             y={y + offset}
+                             textAnchor='end'
+                             transform={`rotate(-45, ${x}, ${y})`}
+                           >
+                             {word}
+                           </text>
+                         ))}
+                       </>
+                     );
+                   }}
                 >
-                  <Label value="Meses" position="bottom" offset={20} />
+                  <Label value="Meses" position="bottom" offset={30} />
                 </XAxis>
                 <YAxis>
                   <Label

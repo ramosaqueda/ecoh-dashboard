@@ -26,7 +26,6 @@ export async function GET(
           }
         }
       });
-      console.log('Relato: ', relatoHecho);
       return NextResponse.json(relatoHecho);
     } catch (error) {
       console.error('Error fetching relato:', error);

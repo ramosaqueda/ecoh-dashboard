@@ -61,3 +61,7 @@ export interface ImputadoDetail {
   causas?: CausaImputado[];
   fotografias?: Fotografia[];
 }
+
+export interface Imputado {
+  
+}

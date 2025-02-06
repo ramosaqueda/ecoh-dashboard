@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import PageContainer from '@/components/layout/page-container';
+import { Delito } from '@prisma/client';
 
 
 interface Causa {
@@ -69,12 +70,12 @@ export default function MapPage() {
   // Obtener años únicos de las causas
   const yearsAvailable = Array.from(
     new Set(
-      causas.map((causa) => {
+      causas.map((causa: Causa) => {
         const date = new Date(causa.fechaDelHecho);
         return date.getFullYear();
       })
     )
-  ).sort((a, b) => b - a);
+  ).sort((a: any, b: any) => b - a);
 
   // Filtrado de causas
   // Lógica de filtrado actualizada
@@ -105,8 +106,8 @@ export default function MapPage() {
     // Para debugging, puedes agregar temporalmente:
     useEffect(() => {
     if (showEcohOnly) {
-      console.log('Causas ECOH encontradas:', causas.filter(c => c.causaEcoh).length);
-      console.log('Primera causa ECOH:', causas.find(c => c.causaEcoh));
+      console.log('Causas ECOH encontradas:', causas.filter((c: { causaEcoh: Boolean; }) => c.causaEcoh).length);
+      console.log('Primera causa ECOH:', causas.find((c: { causaEcoh: Boolean; }) => c.causaEcoh));
     }
     }, [showEcohOnly, causas]);
 
@@ -160,7 +161,7 @@ export default function MapPage() {
                     <SelectGroup>
                       <SelectLabel>Delitos</SelectLabel>
                       <SelectItem value="todos">Todos los delitos</SelectItem>
-                      {delitos.map((delito) => (
+                      {delitos.map((delito: Delito) => (
                         <SelectItem key={delito.id} value={delito.id.toString()}>
                           {delito.nombre}
                         </SelectItem>
@@ -180,7 +181,7 @@ export default function MapPage() {
                     <SelectGroup>
                       <SelectLabel>Año</SelectLabel>
                       <SelectItem value="todos">Todos los años</SelectItem>
-                      {yearsAvailable.map((year) => (
+                      {yearsAvailable.map((year: any) => (
                         <SelectItem key={year} value={year.toString()}>
                           {year}
                         </SelectItem>

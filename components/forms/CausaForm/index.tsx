@@ -56,7 +56,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
 
   const handleSubmit = async (data) => {
     const { ...form } = data ;
-    console.log('dAOTS DEL FOMRULARIO: ', data);
     try {
       await onSubmit(data);
       if (!isEditing) {
@@ -71,8 +70,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
 
   React.useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
-      console.log('valor es crimen organizado: ', initialValues?.esCrimenOrganizado);
-      console.log('VALORES INICIALES:', initialValues);
       // Asegurarse de que los IDs sean strings para los selects
       const formattedValues = {
         ...initialValues,
@@ -350,7 +347,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
                 <RadioGroup value={form.watch('esCrimenOrganizado') === 1 ? '1' : form.watch('esCrimenOrganizado') === 0 ? '0' : '2'} onValueChange={(value) => {
                   const newValue = value === '1' ? 1 : value === '0' ? 0 : 2;
                   form.setValue('esCrimenOrganizado', newValue);
-                  console.log('nuevo valor: ', newValue);
                 }}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="0" id="esCO" />

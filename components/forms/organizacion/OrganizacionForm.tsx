@@ -120,9 +120,7 @@ function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
             : null,
           activo: true
         };
-
-        console.log('Enviando miembro:', miembroData);
-
+        
         const response = await fetch('/api/organizacion/miembros', {
           method: 'POST',
           headers: {

@@ -46,7 +46,6 @@ export async function GET(
       }
       
     });
-    console.log('Causa:', causa);
     return NextResponse.json(causa);
   } catch (error) {
     console.error('Error fetching causa:', error);

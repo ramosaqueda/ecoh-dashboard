@@ -255,8 +255,6 @@ export async function PUT(req: Request) {
         { status: 400 }
       );
     }
-    console.log('Actualizando el plazo del imputado:', imputadoId);
-
 
     const updatedPlazo = await prisma.causasImputados.update({
       where: {

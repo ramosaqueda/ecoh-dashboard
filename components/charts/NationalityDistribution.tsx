@@ -65,7 +65,7 @@ export default function NationalityDistribution() {
 
         // Calcular el total
         const total = Object.values(rawData).reduce(
-          (a: number, b: number) => a + b,
+          (a, b) =>  (typeof a === 'number' ? a : 0) + (typeof b === 'number' ? b : 0),
           0
         );
 

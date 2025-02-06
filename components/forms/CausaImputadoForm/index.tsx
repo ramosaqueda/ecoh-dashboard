@@ -258,9 +258,7 @@ export default function CausaImputadoForm({
   const handleSubmit = async (data: CausaImputadoFormValues) => {
     const formattedData = {
       ...data,
-      fechaFormalizacion: data.fechaFormalizacion
-        ? format(new Date(data.fechaFormalizacion), 'yyyy-MM-dd')
-        : null
+      
     };
     await onSubmit(formattedData);
   };
@@ -359,7 +357,7 @@ export default function CausaImputadoForm({
                           <FormControl>
                             <ReactDatePicker
                               selected={field.value}
-                              onChange={(date: Date) => field.onChange(date)}
+                              onChange={(date: Date | null) => field.onChange(date)}
                               dateFormat="dd/MM/yyyy"
                               locale={es}
                               placeholderText="Seleccione una fecha"
@@ -388,7 +386,7 @@ export default function CausaImputadoForm({
                           <FormLabel>Medida Cautelar</FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            value={field.value}
+                            value={field.value ?? undefined}
                             disabled={isLoadingCautelares}
                           >
                             <FormControl>
