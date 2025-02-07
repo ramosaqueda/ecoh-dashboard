@@ -7,9 +7,23 @@ export async function GET(req: Request) {
     const year = parseInt(
       searchParams.get('year') || new Date().getFullYear().toString()
     );
+    const onlyEcoh = searchParams.get('onlyEcoh') === 'true';
 
     const startDate = new Date(year, 0, 1);
     const endDate = new Date(year, 11, 31);
+
+    // Obtener los delitos primero para poder filtrar por ECOH si es necesario
+    const delitos = await prisma.delito.findMany({
+      where: onlyEcoh ? {
+        nombre: {
+          contains: 'ECOH',
+          mode: 'insensitive'
+        }
+      } : undefined
+    });
+
+    const delitoIds = delitos.map(d => d.id);
+    const delitoMap = new Map(delitos.map((d) => [d.id, d.nombre]));
 
     const distribution = await prisma.causa.groupBy({
       by: ['delitoId'],
@@ -17,6 +31,9 @@ export async function GET(req: Request) {
         fechaDelHecho: {
           gte: startDate,
           lte: endDate
+        },
+        delitoId: {
+          in: delitoIds
         }
       },
       _count: true,
@@ -26,9 +43,6 @@ export async function GET(req: Request) {
         }
       }
     });
-
-    const delitos = await prisma.delito.findMany();
-    const delitoMap = new Map(delitos.map((d) => [d.id, d.nombre]));
 
     const result = distribution.reduce(
       (acc, curr) => {

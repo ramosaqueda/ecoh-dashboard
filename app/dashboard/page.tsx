@@ -5,6 +5,8 @@ import AbogadoAnalistaChart from '@/components/charts/AbogadoAnalistaChart';
 import { CasesHeatmap } from '@/components/charts/CasesHeatmap';
 import { DelitosDistribution } from '@/components/charts/DelitosDistribution';
 import { ImputadosFlow } from '@/components/charts/ImputadosFlow';
+import FormalizationChart from '@/components/charts/FormalizationChart';
+
 import { Button } from '@/components/ui/button';
 import { currentUser } from '@clerk/nextjs/server';
 import  CauseTimeline  from '@/components/CauseTimeline';
@@ -66,6 +68,10 @@ export default async function page() {
               <AbogadoAnalistaChart />
               <NationalityDistribution />
               
+            </div>
+
+            <div className="grid gap-6">
+              <FormalizationChart />  
             </div>
 
             {/* Mapa de calor - Ancho completo */}

@@ -9,26 +9,27 @@ export async function GET(request: NextRequest) {
 
   try {
     if (id) {
-      // Obtener un atvt específico
-      const atvt = await prisma.atvt.findUnique({
+      // Obtener un  Atvt específico
+      const  atvt = await prisma.atvt.findUnique({
+ 
         where: { id: Number(id) }
       });
-      if (atvt) {
+      if ( atvt) {
         return NextResponse.json(atvt);
       } else {
         return NextResponse.json(
-          { message: 'Atvt no encontrado' },
+          { message: ' Atvt no encontrado' },
           { status: 404 }
         );
       }
     } else {
-      // Obtener todos los atvt
-      const atvts = await prisma.atvt.findMany();
+      // Obtener todos los  Atvts
+      const  atvts = await prisma.atvt.findMany(); 
       return NextResponse.json(atvts);
     }
   } catch (error) {
     return NextResponse.json(
-      { message: 'Error al obtener atvt(s)', error },
+      { message: 'Error al obtener  Atvt(s)', error },
       { status: 500 }
     );
   }
@@ -37,13 +38,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { nombre } = await request.json();
-    const atvt = await prisma.atvt.create({
+    const  Atvt = await prisma. Atvt.create({
       data: { nombre }
     });
-    return NextResponse.json(atvt, { status: 201 });
+    return NextResponse.json( Atvt, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { message: 'Error al crear atvt', error },
+      { message: 'Error al crear  Atvt', error },
       { status: 500 }
     );
   }
@@ -62,14 +63,14 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { nombre } = await request.json();
-    const atvt = await prisma.atvt.update({
+    const  Atvt = await prisma. Atvt.update({
       where: { id: Number(id) },
       data: { nombre }
     });
-    return NextResponse.json(atvt);
+    return NextResponse.json( Atvt);
   } catch (error) {
     return NextResponse.json(
-      { message: 'Error al actualizar atvt', error },
+      { message: 'Error al actualizar  Atvt', error },
       { status: 500 }
     );
   }
@@ -93,7 +94,7 @@ export async function DELETE(request: NextRequest) {
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return NextResponse.json(
-      { message: 'Error al eliminar atvt', error },
+      { message: 'Error al eliminar  Atvt', error },
       { status: 500 }
     );
   }

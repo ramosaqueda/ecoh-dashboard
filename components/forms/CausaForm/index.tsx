@@ -26,6 +26,7 @@ import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
 import DatosRelato from '@/components/relato-hecho/datos-relato';
 import CrimenOrgParamsSelect from "@/components/select/CrimenOrgParamsSelect"
+import CrimenOrgGauge from '@/components/CrimenorgGauge';
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
@@ -85,8 +86,8 @@ const CausaForm: React.FC<CausaFormProps> = ({
         // Asegurarse de que las fechas estén en el formato correcto
         fechaHoraTomaConocimiento: initialValues.fechaHoraTomaConocimiento
           ? new Date(initialValues.fechaHoraTomaConocimiento)
-              .toISOString()
-              .slice(0, 16)
+            .toISOString()
+            .slice(0, 16)
           : '',
         fechaDelHecho: initialValues.fechaDelHecho
           ? new Date(initialValues.fechaDelHecho).toISOString().slice(0, 10)
@@ -148,8 +149,8 @@ const CausaForm: React.FC<CausaFormProps> = ({
                 />
 
                 {isHomicidio && (
-                    <SwitchField form={form} name="homicidioConsumado" label="Homicidio Consumado" />
-                  )}
+                  <SwitchField form={form} name="homicidioConsumado" label="Homicidio Consumado" />
+                )}
               </div>
             </div>
 
@@ -388,6 +389,8 @@ const CausaForm: React.FC<CausaFormProps> = ({
               </FormField>
             </div>
 
+
+
             <Separator />
 
             {/* Botones de Acción */}
@@ -422,7 +425,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
           </form>
         </Form>
       </CardContent>
-    </Card>
+    </Card >
   );
 };
 
