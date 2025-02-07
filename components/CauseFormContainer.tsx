@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogDescription
 } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import CausaForm from '@/components/forms/CausaForm/';
@@ -166,6 +167,9 @@ const CauseFormContainer: React.FC<CauseFormContainerProps> = ({
           }
         }}
       >
+        <VisuallyHidden>
+          <DialogTitle>Diálogo de cierre</DialogTitle>
+        </VisuallyHidden>
         {renderContent()}
       </DialogContent>
     </Dialog>

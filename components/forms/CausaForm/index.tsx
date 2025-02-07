@@ -111,20 +111,10 @@ const CausaForm: React.FC<CausaFormProps> = ({
     }
   }, [initialValues, form]);
   const selectedDelito = form.watch('delito');
-  const isHomicidio = selectedDelito === "1";
+  const isHomicidio = selectedDelito === 1;
   const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
   return (
     <Card className="mx-auto w-full max-w-[1200px]">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">
-          {isEditing ? 'Editar Causa' : 'Registro de Causa'}
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {isEditing
-            ? 'Modifique los datos de la causa existente'
-            : 'Ingrese los datos de la nueva causa'}
-        </p>
-      </CardHeader>
       <Separator className="mb-4" />
       <CardContent>
         <Form {...form}>
