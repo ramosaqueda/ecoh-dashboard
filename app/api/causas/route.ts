@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
     const causaEcoh = searchParams.get('causaEcoh');
     const causaLegada = searchParams.get('causaLegada');
     const homicidioConsumado = searchParams.get('homicidioConsumado');
+    const crimenorg = searchParams.get('esCrimenOrganizado');
 
     let whereClause: any = {};
 
@@ -22,6 +23,13 @@ export async function GET(req: NextRequest) {
 
     if (homicidioConsumado !== null) {
       whereClause.homicidioConsumado = homicidioConsumado === 'true';
+    }
+
+    if (crimenorg !== null) {
+      const totalCausas = await prisma.causa.count({
+        where: { esCrimenOrganizado: 0}
+      });
+      return NextResponse.json({ count: totalCausas });
     }
 
     if (count === 'true') {

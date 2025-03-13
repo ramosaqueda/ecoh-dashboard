@@ -16,6 +16,7 @@ import CausasCard from '@/components/cards/CausasCard';
 import CausasLegadaCard from '@/components/cards/CausasLegadaCard';
 import { EsclarecimientoCard } from '@/components/cards/EsclarecimientoCard';
 import NationalityDistribution from '@/components/charts/NationalityDistribution';
+import CausasCrimenOrgCard from '@/components/cards/CausasCrimenOrgCard';
 
 export default async function page() {
   const user = await currentUser();
@@ -49,6 +50,7 @@ export default async function page() {
               <CausasEcohCard />
               <CausasLegadaCard />
               <EsclarecimientoCard />
+              <CausasCrimenOrgCard />
             </div>
 
             {/* Línea de tiempo destacada */}
