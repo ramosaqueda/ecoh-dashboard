@@ -8,10 +8,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from "@/components/ui/label";
+import { TriangleAlert } from 'lucide-react';
+
 import FormField from './FormField';
 import SwitchField from './SwitchField';
 import AnalistaSelect from '@/components/select/AnalistaSelect';
+import AtvtSelect from '@/components/select/AtvtSelect';
 import AbogadoSelect from '@/components/select/AbogadoSelect';
 import DelitoSelect from '@/components/select/DelitoSelect';
 import TribunalSelect from '@/components/select/TribunalSelect';
@@ -20,7 +24,8 @@ import FocoSelect from '@/components/select/FocoSelect';
 
 import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
-import CrimenOrgParamsSelect from '@/components/select/CrimenOrgParamsSelect';
+import DatosRelato from '@/components/relato-hecho/datos-relato';
+import CrimenOrgParamsSelect from "@/components/select/CrimenOrgParamsSelect"
 import CrimenOrgGauge from '@/components/CrimenorgGauge';
 
 interface CausaFormProps {
@@ -34,7 +39,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
   initialValues = {},
   onSubmit,
   isSubmitting,
-  isEditing = false
+  isEditing
 }) => {
   const form = useForm<CausaFormData>({
     resolver: zodResolver(causaSchema),
@@ -47,32 +52,41 @@ const CausaForm: React.FC<CausaFormProps> = ({
       // Sobrescribir con los valores iniciales si existen
       ...initialValues
     }
+
   });
 
-  const handleSubmit = async (data: CausaFormData) => {
+  const handleSubmit = async (data) => {
+    console.log('Formulario antes de enviar:', data); // Añade este log
+
+    const { ...form } = data;
     try {
       await onSubmit(data);
-
       if (!isEditing) {
         form.reset();
       }
     } catch (error) {
       console.error('Error en el formulario:', error);
+    } finally {
+
     }
   };
 
   React.useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
-      console.log('VALORES INICIALES:', initialValues);
       // Asegurarse de que los IDs sean strings para los selects
+      console.log('Initial values received:', initialValues);
+
       const formattedValues = {
         ...initialValues,
         abogado: initialValues.abogado?.toString(),
         analista: initialValues.analista?.toString(),
+        atvt: initialValues.atvt?.toString(),
         fiscalACargo: initialValues.fiscalACargo?.toString(),
         tribunal: initialValues.tribunal?.toString(),
         delito: initialValues.delito?.toString(),
         foco: initialValues.foco?.toString(),
+        causaId: initialValues.causaId?.toString() || '',
+        esCrimenOrganizado: initialValues.esCrimenOrganizado,
         // Asegurarse de que las fechas estén en el formato correcto
         fechaHoraTomaConocimiento: initialValues.fechaHoraTomaConocimiento
           ? new Date(initialValues.fechaHoraTomaConocimiento)
@@ -100,22 +114,14 @@ const CausaForm: React.FC<CausaFormProps> = ({
       console.log('No initialValues provided');
     }
   }, [initialValues, form]);
+
   const selectedDelito = form.watch('delito');
-  const isHomicidio = selectedDelito === "1";
+  // Corrección aquí: comparar como string o como número
+  const isHomicidio = selectedDelito === 1 || selectedDelito === "1";
   const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
 
   return (
     <Card className="mx-auto w-full max-w-[1200px]">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">
-          {isEditing ? 'Editar Causa' : 'Registro de Causa'}
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {isEditing
-            ? 'Modifique los datos de la causa existente'
-            : 'Ingrese los datos de la nueva causa'}
-        </p>
-      </CardHeader>
       <Separator className="mb-4" />
       <CardContent>
         <Form {...form}>
@@ -280,6 +286,19 @@ const CausaForm: React.FC<CausaFormProps> = ({
                   />
                 </FormField>
 
+                <FormField form={form} name="atvt" label="Atvt">
+                    <AtvtSelect
+                      value={form.watch('atvt')}
+                      onValueChange={(value) => {
+                        console.log('ATVT seleccionado:', value);
+                        form.setValue('atvt', value, {
+                          shouldValidate: true,
+                          shouldDirty: true
+                        });
+                      }}
+                    />
+                  </FormField>
+
                 <FormField form={form} name="tribunal" label="Tribunal">
                   <TribunalSelect
                     value={form.watch('tribunal')}
@@ -318,40 +337,58 @@ const CausaForm: React.FC<CausaFormProps> = ({
             </div>
 
             {/* Sección de Parámetros de Crimen Organizado */}
-            <div className="space-y-2">
+            <div className="space-y-4">
               <h3 className="font-medium">Parámetros Crimen Organizado</h3>
-              <div className="grid grid-cols-3 gap-6">
-                {/* Select ocupando 2 columnas */}
-                <div className="col-span-2">
-                  <FormField
-                    form={form}
-                    name="co"
-                    label="Crimen Organizado"
-                  >
-                    <CrimenOrgParamsSelect />
-                  </FormField>
-                </div>
-
-                {/* Checkbox ocupando 1 columna */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="terms1"
-                    className="w-4 h-4 border-2 border-gray-500 rounded-none"
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <label
-                      htmlFor="terms1"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Crimen Organizado
-                    </label>
+              <FormField form={form} name="co" label="Crimen Organizado">
+                <CrimenOrgParamsSelect id={initialValues.causaId || ''} />
+              </FormField>
+              <div className="items-top flex space-x-2">
+                <RadioGroup
+                  value={form.watch('esCrimenOrganizado') === true ? '0' : form.watch('esCrimenOrganizado') === false ? '1' : '2'}
+                  onValueChange={(value) => {
+                    // Convertir a booleano antes de guardarlo en el formulario
+                    // '0' = Es crimen organizado (true)
+                    // '1' = No es crimen organizado (false)
+                    // '2' = Se desconoce (null o false, dependiendo de tu caso de uso)
+                    const booleanValue = value === '0' ? true : false;
+                    form.setValue('esCrimenOrganizado', booleanValue, {
+                      shouldValidate: true,
+                      shouldDirty: true
+                    });
+                  }}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="0" id="esCO" />
+                    <Label htmlFor="esCO">Es Crimen Organizado</Label>
                   </div>
-                </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="1" id="noCO" />
+                    <Label htmlFor="noCO">No es Crimen Organizado</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="2" id="desconoce" />
+                    <Label htmlFor="desconoce">Se desconoce</Label>
+                  </div>
+                </RadioGroup>
               </div>
             </div>
+
             {/* Sección de Observaciones */}
             <div className="space-y-4">
               <h3 className="font-medium">Observaciones</h3>
+              <div className='relative'>
+                <FormField form={form} name="datosRelevantes" label={
+                  <div className='flex items-center gap-2'>
+                    <h3 className="text-[16px] ">Datos Relevantes</h3>
+                    <TriangleAlert size={20} className='text-red-500' />
+                  </div>
+                } >
+                  <DatosRelato causaId={initialValues.causaId || ''} />
+                </FormField>
+              </div>
+
+
+
               <FormField form={form} name="observacion" label="Observación">
                 <Textarea
                   className="min-h-[100px]"

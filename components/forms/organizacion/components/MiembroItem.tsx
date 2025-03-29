@@ -17,8 +17,6 @@ interface MiembroItemProps {
   miembro: Miembro;
   index: number;
   imputados: Imputado[];
-  openCombobox: boolean;
-  onOpenComboboxChange: (open: boolean) => void;
   onUpdate: (index: number, field: string, value: any) => void;
   onRemove: (index: number) => void;
 }
@@ -27,8 +25,6 @@ function MiembroItem({
   miembro,
   index,
   imputados,
-  openCombobox,
-  onOpenComboboxChange,
   onUpdate,
   onRemove
 }: MiembroItemProps) {
@@ -39,8 +35,6 @@ function MiembroItem({
           value={miembro.imputadoId}
           onChange={(value) => onUpdate(index, 'imputadoId', value)}
           imputados={imputados}
-          open={openCombobox}
-          onOpenChange={(onOpenChange) => onOpenComboboxChange(onOpenChange)}
         />
       </TableCell>
       <TableCell>

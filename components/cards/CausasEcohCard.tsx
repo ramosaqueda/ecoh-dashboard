@@ -7,12 +7,14 @@ import {
   CardHeader,
   CardTitle
 } from '@/components/ui/card';
+import { useYearContext } from '@/components/YearSelector';
 
 interface CausasCountResponse {
   count: number;
 }
 
 const CausasEcohCard: React.FC = () => {
+  const { selectedYear } = useYearContext();
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,19 @@ const CausasEcohCard: React.FC = () => {
     const fetchCausasCount = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/causas?count=true&causaEcoh=true');
+        
+        // Construir URL para la API
+        const url = new URL('/api/causas', window.location.origin);
+        url.searchParams.append('count', 'true');
+        url.searchParams.append('causaEcoh', 'true');
+        
+        // Solo añadir year si no es "todos"
+        if (selectedYear !== 'todos') {
+          url.searchParams.append('year', selectedYear);
+        }
+        
+        const response = await fetch(url.toString());
+        
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
@@ -36,12 +50,15 @@ const CausasEcohCard: React.FC = () => {
     };
 
     fetchCausasCount();
-  }, []);
+  }, [selectedYear]);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">CAUSAS ECOH</CardTitle>
+        <span className="text-xs text-muted-foreground">
+          {selectedYear === 'todos' ? 'Todos los años' : selectedYear}
+        </span>
       </CardHeader>
       <CardContent>
         {loading ? (

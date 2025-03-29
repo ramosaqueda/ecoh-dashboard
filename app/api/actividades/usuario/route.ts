@@ -6,7 +6,11 @@ import { auth } from '@clerk/nextjs/server';
 export async function GET(req: NextRequest) {
   try {
     const { userId } = await auth();
+    console.log('userId:', userId);
+
+   
     if (!userId) {
+    
       return NextResponse.json({ data: [] });
     }
 
@@ -17,7 +21,7 @@ export async function GET(req: NextRequest) {
     if (!usuario) {
       return NextResponse.json({ data: [] });
     }
-
+    console.log('usuario encontrado:', usuario);
     const actividades = await prisma.actividad.findMany({
       where: { usuario_id: usuario.id },
       include: {
@@ -30,7 +34,7 @@ export async function GET(req: NextRequest) {
         }
       }
     });
-
+    console.log('actividades encontradas:', actividades.length);
     // Devolver en el mismo formato que el endpoint principal
     return NextResponse.json({ data: actividades });
   } catch (error) {

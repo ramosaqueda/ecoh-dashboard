@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from '@/components/ui/tooltip';
+import { useYearContext } from '@/components/YearSelector';
 
 interface EsclarecimientoData {
   totalCausas: number;
@@ -37,18 +38,12 @@ interface TipoDelito {
 }
 
 export function EsclarecimientoCard() {
+  const { selectedYear } = useYearContext();
   const [data, setData] = useState<EsclarecimientoData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [tiposDelito, setTiposDelito] = useState<TipoDelito[]>([]);
-  const [selectedYear, setSelectedYear] = useState(
-    new Date().getFullYear().toString()
-  );
   const [selectedTipoDelito, setSelectedTipoDelito] = useState('todos');
   const [soloHomicidiosConsumados, setSoloHomicidiosConsumados] = useState(false);
-
-  const years = Array.from({ length: 5 }, (_, i) =>
-    (new Date().getFullYear() - i).toString()
-  );
 
   useEffect(() => {
     const fetchTiposDelito = async () => {
@@ -71,7 +66,7 @@ export function EsclarecimientoCard() {
       setIsLoading(true);
       try {
         const params = new URLSearchParams({
-          year: selectedYear,
+          ...(selectedYear !== 'todos' && { year: selectedYear }),
           ...(selectedTipoDelito !== 'todos' && { tipoDelito: selectedTipoDelito }),
           ...(soloHomicidiosConsumados && { homicidioConsumado: 'true' })
         });
@@ -136,6 +131,9 @@ export function EsclarecimientoCard() {
                 </TooltipContent>
               </Tooltip>
             </div>
+            <div className="text-sm text-muted-foreground">
+              {selectedYear === 'todos' ? 'Todos los años' : `Año: ${selectedYear}`}
+            </div>
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex gap-2">
@@ -148,18 +146,6 @@ export function EsclarecimientoCard() {
                   {tiposDelito.map((tipo) => (
                     <SelectItem key={tipo.id} value={tipo.id.toString()}>
                       {tipo.nombre.trim()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue placeholder="Año" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year}>
-                      {year}
                     </SelectItem>
                   ))}
                 </SelectContent>

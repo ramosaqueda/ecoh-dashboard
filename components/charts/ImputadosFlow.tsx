@@ -2,15 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { ResponsiveSankey } from '@nivo/sankey';
+import { useYearContext } from '@/components/YearSelector';
 
 interface FlowData {
   nodes: Array<{
@@ -25,15 +19,9 @@ interface FlowData {
 }
 
 export function ImputadosFlow() {
+  const { selectedYear } = useYearContext();
   const [data, setData] = useState<FlowData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(
-    new Date().getFullYear().toString()
-  );
-
-  const years = Array.from({ length: 5 }, (_, i) =>
-    (new Date().getFullYear() - i).toString()
-  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,18 +46,9 @@ export function ImputadosFlow() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Flujo Gestión de causas con imputados</CardTitle>
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[100px]">
-            <SelectValue placeholder="Año" />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map((year) => (
-              <SelectItem key={year} value={year}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="text-sm text-muted-foreground">
+          Año: {selectedYear}
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -115,4 +94,3 @@ export function ImputadosFlow() {
     </Card>
   );
 }
-

@@ -6,13 +6,34 @@ const prisma = new PrismaClient();
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const year = parseInt(
-      searchParams.get('year') || new Date().getFullYear().toString()
-    );
+    
+    // Manejar la opción "todos" para el año
+    const yearParam = searchParams.get('year');
+    let dateFilter = {};
+    
+    // Solo aplicar filtro de fecha si year no es "todos" y existe
+    if (yearParam && yearParam !== 'todos') {
+      const year = parseInt(yearParam);
+      
+      if (isNaN(year)) {
+        return NextResponse.json(
+          { error: 'El parámetro year debe ser un número válido' },
+          { status: 400 }
+        );
+      }
+      
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+      
+      dateFilter = {
+        fechaDelHecho: {
+          gte: startDate,
+          lte: endDate
+        }
+      };
+    }
+    
     const onlyEcoh = searchParams.get('onlyEcoh') === 'true';
-
-    const startDate = new Date(year, 0, 1);
-    const endDate = new Date(year, 11, 31);
 
     // Obtener los delitos primero para poder filtrar por ECOH si es necesario
     const delitos = await prisma.delito.findMany({
@@ -27,17 +48,19 @@ export async function GET(req: Request) {
     const delitoIds = delitos.map(d => d.id);
     const delitoMap = new Map(delitos.map((d) => [d.id, d.nombre]));
 
+    // Combinar filtros de fecha y delito
+    const whereConditions = {
+      ...dateFilter,
+      delitoId: {
+        in: delitoIds
+      }
+    };
+
+    console.log('Consulta delitos con filtros:', whereConditions);
+
     const distribution = await prisma.causa.groupBy({
       by: ['delitoId'],
-      where: {
-        fechaDelHecho: {
-          gte: startDate,
-          lte: endDate
-        },
-        delitoId: {
-          in: delitoIds
-        }
-      },
+      where: whereConditions,
       _count: true,
       orderBy: {
         _count: {
@@ -61,7 +84,7 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Error fetching delitos distribution:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Error interno del servidor', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
   }

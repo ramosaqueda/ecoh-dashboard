@@ -20,6 +20,7 @@ export type Task = {
   title: string;
   description?: string;
   status: Status;
+  assignedTo?: string; // Campo añadido para el correo del encargado
 };
 
 export type State = {
@@ -42,7 +43,7 @@ const initialTasks: Task[] = [
 ];
 
 export type Actions = {
-  addTask: (title: string, description?: string) => void;
+  addTask: (title: string, description?: string, assignedTo?: string) => void; // Actualizado para incluir el correo
   addCol: (title: string) => void;
   dragTask: (id: string | null) => void;
   removeTask: (title: string) => void;
@@ -58,11 +59,11 @@ export const useTaskStore = create<State & Actions>()(
       tasks: initialTasks,
       columns: defaultCols,
       draggedTask: null,
-      addTask: (title: string, description?: string) =>
+      addTask: (title: string, description?: string, assignedTo?: string) =>
         set((state) => ({
           tasks: [
             ...state.tasks,
-            { id: uuid(), title, description, status: 'TODO' }
+            { id: uuid(), title, description, status: 'TODO', assignedTo }
           ]
         })),
       updateCol: (id: UniqueIdentifier, newName: string) =>

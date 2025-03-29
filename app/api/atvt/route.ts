@@ -3,8 +3,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
@@ -90,7 +88,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma. Atvt.delete({
+    await prisma.atvt.delete({
       where: { id: Number(id) }
     });
     return new NextResponse(null, { status: 204 });

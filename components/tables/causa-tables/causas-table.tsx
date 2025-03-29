@@ -81,7 +81,7 @@ export function CausasDataTable<TData, TValue>({
       try {
         const [abogadosRes, analistasRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/abogado`),
-          fetch(`${API_BASE_URL}/apii/analista`)
+          fetch(`${API_BASE_URL}/api/analista`)
         ]);
 
         if (abogadosRes.ok && analistasRes.ok) {

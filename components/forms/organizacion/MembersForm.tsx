@@ -16,13 +16,6 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -34,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import ImputadoCombobox from './components/ImputadoCombobox'; // Ajusta la ruta según sea necesario
 
 const AddMemberForm = ({ organization, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -92,22 +86,13 @@ const AddMemberForm = ({ organization, onClose, onSuccess }) => {
       
       <div>
         <label className="block text-sm font-medium mb-1">Imputado</label>
-        <Select
+        <ImputadoCombobox
           value={formData.imputadoId.toString()}
-          onValueChange={(value) => setFormData({...formData, imputadoId: parseInt(value)})}
-          disabled={loading}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={loading ? "Cargando imputados..." : "Seleccione un imputado"} />
-          </SelectTrigger>
-          <SelectContent>
-            {imputados.map((imputado) => (
-              <SelectItem key={imputado.id} value={imputado.id.toString()}>
-                {imputado.nombreSujeto}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(value) => setFormData({...formData, imputadoId: parseInt(value)})}
+          imputados={imputados}
+          isDisabled={loading}
+          error={error ? "Error al cargar imputados" : undefined}
+        />
       </div>
 
       <div>

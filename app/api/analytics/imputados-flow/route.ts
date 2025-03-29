@@ -6,23 +6,39 @@ const prisma = new PrismaClient();
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const year = parseInt(
-      searchParams.get('year') || new Date().getFullYear().toString()
-    );
-
-    const startDate = new Date(year, 0, 1);
-    const endDate = new Date(year, 11, 31);
-
-    // Obtener imputados y sus estados
-    const imputados = await prisma.causasImputados.findMany({
-      where: {
+    const yearParam = searchParams.get('year');
+    
+    let whereCondition = {};
+    
+    // Verificar si se seleccionó "todos" o no se proporcionó año
+    if (yearParam && yearParam !== 'todos') {
+      const year = parseInt(yearParam);
+      
+      // Validar que sea un número válido
+      if (isNaN(year)) {
+        return NextResponse.json(
+          { error: 'El parámetro year debe ser un número válido' },
+          { status: 400 }
+        );
+      }
+      
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+      
+      // Establecer filtro de fecha solo si no es "todos"
+      whereCondition = {
         causa: {
           fechaDelHecho: {
             gte: startDate,
             lte: endDate
           }
         }
-      },
+      };
+    }
+
+    // Obtener imputados y sus estados (con o sin filtro de año)
+    const imputados = await prisma.causasImputados.findMany({
+      where: whereCondition,
       include: {
         cautelar: true
       }
@@ -77,7 +93,7 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Error fetching imputados flow:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Error interno del servidor', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
   }

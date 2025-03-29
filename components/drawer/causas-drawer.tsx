@@ -17,8 +17,7 @@ import {
   FileText,
   User,
   Scale,
-  AlertCircle,
-  Handcuffs,
+  AlertCircle,  
   UserRoundSearch,
   Loader2
 } from 'lucide-react';

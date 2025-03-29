@@ -7,6 +7,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+// Modelo para el Genograma
+model Genograma {
+  id             Int      @id @default(autoincrement())
+  rucCausa       String?  // RUC de la causa vinculada al genograma
+  
+  // Contenido del genograma como JSON
+  personas       Json     // Array de personas con sus atributos
+  relaciones     Json     // Array de relaciones entre personas
+  
+  // Código mermaid generado para visualización
+  mermaidCode    String   @db.Text
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Relación con la causa
+  causaId        Int?
+  causa          Causa?   @relation(fields: [causaId], references: [id])
+  
+  @@index([causaId])
+  @@index([rucCausa])
+}
 model Causa {
   id                        Int               @id @default(autoincrement())
   denominacionCausa         String
@@ -33,19 +56,18 @@ model Causa {
   focoId                    Int?
   delitoId                  Int?
   abogadoId                 Int?
-
+  esCrimenOrganizado        Int?
   tribunalId                Int?
   nacionalidadVictimaId     Int?
   abogado                   Abogado?          @relation(fields: [abogadoId], references: [id])
   analista                  Analista?         @relation(fields: [analistaId], references: [id])
-  atvt                      Atv?              @relation(fields: [atvtId], references: [id])
+  atvt                      Atvt?              @relation(fields: [atvtId], references: [id])   
   comuna                    Comuna?           @relation(fields: [comunaId], references: [id])
   delito                    Delito?           @relation(fields: [delitoId], references: [id])
   fiscal                    Fiscal?           @relation(fields: [fiscalId], references: [id])
   foco                      Foco?             @relation(fields: [focoId], references: [id])
   nacionalidadVictima       Nacionalidad?     @relation(fields: [nacionalidadVictimaId], references: [id])
   tribunal                  Tribunal?         @relation(fields: [tribunalId], references: [id])
-  esCrimenOrganizado        Boolean?
   imputados                 CausasImputados[]
   actividades              Actividad[]        // Relación con Actividad
 
@@ -57,6 +79,11 @@ model Causa {
   causasRelacionadasArista  CausasRelacionadas[] @relation("CausaArista")
   causasCrimenOrg CausasCrimenOrganizado[]
   MedidaIntrusiva MedidaIntrusiva[]
+
+  // Nueva relación con Genograma
+  genogramas                Genograma[]
+  relato                    RelatoHecho?
+   
 }
 
 model CrimenOrganizadoParams {
@@ -141,11 +168,10 @@ model Analista {
   causas Causa[]
 }
 
-model Atv {
+model Atvt {
   id     Int     @id @default(autoincrement())
   nombre String
   causas Causa[]
-    @@map("Atvt")
 }	
 
 
@@ -463,4 +489,12 @@ model TipoMedida {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   medidasIntrusivas MedidaIntrusiva[]
+}
+
+
+model RelatoHecho {
+  id          Int                    @id @default(autoincrement())
+  causaId     Int                    @unique
+  causa       Causa                  @relation(fields: [causaId], references: [id])
+  relato      String 
 }

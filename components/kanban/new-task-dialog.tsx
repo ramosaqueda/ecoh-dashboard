@@ -23,10 +23,16 @@ export default function NewTaskDialog() {
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const { title, description } = Object.fromEntries(formData);
+    const { title, description, assignedTo } = Object.fromEntries(formData);
 
-    if (typeof title !== 'string' || typeof description !== 'string') return;
-    addTask(title, description);
+    if (typeof title !== 'string') return;
+    
+    // Mantenemos la compatibilidad con el código existente
+    const desc = typeof description === 'string' ? description : undefined;
+    const email = typeof assignedTo === 'string' && assignedTo.trim() !== '' ? assignedTo : undefined;
+    
+    // Pasamos el correo como tercer parámetro a addTask
+    addTask(title, desc, email);
   };
 
   return (
@@ -54,6 +60,7 @@ export default function NewTaskDialog() {
               name="title"
               placeholder="Todo title..."
               className="col-span-4"
+              required
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -61,6 +68,15 @@ export default function NewTaskDialog() {
               id="description"
               name="description"
               placeholder="Description..."
+              className="col-span-4"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Input
+              id="assignedTo"
+              name="assignedTo"
+              type="email"
+              placeholder="Assigned to (email)..."
               className="col-span-4"
             />
           </div>

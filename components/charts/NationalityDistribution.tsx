@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { useYearContext } from '@/components/YearSelector';
 
 interface NationalityData {
   name: string;
@@ -51,14 +52,16 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function NationalityDistribution() {
+  const { selectedYear } = useYearContext();
   const [data, setData] = useState<NationalityData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState<number | undefined>();
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
-        const response = await fetch('/api/analytics/nationality-distribution');
+        const response = await fetch(`/api/analytics/nationality-distribution?year=${selectedYear}`);
         if (!response.ok) throw new Error('Error al cargar datos');
 
         const rawData = await response.json();
@@ -88,7 +91,7 @@ export default function NationalityDistribution() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedYear]); // Añadimos selectedYear como dependencia
 
   const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index);
@@ -102,7 +105,12 @@ export default function NationalityDistribution() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Distribución por Nacionalidad</span>
+          <div className="flex items-center gap-2">
+            <span>Distribución por Nacionalidad</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              ({selectedYear})
+            </span>
+          </div>
           <span className="text-sm font-normal text-muted-foreground">
             Total: {data.reduce((acc, curr) => acc + curr.value, 0)} imputados
           </span>

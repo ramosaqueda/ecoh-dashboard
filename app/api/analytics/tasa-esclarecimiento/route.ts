@@ -1,35 +1,55 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const year = parseInt(
-      searchParams.get('year') || new Date().getFullYear().toString()
-    );
-    const tipoDelito = searchParams.get('tipoDelito');
-    const homicidioConsumado = searchParams.get('homicidioConsumado') === 'true';
+    // Obtener parámetros de la consulta
+    const yearParam = req.nextUrl.searchParams.get('year');
+    const tipoDelito = req.nextUrl.searchParams.get('tipoDelito');
+    const homicidioConsumado = req.nextUrl.searchParams.get('homicidioConsumado') === 'true';
 
-    const startDate = new Date(year, 0, 1);
-    const endDate = new Date(year, 11, 31);
+    // Definir las condiciones base de la consulta
+    let whereConditions: any = {};
 
-    // Base query conditions
-    const baseWhere = {
-      fechaDelHecho: {
+    // Filtrar por año si no es "todos"
+    if (yearParam && yearParam !== 'todos') {
+      const year = parseInt(yearParam);
+      
+      if (isNaN(year)) {
+        return NextResponse.json(
+          { error: 'El parámetro year debe ser un número válido' },
+          { status: 400 }
+        );
+      }
+      
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+
+      whereConditions.fechaDelHecho = {
         gte: startDate,
         lte: endDate
-      },
-      causaEcoh: true,
-      ...(tipoDelito && tipoDelito !== 'todos' ? { delitoId: parseInt(tipoDelito) } : {}),
-      ...(homicidioConsumado ? { homicidioConsumado: true } : {})
-    };
+      };
+    }
 
+    // Aplicar otros filtros
+    whereConditions.causaEcoh = true;
+    
+    if (tipoDelito && tipoDelito !== 'todos') {
+      whereConditions.delitoId = parseInt(tipoDelito);
+    }
+    
+    if (homicidioConsumado) {
+      whereConditions.homicidioConsumado = true;
+    }
+
+    // Contar total de causas con estos filtros
     const totalCausas = await prisma.causa.count({
-      where: baseWhere
+      where: whereConditions
     });
 
+    // Obtener causas con imputados
     const causasImputados = await prisma.causa.findMany({
-      where: baseWhere,
+      where: whereConditions,
       include: {
         imputados: {
           include: {
@@ -40,9 +60,7 @@ export async function GET(req: Request) {
       }
     });
 
-    let causasEsclarecidas = 0;
-
-    // Usaremos sets para mantener un registro único de las causas por cada condición
+    // Analizar los datos para el esclarecimiento
     const causasFormalizadasSet = new Set();
     const causasConCautelarSet = new Set();
     const causasAmbasSituacionesSet = new Set();
@@ -52,9 +70,7 @@ export async function GET(req: Request) {
       const tieneFormalizados = causa.imputados.some(imp => imp.formalizado);
       const tieneCautelar = causa.imputados.some(imp => imp.cautelarId !== null);
 
-      // Registrar cada condición
       if (tieneFormalizados) {
-        
         causasFormalizadasSet.add(causa.id);
       }
 
@@ -62,14 +78,11 @@ export async function GET(req: Request) {
         causasConCautelarSet.add(causa.id);
       }
 
-      // Si tiene ambas condiciones
       if (tieneFormalizados && tieneCautelar) {
         causasAmbasSituacionesSet.add(causa.id);
       }
 
-      // Si tiene al menos una de las condiciones
       if (tieneFormalizados || tieneCautelar) {
-        console.log('causa.id', causa.id);
         causasEsclarecidasSet.add(causa.id);
       }
     });
@@ -91,10 +104,8 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Error fetching tasa esclarecimiento:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Error interno del servidor', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

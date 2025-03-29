@@ -19,6 +19,8 @@ export interface CausaFormData {
   fiscalACargo: number;
   abogado: number;
   analista: number;
+  atvt: number;
+  esCrimenOrganizado: boolean;
 
   numeroIta: string;
 

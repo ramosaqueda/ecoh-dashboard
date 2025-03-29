@@ -28,7 +28,6 @@ import {
   User,
   User2Icon,
   UserX2Icon,
-  Twitter,
   X,
   DramaIcon,
   BriefcaseBusiness,
@@ -43,6 +42,13 @@ import {
   ListCheckIcon,
   LucideListCheck,
   ListChecksIcon,
+  WaypointsIcon,
+  ScaleIcon,
+  SquareCheckBig,
+  MapPinCheckIcon,
+  PhoneCallIcon,
+  PanelLeftIcon,
+  GhostIcon,
   
 
 } from 'lucide-react';
@@ -85,6 +91,13 @@ export const Icons = {
   Smartphone: Smartphone,
   UserRound: UserRound,
   check:ListChecksIcon,
+  Waipoints:WaypointsIcon,
+  lawyer:ScaleIcon,
+  squerecheck:SquareCheckBig,
+  mappin:MapPinCheckIcon,
+  phonecall:PhoneCallIcon,
+  panelleft:PanelLeftIcon,
+  ghost:GhostIcon,
 
   gitHub: ({ ...props }: LucideProps) => (
     <svg
@@ -103,7 +116,7 @@ export const Icons = {
       ></path>
     </svg>
   ),
-  twitter: Twitter,
+  
  
   kanban:SquareDashedKanbanIcon,
   folder:FolderCheckIcon

@@ -1,60 +1,69 @@
+// src/components/ui/date-range-picker.tsx
 'use client';
+
+import * as React from 'react';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { DateRange } from 'react-day-picker';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
 } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { CalendarIcon } from '@radix-ui/react-icons';
-import { addDays, format } from 'date-fns';
-import * as React from 'react';
-import { DateRange } from 'react-day-picker';
 
-export function CalendarDateRangePicker({
-  className
-}: React.HTMLAttributes<HTMLDivElement>) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(2023, 0, 20),
-    to: addDays(new Date(2023, 0, 20), 20)
-  });
+interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
+  dateRange: DateRange | undefined;
+  onDateRangeChange: (range: DateRange | undefined) => void;
+  align?: 'start' | 'center' | 'end';
+}
 
+export function DateRangePicker({
+  dateRange,
+  onDateRangeChange,
+  className,
+  align = 'start',
+  ...props
+}: DateRangePickerProps) {
   return (
-    <div className={cn('grid gap-2', className)}>
+    <div className={cn('grid gap-2', className)} {...props}>
       <Popover>
         <PopoverTrigger asChild>
           <Button
             id="date"
             variant={'outline'}
             className={cn(
-              'w-[260px] justify-start text-left font-normal',
-              !date && 'text-muted-foreground'
+              'w-full justify-start text-left font-normal',
+              !dateRange && 'text-muted-foreground'
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
+            {dateRange?.from ? (
+              dateRange.to ? (
                 <>
-                  {format(date.from, 'LLL dd, y')} -{' '}
-                  {format(date.to, 'LLL dd, y')}
+                  {format(dateRange.from, 'dd/MM/yyyy', { locale: es })} -{' '}
+                  {format(dateRange.to, 'dd/MM/yyyy', { locale: es })}
                 </>
               ) : (
-                format(date.from, 'LLL dd, y')
+                format(dateRange.from, 'dd/MM/yyyy', { locale: es })
               )
             ) : (
-              <span>Pick a date</span>
+              <span>Seleccione un rango de fechas</span>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
+        <PopoverContent className="w-auto p-0" align={align}>
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
+            defaultMonth={dateRange?.from}
+            selected={dateRange}
+            onSelect={onDateRangeChange}
             numberOfMonths={2}
+            locale={es}
           />
         </PopoverContent>
       </Popover>

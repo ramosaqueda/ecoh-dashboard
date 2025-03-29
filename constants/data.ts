@@ -8,6 +8,33 @@ export const navItems: NavItem[] = [
     label: 'Dashboard'
   },
   {
+    title: 'Paneles',
+    icon: 'panelleft',
+    subItems: [
+      {
+        title: 'Resumen Formalizaciones',
+        href: '/dashboard/ResumenFormalizaciones',
+        icon: 'lawyer',
+        label: 'causas'
+      },
+      {
+        title: 'Actividades',
+        href: '/dashboard/seguimiento-actividades',
+        icon: 'squerecheck'
+      },
+      {
+        title: 'Incidencia Geográfica',
+        href: '/dashboard/incidencia-geografica',
+        icon: 'mappin'
+      },
+      {
+        title: 'Telefonos Panel',
+        href: '/dashboard/telefonos-panel',
+        icon: 'phonecall'
+      }
+    ]
+  },
+  {
     title: 'Gestión de Causas',
     icon: 'folder',
     subItems: [
@@ -33,8 +60,8 @@ export const navItems: NavItem[] = [
   {
     title: 'Imputados o Sujetos de interés',
     href: '/dashboard/imputado',
-    icon: 'Mask',
-    label: 'profile'
+    icon: 'ghost',
+    label: 'imputados'
   },
 
   {
@@ -51,6 +78,12 @@ export const navItems: NavItem[] = [
     label: 'Mapas'
   },
   
+  {
+    title: 'Genogramas',
+    href: '/dashboard/genograma',
+    icon: 'Waipoints',
+    label: 'Genogramas'
+  },
   {
     title: 'Registro Organizaciones',
     icon: 'Net',

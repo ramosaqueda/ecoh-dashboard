@@ -13,43 +13,79 @@ import {
   Label
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label as UILabel } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { useYearContext } from '@/components/YearSelector';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface MonthlyData {
   month: string;
   count: number;
+  countPrevYear?: number;
 }
 
 export default function CaseTimelineChart() {
+  const { selectedYear } = useYearContext();
+  const [localYear, setLocalYear] = useState(new Date().getFullYear().toString());
   const [data, setData] = useState<MonthlyData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(
-    new Date().getFullYear().toString()
-  );
   const [caseType, setCaseType] = useState('all'); // "all" | "ecoh"
+  const [showComparison, setShowComparison] = useState(true);
 
-  const years = Array.from({ length: 5 }, (_, i) =>
-    (new Date().getFullYear() - i).toString()
+  // Generar array de años desde 2024 hasta el año actual
+  const years = Array.from(
+    { length: new Date().getFullYear() - 2023 },
+    (_, i) => (2024 + i).toString()
   );
+
+  // Actualizar el año local cuando cambia el año global, siempre que no sea "todos"
+  useEffect(() => {
+    if (selectedYear !== 'todos') {
+      setLocalYear(selectedYear);
+    }
+  }, [selectedYear]);
+
+  const fetchDataForYear = async (year: string, type: string) => {
+    try {
+      // Construir URL para la API
+      const url = new URL('/api/analytics/case-timeline', window.location.origin);
+      url.searchParams.append('type', type);
+      url.searchParams.append('year', year);
+      
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) throw new Error('Error al cargar datos');
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching case timeline for year ${year}:`, error);
+      return [];
+    }
+  };
 
   const fetchData = async (year: string, type: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/analytics/case-timeline?year=${year}&type=${type}`
-      );
-      if (!response.ok) throw new Error('Error al cargar datos');
-      const rawData = await response.json();
-      setData(rawData);
+      // Obtener datos del año seleccionado
+      const currentYearData = await fetchDataForYear(year, type);
+      
+      // Obtener datos del año anterior para comparación
+      const prevYear = (parseInt(year) - 1).toString();
+      const prevYearData = await fetchDataForYear(prevYear, type);
+      
+      // Combinar datos para la visualización
+      const combinedData = currentYearData.map((item: MonthlyData) => {
+        const prevYearItem = prevYearData.find(
+          (prev: MonthlyData) => prev.month === item.month
+        );
+        return {
+          ...item,
+          countPrevYear: prevYearItem ? prevYearItem.count : 0
+        };
+      });
+      
+      setData(combinedData);
     } catch (error) {
       console.error('Error fetching case timeline:', error);
     } finally {
@@ -58,17 +94,22 @@ export default function CaseTimelineChart() {
   };
 
   useEffect(() => {
-    fetchData(selectedYear, caseType);
-  }, [selectedYear, caseType]);
+    fetchData(localYear, caseType);
+  }, [localYear, caseType]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="rounded-lg border bg-white p-3 shadow-lg">
           <p className="font-medium">{label}</p>
-          <p className="text-sm">
-            <span className="font-semibold">{payload[0].value}</span> casos
-          </p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              <span className="font-semibold">{entry.value}</span> casos
+              {entry.dataKey === 'countPrevYear' 
+                ? ` (${parseInt(localYear) - 1})` 
+                : ` (${localYear})`}
+            </p>
+          ))}
         </div>
       );
     }
@@ -81,35 +122,58 @@ export default function CaseTimelineChart() {
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
             <CardTitle>Casos por Mes</CardTitle>
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {selectedYear === 'todos' ? (
+              <div className="flex items-center gap-2 text-sm">
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <span className="text-muted-foreground">Este gráfico requiere un año específico</span>
+                <Select value={localYear} onValueChange={setLocalYear}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Año" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Año: {localYear}
+              </div>
+            )}
           </div>
 
-          <RadioGroup
-            defaultValue="all"
-            value={caseType}
-            onValueChange={setCaseType}
-            className="flex space-x-4"
-          >
+          <div className="flex items-center justify-between">
+            <RadioGroup
+              defaultValue="all"
+              value={caseType}
+              onValueChange={setCaseType}
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="all" id="all" />
+                <UILabel htmlFor="all">Todas las causas</UILabel>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="ecoh" id="ecoh" />
+                <UILabel htmlFor="ecoh">Solo causas ECOH</UILabel>
+              </div>
+            </RadioGroup>
+            
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="all" id="all" />
-              <UILabel htmlFor="all">Todas las causas</UILabel>
+              <Switch
+                id="compare-years"
+                checked={showComparison}
+                onCheckedChange={setShowComparison}
+              />
+              <UILabel htmlFor="compare-years">
+                Comparar con {parseInt(localYear) - 1}
+              </UILabel>
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="ecoh" id="ecoh" />
-              <UILabel htmlFor="ecoh">Solo causas ECOH</UILabel>
-            </div>
-          </RadioGroup>
+          </div>
         </div>
       </CardHeader>
 
@@ -146,12 +210,23 @@ export default function CaseTimelineChart() {
                 <Line
                   type="monotone"
                   dataKey="count"
-                  name={caseType === 'all' ? 'Todos los casos' : 'Casos ECOH'}
+                  name={`${caseType === 'all' ? 'Todos los casos' : 'Casos ECOH'} ${localYear}`}
                   stroke="#8884d8"
                   strokeWidth={2}
                   dot={{ r: 4 }}
                   activeDot={{ r: 8 }}
                 />
+                {showComparison && (
+                  <Line
+                    type="monotone"
+                    dataKey="countPrevYear"
+                    name={`${caseType === 'all' ? 'Todos los casos' : 'Casos ECOH'} ${parseInt(localYear) - 1}`}
+                    stroke="#82ca9d"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ r: 4 }}
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>

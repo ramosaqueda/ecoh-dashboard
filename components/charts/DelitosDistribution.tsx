@@ -3,16 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useYearContext } from '@/components/YearSelector';
 
 interface DelitoData {
   name: string;
@@ -49,26 +43,28 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export function DelitosDistribution() {
+  const { selectedYear } = useYearContext();
   const [rawData, setRawData] = useState<DelitoData[]>([]);
   const [filteredData, setFilteredData] = useState<DelitoData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(
-    new Date().getFullYear().toString()
-  );
   const [showOnlyECOH, setShowOnlyECOH] = useState(false);
-
-  const years = Array.from({ length: 5 }, (_, i) =>
-    (new Date().getFullYear() - i).toString()
-  );
 
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `/api/analytics/delitos-distribution?year=${selectedYear}&onlyEcoh=${showOnlyECOH}`
-        );
+        // Construir URL para la API
+        const url = new URL('/api/analytics/delitos-distribution', window.location.origin);
+        url.searchParams.append('onlyEcoh', showOnlyECOH.toString());
+        
+        // Solo añadir year si no es "todos"
+        if (selectedYear !== 'todos') {
+          url.searchParams.append('year', selectedYear);
+        }
+        
+        const response = await fetch(url.toString());
+        
         if (!response.ok) throw new Error('Error al cargar datos');
 
         const jsonData = await response.json();
@@ -102,7 +98,7 @@ export function DelitosDistribution() {
     };
 
     fetchData();
-  }, [selectedYear]);
+  }, [selectedYear, showOnlyECOH]);
 
   // Handle ECOH filter changes
   useEffect(() => {
@@ -158,18 +154,9 @@ export function DelitosDistribution() {
             />
             <Label htmlFor="ecoh-filter">Solo ECOH</Label>
           </div>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Año" />
-            </SelectTrigger>
-            <SelectContent>
-              {years.map((year) => (
-                <SelectItem key={year} value={year}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="text-sm text-muted-foreground">
+            {selectedYear === 'todos' ? 'Todos los años' : `Año: ${selectedYear}`}
+          </div>
         </div>
       </CardHeader>
       <CardContent>

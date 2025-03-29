@@ -14,20 +14,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Loader2, ChevronDown, ChevronUp,ExternalLink } from "lucide-react"; 
+import { Loader2, ChevronDown, ChevronUp, ExternalLink } from "lucide-react"; 
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import DelitoSelect from '@/components/select/DelitoSelect';
 import { Button } from '@/components/ui/button';
+import { useYearContext } from '@/components/YearSelector';
 
 const CauseTimeline = () => {
+  const { selectedYear } = useYearContext();
   const [causes, setCauses] = useState([]);
   const [filteredCauses, setFilteredCauses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,13 +33,6 @@ const CauseTimeline = () => {
   const [expandedMonth, setExpandedMonth] = useState(null);
   const [showOnlyEcoh, setShowOnlyEcoh] = useState(false);
   const [selectedDelito, setSelectedDelito] = useState('');
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
-
-  // Generar array de años desde 2024 hasta el año actual
-  const years = Array.from(
-    { length: new Date().getFullYear() - 2023 },
-    (_, i) => (2024 + i).toString()
-  );
 
   useEffect(() => {
     const fetchCauses = async () => {
@@ -67,7 +55,7 @@ const CauseTimeline = () => {
   useEffect(() => {
     let filtered = [...causes];
     
-    // Filtrar por año seleccionado
+    // Filtrar por año seleccionado (usando el año global)
     filtered = filtered.filter(cause => {
       const causeDate = parseISO(cause.fechaDelHecho);
       return causeDate.getFullYear() === parseInt(selectedYear);
@@ -152,18 +140,9 @@ const CauseTimeline = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               Línea de Tiempo de Causas
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[100px] ml-2">
-                  <SelectValue placeholder="Año" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <span className="text-sm text-muted-foreground ml-2">
+                {selectedYear}
+              </span>
             </CardTitle>
             <div className="flex items-center gap-6">
               <div className="flex items-center space-x-2">
@@ -255,7 +234,8 @@ const CauseTimeline = () => {
 
                     {/* Expanded month view */}
                     {isExpanded && monthCauses.length > 0 && (
-                      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10">
+                      <div className="absolute top-20 left-1/2 -translate-x-1/4 z-50  transform -translate-y-1/8">
+                        
                         <Card className="w-64">
                           <CardHeader>
                             <CardTitle className="text-sm">

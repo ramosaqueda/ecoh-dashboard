@@ -1,3 +1,4 @@
+'use client';
 import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';

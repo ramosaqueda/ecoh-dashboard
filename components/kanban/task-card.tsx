@@ -1,16 +1,19 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Task } from '@/lib/store';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cva } from 'class-variance-authority';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Mail } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // export interface Task {
 //   id: UniqueIdentifier;
 //   columnId: ColumnId;
 //   content: string;
+//   title: string;
+//   assignedTo?: string; // Email del encargado
 // }
 
 interface TaskCardProps {
@@ -80,9 +83,24 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
           Task
         </Badge>
       </CardHeader>
-      <CardContent className="whitespace-pre-wrap px-3 pb-6 pt-3 text-left">
+      <CardContent className="whitespace-pre-wrap px-3 pb-3 pt-3 text-left">
         {task.title}
       </CardContent>
+      {task.assignedTo && (
+        <CardFooter className="border-t border-secondary px-3 py-2 flex items-center gap-2 text-sm text-muted-foreground">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className="flex items-center gap-1">
+                <Mail className="h-3.5 w-3.5" />
+                <span className="truncate max-w-[180px]">{task.assignedTo}</span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{task.assignedTo}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardFooter>
+      )}
     </Card>
   );
 }

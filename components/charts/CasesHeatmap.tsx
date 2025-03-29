@@ -1,14 +1,8 @@
-"use client"
+'use client'
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { useYearContext } from '@/components/YearSelector';
 
 interface DayData {
   date: string;
@@ -22,24 +16,24 @@ const MONTHS = [
 ];
 
 export function CasesHeatmap() {
+  const { selectedYear } = useYearContext();
   const [data, setData] = useState<DayData[]>([]);
   const [weekdayStats, setWeekdayStats] = useState<{[key: string]: number}>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(
-    new Date().getFullYear().toString()
-  );
-
-  const years = Array.from({ length: 5 }, (_, i) =>
-    (new Date().getFullYear() - i).toString()
-  );
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `/api/analytics/cases-heatmap?year=${selectedYear}`
-        );
+        // Construir URL para la API
+        const url = new URL('/api/analytics/cases-heatmap', window.location.origin);
+        
+        // Solo añadir year si no es "todos"
+        if (selectedYear !== 'todos') {
+          url.searchParams.append('year', selectedYear);
+        }
+        
+        const response = await fetch(url.toString());
         const fetchedData = await response.json();
         setData(fetchedData);
         
@@ -96,18 +90,9 @@ export function CasesHeatmap() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Intensidad de Casos por Día</CardTitle>
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[100px]">
-            <SelectValue placeholder="Año" />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map((year) => (
-              <SelectItem key={year} value={year}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="text-sm text-muted-foreground">
+          {selectedYear === 'todos' ? 'Todos los años' : `Año: ${selectedYear}`}
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
