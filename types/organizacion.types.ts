@@ -20,6 +20,25 @@ export interface Miembro {
   };
 }
 
+export interface CausaAsociada {
+  id?: number;
+  organizacionId?: number;
+  causaId: number;
+  ruc?: string;
+  denominacion?: string;
+  fechaAsociacion: Date;
+  observacion?: string;
+  causa?: {
+    id: number;
+    ruc?: string;
+    denominacionCausa: string;
+    delito?: {
+      id: number;
+      nombre: string;
+    };
+  };
+}
+
 export interface Imputado {
   id: string;
   nombreSujeto: string;
@@ -32,6 +51,9 @@ export interface TipoOrganizacion {
 }
 
 export interface OrganizacionFormProps {
-  initialData?: Partial<OrganizacionFormValues>;
+  initialData?: Partial<OrganizacionFormValues> & {
+    miembros?: Miembro[];
+    causas?: CausaAsociada[];
+  };
   onSubmit: (data: OrganizacionFormValues) => Promise<void>;
 }

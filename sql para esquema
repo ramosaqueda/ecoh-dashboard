@@ -107,3 +107,52 @@ ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- Crear índice para la relación
 CREATE INDEX "Actividad_usuarioId_idx" ON "Actividad"("usuarioId");
+
+
+-- nuevo esquema para relaciones causa y organizaciones.
+
+-- Crear la tabla CausaOrganizacion
+CREATE TABLE "CausaOrganizacion" (
+  "id" SERIAL PRIMARY KEY,
+  "organizacionId" INTEGER NOT NULL,
+  "causaId" INTEGER NOT NULL,
+  "fechaAsociacion" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "observacion" TEXT,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  
+  -- Añadir restricción de unicidad
+  CONSTRAINT "CausaOrganizacion_organizacionId_causaId_unique" UNIQUE ("organizacionId", "causaId")
+);
+
+-- Crear índices para mejorar el rendimiento
+CREATE INDEX "CausaOrganizacion_causaId_idx" ON "CausaOrganizacion"("causaId");
+CREATE INDEX "CausaOrganizacion_organizacionId_idx" ON "CausaOrganizacion"("organizacionId");
+
+-- Añadir claves foráneas
+ALTER TABLE "CausaOrganizacion" 
+  ADD CONSTRAINT "CausaOrganizacion_organizacionId_fkey" 
+  FOREIGN KEY ("organizacionId") 
+  REFERENCES "OrganizacionDelictual"("id") 
+  ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "CausaOrganizacion" 
+  ADD CONSTRAINT "CausaOrganizacion_causaId_fkey" 
+  FOREIGN KEY ("causaId") 
+  REFERENCES "Causa"("id") 
+  ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Crear función para actualizar automáticamente la columna updatedAt
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."updatedAt" = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Crear trigger para actualizar automáticamente updatedAt
+CREATE TRIGGER update_causa_organizacion_updated_at
+BEFORE UPDATE ON "CausaOrganizacion"
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

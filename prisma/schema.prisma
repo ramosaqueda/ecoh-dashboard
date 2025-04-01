@@ -79,11 +79,32 @@ model Causa {
   causasRelacionadasArista  CausasRelacionadas[] @relation("CausaArista")
   causasCrimenOrg CausasCrimenOrganizado[]
   MedidaIntrusiva MedidaIntrusiva[]
+  //relacion para organizaciones.
+  // Se mantiene la relación con la tabla intermedia CausaOrganizacion
+  organizaciones CausaOrganizacion[]
+
 
   // Nueva relación con Genograma
   genogramas                Genograma[]
   relato                    RelatoHecho?
    
+}
+
+// Add this new model to schema.prisma
+model CausaOrganizacion {
+  id              Int                   @id @default(autoincrement())
+  organizacionId  Int
+  causaId         Int
+  fechaAsociacion DateTime              @default(now())
+  observacion     String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  causa           Causa                 @relation(fields: [causaId], references: [id])
+  organizacion    OrganizacionDelictual @relation(fields: [organizacionId], references: [id])
+
+  @@unique([organizacionId, causaId])
+  @@index([causaId])
+  @@index([organizacionId])
 }
 
 model CrimenOrganizadoParams {
@@ -264,6 +285,8 @@ model OrganizacionDelictual {
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
   miembros            MiembrosOrganizacion[]
+  causas              CausaOrganizacion[]
+
   tipoOrganizacion    TipoOrganizacion       @relation(fields: [tipoOrganizacionId], references: [id])
 }
 

@@ -26,6 +26,27 @@ export async function GET(
           include: {
             imputado: true
           }
+        },
+        // Incluir causas asociadas
+        causas: {
+          include: {
+            causa: {
+              select: {
+                id: true,
+                ruc: true,
+                denominacionCausa: true,
+                delito: {
+                  select: {
+                    id: true,
+                    nombre: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: {
+            fechaAsociacion: 'desc'
+          }
         }
       }
     });
@@ -66,6 +87,24 @@ export async function PUT(
         miembros: {
           include: {
             imputado: true
+          }
+        },
+        // Incluir causas asociadas también en la respuesta de actualización
+        causas: {
+          include: {
+            causa: {
+              select: {
+                id: true,
+                ruc: true,
+                denominacionCausa: true,
+                delito: {
+                  select: {
+                    id: true,
+                    nombre: true
+                  }
+                }
+              }
+            }
           }
         }
       }

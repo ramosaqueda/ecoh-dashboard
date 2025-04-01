@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -30,6 +29,7 @@ interface Causa {
   fechaDelHecho: string;
   delitoId?: number;
   causaEcoh: boolean;  
+  esCrimenOrganizado?: boolean | number;
 }
 
 const breadcrumbItems = [
@@ -48,6 +48,7 @@ export default function MapPage() {
   const [selectedYear, setSelectedYear] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [showEcohOnly, setShowEcohOnly] = useState(false);
+  const [showCrimenOrganizadoOnly, setShowCrimenOrganizadoOnly] = useState(false);
 
   // Fetch de causas
   const { data: causas = [], isLoading: isLoadingCausas } = useQuery({
@@ -100,16 +101,35 @@ export default function MapPage() {
     })
     .filter((causa: Causa) => {
       if (!showEcohOnly) return true;
-      return causa.causaEcoh === true;  // Usando el nombre correcto de la propiedad
+      return causa.causaEcoh === true;
+    })
+    .filter((causa: Causa) => {
+      if (!showCrimenOrganizadoOnly) return true;
+      
+      // Manejar caso donde esCrimenOrganizado puede ser booleano o número
+      if (typeof causa.esCrimenOrganizado === 'boolean') {
+        return causa.esCrimenOrganizado === true;
+      } else if (typeof causa.esCrimenOrganizado === 'number') {
+        return causa.esCrimenOrganizado === 1;
+      }
+      
+      return false;
     });
 
-    // Para debugging, puedes agregar temporalmente:
+    // Para debugging
     useEffect(() => {
-    if (showEcohOnly) {
-      console.log('Causas ECOH encontradas:', causas.filter(c => c.causaEcoh).length);
-      console.log('Primera causa ECOH:', causas.find(c => c.causaEcoh));
-    }
-    }, [showEcohOnly, causas]);
+      if (showEcohOnly) {
+        console.log('Causas ECOH encontradas:', causas.filter(c => c.causaEcoh).length);
+      }
+      if (showCrimenOrganizadoOnly) {
+        const causasCrimen = causas.filter(c => {
+          if (typeof c.esCrimenOrganizado === 'boolean') return c.esCrimenOrganizado === true;
+          if (typeof c.esCrimenOrganizado === 'number') return c.esCrimenOrganizado === 1;
+          return false;
+        });
+        console.log('Causas Crimen Organizado encontradas:', causasCrimen.length);
+      }
+    }, [showEcohOnly, showCrimenOrganizadoOnly, causas]);
 
   if (isLoadingCausas || isLoadingDelitos) {
     return (
@@ -129,96 +149,107 @@ export default function MapPage() {
           <h1 className="mt-4 text-2xl font-bold">Mapa de Causas</h1>
         </div>
 
-        <div className="flex-1  px-6 py-4">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            <div className="lg:col-span-9">
-              <StatsPanel
-                causas={causasFiltradas}
-                selectedDelito={selectedDelito}
+        <div className="flex-1 px-6 py-4">
+          {/* Panel reducido de estadísticas */}
+          <div className="mb-4">
+            <StatsPanel
+              causas={causasFiltradas}
+              selectedDelito={selectedDelito}
+              compact={true} // Añadir una prop para versión compacta
+            />
+          </div>
+
+          {/* Barra de filtros en línea */}
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 shadow-sm">
+            {/* Filtros en línea */}
+            <div className="flex items-center gap-2">
+              <Label htmlFor="ecoh-mode" className="whitespace-nowrap font-medium">
+                Solo ECOH:
+              </Label>
+              <Switch
+                id="ecoh-mode"
+                checked={showEcohOnly}
+                onCheckedChange={setShowEcohOnly}
               />
             </div>
-
-            <div className="space-y-4 lg:col-span-2">
-              {/* Switch de ECOH */}
-              <div className="flex items-center justify-between space-x-2 rounded-lg border p-3 shadow-sm">
-                <Label htmlFor="ecoh-mode" className="font-medium">
-                  Solo causas ECOH
-                </Label>
-                <Switch
-                  id="ecoh-mode"
-                  checked={showEcohOnly}
-                  onCheckedChange={setShowEcohOnly}
-                />
-              </div>
-
-              {/* Select de Delitos */}
-              <div className="select-wrapper w-full">
-                <Select value={selectedDelito} onValueChange={setSelectedDelito}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Filtrar por delito" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Delitos</SelectLabel>
-                      <SelectItem value="todos">Todos los delitos</SelectItem>
-                      {delitos.map((delito) => (
-                        <SelectItem key={delito.id} value={delito.id.toString()}>
-                          {delito.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Select de Años */}
-              <div className="select-wrapper w-full">
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Filtrar por año" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Año</SelectLabel>
-                      <SelectItem value="todos">Todos los años</SelectItem>
-                      {yearsAvailable.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Campo de Búsqueda */}
-              <div className="relative w-full">
+            
+            <div className="flex items-center gap-2 ml-4">
+              <Label htmlFor="crimen-organizado-mode" className="whitespace-nowrap font-medium">
+                Solo Crimen Organizado:
+              </Label>
+              <Switch
+                id="crimen-organizado-mode"
+                checked={showCrimenOrganizadoOnly}
+                onCheckedChange={setShowCrimenOrganizadoOnly}
+              />
+            </div>
+            
+            <div className="flex items-center gap-2 ml-4">
+              <Label className="whitespace-nowrap font-medium">Delito:</Label>
+              <Select value={selectedDelito} onValueChange={setSelectedDelito}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por delito" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="todos">Todos los delitos</SelectItem>
+                    {delitos.map((delito) => (
+                      <SelectItem key={delito.id} value={delito.id.toString()}>
+                        {delito.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center gap-2 ml-4">
+              <Label className="whitespace-nowrap font-medium">Año:</Label>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Filtrar por año" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {yearsAvailable.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex flex-1 items-center gap-2 ml-4">
+              <div className="relative flex-1">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por RUC o dirección..."
+                  placeholder="Buscar por RUC o denominación..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-8"
+                  className="pl-8"
                 />
               </div>
-
-              {/* Contador de resultados */}
-              <div className="text-sm text-muted-foreground">
-                Mostrando {causasFiltradas.length} de {causas.length} causas
-                {showEcohOnly && ' (Solo ECOH)'}
-              </div>
+            </div>
+            
+            <div className="text-sm text-muted-foreground ml-auto">
+              {causasFiltradas.length} / {causas.length} causas
+              {showEcohOnly && ' (ECOH)'}
+              {showCrimenOrganizadoOnly && ' (Crimen Org.)'}
             </div>
           </div>
 
-          {/* Mapa */}
-
+          {/* Mapa con mayor altura */}
           <div 
             key="leaflet-map-container" 
-            className="h-[calc(100vh-400px)] min-h-[600px] w-full rounded-lg border"
+            className="h-[calc(100vh-300px)] min-h-[600px] w-full rounded-lg border"
           >
-
-
-            <LeafletMap causas={causasFiltradas} />
+            <LeafletMap 
+              causas={causasFiltradas} 
+              showCrimenOrganizado={showCrimenOrganizadoOnly}
+            />
           </div>
         </div>
       </div>

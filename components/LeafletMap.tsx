@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef,useMemo } from 'react';
+import { useRef, useMemo } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -128,17 +128,38 @@ interface LeafletMapProps {
     denominacionCausa: string;
     ruc: string;
     coordenadasSs: string | null;
+    esCrimenOrganizado?: boolean | number;
     delito?: {
       id: number;
       nombre: string;
     };
   }>;
+  showCrimenOrganizado?: boolean;
 }
 
-function LeafletMap({ causas }: LeafletMapProps) {
+function LeafletMap({ causas, showCrimenOrganizado = false }: LeafletMapProps) {
   const mapRef = useRef<L.Map | null>(null);
-  const memoizedCausas = useMemo(() => causas, [causas]);
+  const memoizedCausas = useMemo(() => {
+    // Si está activado el filtro de crimen organizado, filtramos las causas
+    if (showCrimenOrganizado) {
+      return causas.filter(causa => {
+        // Manejar el caso donde esCrimenOrganizado puede ser un número o un booleano
+        if (typeof causa.esCrimenOrganizado === 'boolean') {
+          return causa.esCrimenOrganizado === true;
+        } else if (typeof causa.esCrimenOrganizado === 'number') {
+          return causa.esCrimenOrganizado === 1;
+        }
+        return false;
+      });
+    }
+    return causas;
+  }, [causas, showCrimenOrganizado]);
+
+  console.log(`Total causas sin filtrar: ${causas.length}`);
+  console.log(`Total causas filtradas por crimen organizado: ${memoizedCausas.length}`);
+
   if (memoizedCausas.length === 0) return null;
+
   const getPosicion = (coordStr: string | null) => {
     const defaultCoords = {
       lat: -33.4489,
@@ -167,7 +188,7 @@ function LeafletMap({ causas }: LeafletMapProps) {
     }
   };
 
-  const primerPuntoValido = causas.find((causa) => {
+  const primerPuntoValido = memoizedCausas.find((causa) => {
     const coords = getPosicion(causa.coordenadasSs);
     return coords.isValid;
   });
@@ -190,7 +211,13 @@ function LeafletMap({ causas }: LeafletMapProps) {
     });
   };
 
-  const getMarkerColor = (delito?: { id: number; nombre: string }) => {
+  const getMarkerColor = (causa: any) => {
+    // Si está en modo crimen organizado, mostrar marcadores rojos
+    if (showCrimenOrganizado) {
+      return '#e74c3c'; // Rojo para crimen organizado
+    }
+
+    // Color por tipo de delito
     const colorMap: { [key: number]: string } = {
       1: '#e74c3c', // Rojo
       2: '#3498db', // Azul
@@ -198,11 +225,19 @@ function LeafletMap({ causas }: LeafletMapProps) {
       4: '#f1c40f' // Amarillo
     };
 
-    return delito?.id ? colorMap[delito.id] || '#95a5a6' : '#95a5a6';
+    return causa.delito?.id ? colorMap[causa.delito.id] || '#95a5a6' : '#95a5a6';
   };
 
-  const createCustomMarker = (delito?: { id: number; nombre: string }) => {
-    const color = getMarkerColor(delito);
+  const createCustomMarker = (causa: any) => {
+    const color = getMarkerColor(causa);
+    const isCrimenOrg = typeof causa.esCrimenOrganizado === 'boolean' 
+      ? causa.esCrimenOrganizado 
+      : causa.esCrimenOrganizado === 1;
+    
+    // Tamaño ligeramente mayor para marcadores de crimen organizado
+    const size = showCrimenOrganizado || isCrimenOrg ? 24 : 20;
+    const anchorSize = size / 2;
+
     return L.divIcon({
       html: `
         <div style="
@@ -212,11 +247,12 @@ function LeafletMap({ causas }: LeafletMapProps) {
           border-radius: 50%;
           border: 2px solid white;
           box-shadow: 0 0 4px rgba(0,0,0,0.3);
-        " class="marker-pulse"></div>
+          ${(showCrimenOrganizado || isCrimenOrg) ? 'animation: pulse 1.5s infinite;' : ''}
+        "></div>
       `,
       className: 'custom-marker',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
+      iconSize: [size, size],
+      iconAnchor: [anchorSize, anchorSize]
     });
   };
 
@@ -262,10 +298,6 @@ function LeafletMap({ causas }: LeafletMapProps) {
           background: rgba(231, 76, 60, 0.8);
           width: 55px;
           height: 55px;
-        }
-
-        .marker-pulse {
-          animation: pulse 1.5s infinite;
         }
 
         @keyframes pulse {
@@ -324,7 +356,7 @@ function LeafletMap({ causas }: LeafletMapProps) {
         ref={(map) => {
           mapRef.current = map;
         }}
-         key="unique-map-container"  // Añade una key única
+        key={`map-container-${showCrimenOrganizado ? 'crimen-org' : 'normal'}`}  // Añade una key única que cambie con el filtro
         center={[centroInicial.lat, centroInicial.lng]}
         zoom={12}
         className="h-full w-full rounded-lg shadow-lg"
@@ -349,15 +381,19 @@ function LeafletMap({ causas }: LeafletMapProps) {
           animate={true}
           animateAddingMarkers={true}
         >
-          {causas.map((causa) => {
+          {memoizedCausas.map((causa) => {
             const coordenadas = getPosicion(causa.coordenadasSs);
             if (!coordenadas.isValid) return null;
+
+            const isCrimenOrg = typeof causa.esCrimenOrganizado === 'boolean' 
+              ? causa.esCrimenOrganizado 
+              : causa.esCrimenOrganizado === 1;
 
             return (
               <Marker
                 key={causa.id}
                 position={[coordenadas.lat, coordenadas.lng]}
-                icon={createCustomMarker(causa.delito)}
+                icon={createCustomMarker(causa)}
               >
                 <Popup>
                   <div className="p-2">
@@ -366,6 +402,11 @@ function LeafletMap({ causas }: LeafletMapProps) {
                     {causa.delito && (
                       <p className="text-sm text-blue-600">
                         Delito: {causa.delito.nombre}
+                      </p>
+                    )}
+                    {isCrimenOrg && (
+                      <p className="text-sm font-semibold text-red-600">
+                        Crimen Organizado
                       </p>
                     )}
                     <p className="mt-1 text-xs text-gray-600">

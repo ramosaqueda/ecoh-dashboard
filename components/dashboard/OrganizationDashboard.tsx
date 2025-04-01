@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2, Users,Network } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Users, Network, FileText } from 'lucide-react';
 import Link from 'next/link';
 import {
   Card,
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import MembersForm from '@/components/forms/organizacion/MembersForm';
+import CausasForm from '@/components/forms/organizacion/components/CausasForm';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -166,104 +167,6 @@ const OrganizationForm = ({ organization, onClose, onSuccess }) => {
   );
 };
 
-// Componente de Diálogo de Miembros
-const MembersDialog = ({ organization, onClose }) => {
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (organization) {
-      fetchMembers();
-    }
-  }, [organization]);
-
-  const fetchMembers = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/organizacion/${organization.id}/miembros`);
-      if (!response.ok) {
-        throw new Error('Error al cargar los miembros');
-      }
-      const data = await response.json();
-      setMembers(data);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return <div className="p-4 text-center">Cargando miembros...</div>;
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  return (
-    <div className="min-w-[600px]">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">
-          Miembros de {organization?.nombre}
-        </h3>
-        <Button onClick={() => { }}>
-          Añadir Miembro
-        </Button>
-      </div>
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead>Fecha Ingreso</TableHead>
-              <TableHead>Fecha Salida</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell>{member.imputado.nombreSujeto}</TableCell>
-                <TableCell>{member.rol}</TableCell>
-                <TableCell>{new Date(member.fechaIngreso).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  {member.fechaSalida
-                    ? new Date(member.fechaSalida).toLocaleDateString()
-                    : '-'}
-                </TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs ${member.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                    {member.activo ? 'Activo' : 'Inactivo'}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="icon">
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  );
-};
-
 // Componente Principal
 const OrganizationDashboard = () => {
   const [organizations, setOrganizations] = useState([]);
@@ -275,6 +178,7 @@ const OrganizationDashboard = () => {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [showOrgForm, setShowOrgForm] = useState(false);
   const [showMembersDialog, setShowMembersDialog] = useState(false);
+  const [showCausasDialog, setShowCausasDialog] = useState(false);
 
   useEffect(() => {
     fetchOrganizations();
@@ -406,39 +310,49 @@ const OrganizationDashboard = () => {
                         </TableCell>
                         <TableCell>{org.miembros?.length || 0}</TableCell>
                       
-<TableCell>
-  <div className="flex space-x-2">
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={() => {
-        setSelectedOrg(org);
-        setShowOrgForm(true);
-      }}
-    >
-      <Edit2 className="h-4 w-4" />
-    </Button>
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={() => {
-        setSelectedOrg(org);
-        setShowMembersDialog(true);
-      }}
-    >
-      <Users className="h-4 w-4" />
-    </Button>
-    <Button
-      variant="outline"
-      size="icon"
-      asChild
-    >
-      <Link href={`/organizaciones/${org.id}/network`}>
-        <Network className="h-4 w-4 text-blue-600" />
-      </Link>
-    </Button>
-  </div>
-</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedOrg(org);
+                                setShowOrgForm(true);
+                              }}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedOrg(org);
+                                setShowMembersDialog(true);
+                              }}
+                            >
+                              <Users className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedOrg(org);
+                                setShowCausasDialog(true);
+                              }}
+                            >
+                              <FileText className="h-4 w-4 text-orange-600" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              asChild
+                            >
+                              <Link href={`/organizaciones/${org.id}/network`}>
+                                <Network className="h-4 w-4 text-blue-600" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -504,6 +418,26 @@ const OrganizationDashboard = () => {
               organization={selectedOrg}
               onClose={() => {
                 setShowMembersDialog(false);
+                setSelectedOrg(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showCausasDialog}
+        onOpenChange={(open) => {
+          setShowCausasDialog(open);
+          if (!open) setSelectedOrg(null);
+        }}
+      >
+        <DialogContent className="max-w-4xl">
+          {selectedOrg && (
+            <CausasForm
+              organization={selectedOrg}
+              onClose={() => {
+                setShowCausasDialog(false);
                 setSelectedOrg(null);
               }}
             />

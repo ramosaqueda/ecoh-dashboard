@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import GeneralForm from './components/GeneralForm';
 import MiembrosForm from './components/MiembrosForm';
+import CausasForm from './components/CausasForm';
 import { organizacionSchema } from '@/schemas/organizacion.schema';
 import {
   OrganizacionFormProps,
@@ -194,7 +195,7 @@ function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
           value={currentTab}
           onValueChange={setCurrentTab}
         >
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="general">Información General</TabsTrigger>
             <TabsTrigger value="miembros" className="relative">
               Miembros
@@ -203,6 +204,9 @@ function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
                   {selectedMiembros.length}
                 </span>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="causas" className="relative">
+              Causas
             </TabsTrigger>
           </TabsList>
 
@@ -219,6 +223,18 @@ function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
               onUpdateMiembro={handleUpdateMiembro}
               onRemoveMiembro={handleRemoveMiembro}
             />
+          </TabsContent>
+          
+          <TabsContent value="causas">
+            {initialData?.id ? (
+              <CausasForm organization={initialData} />
+            ) : (
+              <div className="p-8 text-center border rounded-md bg-muted/10">
+                <p className="text-muted-foreground">
+                  Debe guardar la organización antes de poder asociar causas.
+                </p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
