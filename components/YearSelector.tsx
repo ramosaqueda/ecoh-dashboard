@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+ 
 
 // Context para el año seleccionado
 const YearContext = createContext<{
@@ -57,7 +57,7 @@ export function YearSelector() {
           ))}
         </SelectContent>
       </Select>
-      <Button onClick={updateDashboard}>Actualizar</Button>
+
     </div>
   );
 }

@@ -8,40 +8,27 @@ import { CasesHeatmap } from '@/components/charts/CasesHeatmap';
 import { DelitosDistribution } from '@/components/charts/DelitosDistribution';
 import { ImputadosFlow } from '@/components/charts/ImputadosFlow';
 import FormalizationChart from '@/components/charts/FormalizationChart';
-import { Button } from '@/components/ui/button';
 import CauseTimeline from '@/components/CauseTimeline';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CausasEcohCard from '@/components/cards/CausasEcohCard';
 import CausasCard from '@/components/cards/CausasCard';
 import CausasLegadaCard from '@/components/cards/CausasLegadaCard';
 import { EsclarecimientoCard } from '@/components/cards/EsclarecimientoCard';
+import { CrimenOrganizadoCard } from '@/components/cards/CrimenOrganizadoCard';
 import NationalityDistribution from '@/components/charts/NationalityDistribution';
 import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 
 export default function DashboardPage() {
+  const { user, isLoaded } = useUser();
   const [userName, setUserName] = useState('Usuario');
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        // Fetch usuario de la API o del cliente Clerk
-        const response = await fetch('/api/user');
-        const data = await response.json();
-        setUserName(data.firstName || 'Usuario');
-      } catch (error) {
-        console.error('Error al cargar datos del usuario:', error);
-      }
-    };
-
-    fetchUserData();
-  }, []);
+    if (isLoaded && user) {
+      // Actualizar el nombre cuando los datos del usuario estén cargados
+      setUserName(user.firstName || 'Usuario');
+    }
+  }, [user, isLoaded]);
 
   return (
     <YearProvider>
@@ -67,11 +54,15 @@ export default function DashboardPage() {
             
             <TabsContent value="overview" className="space-y-6">
               {/* Indicadores principales */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+               
+              
                 <CausasCard />
                 <CausasEcohCard />
                 <CausasLegadaCard />
+                <CrimenOrganizadoCard />
                 <EsclarecimientoCard />
+                
               </div>
 
               {/* Línea de tiempo destacada */}

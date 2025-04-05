@@ -6,8 +6,8 @@ import Header from '@/components/layout/header';
 import { DateRangeProviderWrapper } from './date-range-provider-wrapper';
 
 export const metadata: Metadata = {
-  title: 'Ecoh Tools',
-  description: 'Set de herramientas ECOH'
+  title: 'RGECOH',
+  description: 'Registros y Gestión ECOH'
 };
 
 export default function DashboardLayout({

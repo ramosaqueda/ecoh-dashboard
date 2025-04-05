@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -435,7 +434,7 @@ export const GenogramaForm: React.FC<GenogramaFormProps> = ({
                   {...registerRelacion('descripcion')}
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Esta etiqueta se mostrará en la línea de relación cuando el tipo sea "otro"
+                  Esta etiqueta se mostrará en la línea de relación cuando el tipo sea \"otro\"
                 </p>
               </div>
 

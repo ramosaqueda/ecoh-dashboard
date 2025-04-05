@@ -17,9 +17,10 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { StatsPanel } from '@/components/StatsPanel';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, Maximize2 } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import PageContainer from '@/components/layout/page-container';
+import { Button } from '@/components/ui/button';
 
 
 interface Causa {
@@ -80,7 +81,7 @@ export default function MapPage() {
 
   // Filtrado de causas
   // Lógica de filtrado actualizada
-    const causasFiltradas = causas
+  const causasFiltradas = causas
     .filter((causa: Causa) =>
       selectedDelito === 'todos'
         ? true
@@ -116,20 +117,54 @@ export default function MapPage() {
       return false;
     });
 
-    // Para debugging
-    useEffect(() => {
-      if (showEcohOnly) {
-        console.log('Causas ECOH encontradas:', causas.filter(c => c.causaEcoh).length);
+  // Para debugging
+  useEffect(() => {
+    if (showEcohOnly) {
+      console.log('Causas ECOH encontradas:', causas.filter(c => c.causaEcoh).length);
+    }
+    if (showCrimenOrganizadoOnly) {
+      const causasCrimen = causas.filter(c => {
+        if (typeof c.esCrimenOrganizado === 'boolean') return c.esCrimenOrganizado === true;
+        if (typeof c.esCrimenOrganizado === 'number') return c.esCrimenOrganizado === 1;
+        return false;
+      });
+      console.log('Causas Crimen Organizado encontradas:', causasCrimen.length);
+    }
+  }, [showEcohOnly, showCrimenOrganizadoOnly, causas]);
+
+  // Función para abrir el mapa en una nueva ventana
+  const openMapInNewWindow = () => {
+    try {
+      // Crear un objeto con los filtros actuales y los datos necesarios
+      const mapData = {
+        causas: causasFiltradas,
+        showCrimenOrganizado: showCrimenOrganizadoOnly,
+        delitos: delitos,
+        filters: {
+          delito: selectedDelito,
+          year: selectedYear,
+          search: searchTerm,
+          ecoh: showEcohOnly,
+          crimenOrganizado: showCrimenOrganizadoOnly
+        }
+      };
+      
+      // Serializar los datos y codificarlos para pasarlos como parámetro de URL
+      const serializedData = encodeURIComponent(JSON.stringify(mapData));
+      
+      // Abrir una nueva ventana con parámetros de URL que contienen los datos
+      // Usamos una URL con un hash fragment para evitar límites de tamaño de URL
+      const newWindow = window.open(`/geo#data=${serializedData}`, '_blank');
+      
+      // Asegurarnos de que se enfoque la nueva ventana
+      if (newWindow) {
+        newWindow.focus();
       }
-      if (showCrimenOrganizadoOnly) {
-        const causasCrimen = causas.filter(c => {
-          if (typeof c.esCrimenOrganizado === 'boolean') return c.esCrimenOrganizado === true;
-          if (typeof c.esCrimenOrganizado === 'number') return c.esCrimenOrganizado === 1;
-          return false;
-        });
-        console.log('Causas Crimen Organizado encontradas:', causasCrimen.length);
-      }
-    }, [showEcohOnly, showCrimenOrganizadoOnly, causas]);
+    } catch (error) {
+      console.error('Error al abrir el mapa en pantalla completa:', error);
+      alert('Error al abrir el mapa en pantalla completa. Por favor, intente de nuevo con menos datos.');
+    }
+  };
 
   if (isLoadingCausas || isLoadingDelitos) {
     return (
@@ -233,13 +268,31 @@ export default function MapPage() {
                 />
               </div>
             </div>
+
+            {/* Botón para abrir el mapa en pantalla completa */}
+          
             
             <div className="text-sm text-muted-foreground ml-auto">
               {causasFiltradas.length} / {causas.length} causas
               {showEcohOnly && ' (ECOH)'}
               {showCrimenOrganizadoOnly && ' (Crimen Org.)'}
             </div>
+
+            <div className="mb-2 flex justify-end">
+            <Button 
+              onClick={openMapInNewWindow}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Maximize2 className="h-4 w-4" />
+              Abrir en pantalla completa
+            </Button>
           </div>
+          </div>
+
+          
+
+          
 
           {/* Mapa con mayor altura */}
           <div 

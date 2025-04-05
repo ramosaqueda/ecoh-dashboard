@@ -19,6 +19,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { useYearContext } from '@/components/YearSelector';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import DelitoSelect from '@/components/select/DelitoSelect';
 
 interface MonthlyData {
   month: string;
@@ -33,6 +34,9 @@ export default function CaseTimelineChart() {
   const [isLoading, setIsLoading] = useState(true);
   const [caseType, setCaseType] = useState('all'); // "all" | "ecoh"
   const [showComparison, setShowComparison] = useState(true);
+  
+  // Estado para el filtro de delito
+  const [tipoDelitoFilter, setTipoDelitoFilter] = useState('');
 
   // Generar array de años desde 2024 hasta el año actual
   const years = Array.from(
@@ -47,12 +51,19 @@ export default function CaseTimelineChart() {
     }
   }, [selectedYear]);
 
-  const fetchDataForYear = async (year: string, type: string) => {
+  // No necesitamos cargar los tipos de delito aquí ya que DelitoSelect lo hace internamente
+
+  const fetchDataForYear = async (year: string, type: string, tipoDelitoId: string) => {
     try {
       // Construir URL para la API
       const url = new URL('/api/analytics/case-timeline', window.location.origin);
       url.searchParams.append('type', type);
       url.searchParams.append('year', year);
+      
+      // Añadir filtro de tipo de delito si existe
+      if (tipoDelitoId) {
+        url.searchParams.append('delito_id', tipoDelitoId);
+      }
       
       const response = await fetch(url.toString());
       
@@ -64,15 +75,15 @@ export default function CaseTimelineChart() {
     }
   };
 
-  const fetchData = async (year: string, type: string) => {
+  const fetchData = async (year: string, type: string, tipoDelitoId: string) => {
     setIsLoading(true);
     try {
       // Obtener datos del año seleccionado
-      const currentYearData = await fetchDataForYear(year, type);
+      const currentYearData = await fetchDataForYear(year, type, tipoDelitoId);
       
       // Obtener datos del año anterior para comparación
       const prevYear = (parseInt(year) - 1).toString();
-      const prevYearData = await fetchDataForYear(prevYear, type);
+      const prevYearData = await fetchDataForYear(prevYear, type, tipoDelitoId);
       
       // Combinar datos para la visualización
       const combinedData = currentYearData.map((item: MonthlyData) => {
@@ -94,8 +105,8 @@ export default function CaseTimelineChart() {
   };
 
   useEffect(() => {
-    fetchData(localYear, caseType);
-  }, [localYear, caseType]);
+    fetchData(localYear, caseType, tipoDelitoFilter);
+  }, [localYear, caseType, tipoDelitoFilter]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -114,6 +125,11 @@ export default function CaseTimelineChart() {
       );
     }
     return null;
+  };
+
+  // Función para obtener la etiqueta del delito para el título del gráfico
+  const getDelitoLabel = () => {
+    return tipoDelitoFilter ? 'Delito seleccionado' : 'Todos los delitos';
   };
 
   return (
@@ -146,32 +162,42 @@ export default function CaseTimelineChart() {
             )}
           </div>
 
-          <div className="flex items-center justify-between">
-            <RadioGroup
-              defaultValue="all"
-              value={caseType}
-              onValueChange={setCaseType}
-              className="flex space-x-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="all" id="all" />
-                <UILabel htmlFor="all">Todas las causas</UILabel>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <RadioGroup
+                defaultValue="all"
+                value={caseType}
+                onValueChange={setCaseType}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="all" id="all" />
+                  <UILabel htmlFor="all">Todas las causas</UILabel>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="ecoh" id="ecoh" />
+                  <UILabel htmlFor="ecoh">Solo causas ECOH</UILabel>
+                </div>
+              </RadioGroup>
+              
+              <div className="w-[200px]">
+                <DelitoSelect
+                  value={tipoDelitoFilter}
+                  onValueChange={setTipoDelitoFilter}
+                  className="w-full"
+                />
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="ecoh" id="ecoh" />
-                <UILabel htmlFor="ecoh">Solo causas ECOH</UILabel>
+              
+              <div className="flex items-center space-x-2 ml-auto">
+                <Switch
+                  id="compare-years"
+                  checked={showComparison}
+                  onCheckedChange={setShowComparison}
+                />
+                <UILabel htmlFor="compare-years">
+                  Comparar con {parseInt(localYear) - 1}
+                </UILabel>
               </div>
-            </RadioGroup>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="compare-years"
-                checked={showComparison}
-                onCheckedChange={setShowComparison}
-              />
-              <UILabel htmlFor="compare-years">
-                Comparar con {parseInt(localYear) - 1}
-              </UILabel>
             </div>
           </div>
         </div>
@@ -210,7 +236,7 @@ export default function CaseTimelineChart() {
                 <Line
                   type="monotone"
                   dataKey="count"
-                  name={`${caseType === 'all' ? 'Todos los casos' : 'Casos ECOH'} ${localYear}`}
+                  name={`${caseType === 'all' ? 'Todos los casos' : 'Casos ECOH'} - ${getDelitoLabel()} (${localYear})`}
                   stroke="#8884d8"
                   strokeWidth={2}
                   dot={{ r: 4 }}
@@ -220,7 +246,7 @@ export default function CaseTimelineChart() {
                   <Line
                     type="monotone"
                     dataKey="countPrevYear"
-                    name={`${caseType === 'all' ? 'Todos los casos' : 'Casos ECOH'} ${parseInt(localYear) - 1}`}
+                    name={`${caseType === 'all' ? 'Todos los casos' : 'Casos ECOH'} - ${getDelitoLabel()} (${parseInt(localYear) - 1})`}
                     stroke="#82ca9d"
                     strokeWidth={2}
                     strokeDasharray="5 5"

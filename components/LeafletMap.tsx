@@ -7,7 +7,8 @@ import {
   Marker,
   Popup,
   FeatureGroup,
-  useMap
+  useMap,
+  LayersControl
 } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import dynamic from 'next/dynamic';
@@ -361,10 +362,32 @@ function LeafletMap({ causas, showCrimenOrganizado = false }: LeafletMapProps) {
         zoom={12}
         className="h-full w-full rounded-lg shadow-lg"
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        {/* Control de capas */}
+        <LayersControl position="topright">
+          {/* Capa base: OpenStreetMap */}
+          <LayersControl.BaseLayer checked name="Mapa Estándar">
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          </LayersControl.BaseLayer>
+          
+          {/* Capa satelital de ESRI */}
+          <LayersControl.BaseLayer name="Satelital">
+            <TileLayer
+              attribution='&copy; <a href="https://www.esri.com">Esri</a>'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
+          </LayersControl.BaseLayer>
+          
+          {/* Capa híbrida: Satelital con etiquetas */}
+          <LayersControl.BaseLayer name="Híbrido">
+            <TileLayer
+              attribution='&copy; <a href="https://www.esri.com">Esri</a>'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
 
         {/* Herramientas de dibujo */}
         <DrawTools />

@@ -24,7 +24,7 @@ export default function Header() {
               {/* Eliminamos el padding izquierdo */}
               <Logo className="h-8 w-8" />
               <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">
-                Ecoh Tools
+                ECOHInsight {/* Cambiamos el nombre a "ECOHInsight" */}
               </span>
             </div>
           </div>

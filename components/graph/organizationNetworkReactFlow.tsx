@@ -15,9 +15,9 @@ import {
   Edge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import  DownloadButton from '@/components/DownloadButton';
+import DownloadButton from '@/components/DownloadButton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import CustomNode from './CustomNode';
@@ -103,6 +103,9 @@ const OrganizationNetworkReactFlow = ({ organizationId }: OrganizationNetworkRea
           
           const imputadoId = `imp-${member.imputadoId}`;
           
+          // Verificar si el imputado tiene foto principal
+          const hasPhoto = member.imputado.fotoPrincipal ? true : false;
+          
           processedNodes.push({
             id: imputadoId,
             type: 'custom',
@@ -112,7 +115,8 @@ const OrganizationNetworkReactFlow = ({ organizationId }: OrganizationNetworkRea
               role: member.rol || 'Miembro',
               emoji: '👤',
               type: 'imputado',
-              imputado: member.imputado // Aseguramos pasar el objeto completo para el DetailPanel
+              imputado: member.imputado, // Pasar objeto completo
+              photoUrl: hasPhoto ? member.imputado.fotoPrincipal : null // Añadir URL de foto si existe
             }
           });
 
@@ -128,6 +132,55 @@ const OrganizationNetworkReactFlow = ({ organizationId }: OrganizationNetworkRea
             style: { stroke: '#2563eb', strokeWidth: 2 }
           });
         }
+      });
+    }
+    
+    // Procesar causas asociadas - NUEVO
+    if (org.causas && org.causas.length > 0) {
+      const radiusCausas = 400; // Radio mayor para situar las causas
+      
+      // Determinar si vamos a colocar las causas en un semicírculo inferior
+      // o en un círculo completo si hay muchas causas
+      const useSemicircle = org.causas.length <= 5;
+      const startAngle = useSemicircle ? Math.PI : 0; // Comienza desde abajo si es semicírculo
+      const endAngle = useSemicircle ? 2 * Math.PI : 2 * Math.PI; // Completa el círculo
+      const angleStep = (endAngle - startAngle) / org.causas.length;
+      
+      org.causas.forEach((causa: any, index: number) => {
+        // Calcular posición en círculo o semicírculo
+        const angle = startAngle + (index * angleStep);
+        const x = radiusCausas * Math.cos(angle);
+        const y = radiusCausas * Math.sin(angle);
+        
+        const causaId = `causa-${causa.id}`;
+        
+        processedNodes.push({
+          id: causaId,
+          type: 'custom',
+          position: { x, y },
+          data: {
+            name: causa.causa?.denominacionCausa || 'Causa sin nombre',
+            role: causa.causa?.ruc || 'Sin RUC',
+            emoji: '📋',
+            type: 'causa',
+            causa: causa.causa, // Pasar objeto completo para DetailPanel
+            delito: causa.causa?.delito?.nombre // Añadir nombre del delito si existe
+          }
+        });
+        
+        processedEdges.push({
+          id: `e-${org.id}-causa-${causa.id}`,
+          source: `org-${org.id}`,
+          target: causaId,
+          type: 'smoothstep',
+          animated: true,
+          label: 'Asociada',
+          labelStyle: { fill: '#f97316', fontWeight: 500 },
+          markerEnd: {
+            type: MarkerType.Arrow,
+          },
+          style: { stroke: '#f97316', strokeWidth: 2 } // Color naranja para diferenciar
+        });
       });
     }
 
@@ -184,7 +237,16 @@ const OrganizationNetworkReactFlow = ({ organizationId }: OrganizationNetworkRea
           <ArrowLeft className="h-4 w-4" />
           Volver
         </Button>
-        <h1 className="text-2xl font-bold">{organizacion?.nombre}</h1>
+        <h1 className="text-2xl font-bold">
+          {organizacion?.nombre}
+          {/* Añadir contador de causas */}
+          {organizacion?.causas && organizacion.causas.length > 0 && (
+            <span className="ml-2 text-sm text-orange-600 bg-orange-100 px-2 py-1 rounded-full">
+              <FileText className="inline-block h-4 w-4 mr-1" />
+              {organizacion.causas.length} Causas
+            </span>
+          )}
+        </h1>
       </div>
 
       <div className="h-[800px] w-full border rounded-lg">
@@ -201,15 +263,12 @@ const OrganizationNetworkReactFlow = ({ organizationId }: OrganizationNetworkRea
           attributionPosition="bottom-left"
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
           className="react-flow"
-
           minZoom={0.1}
           maxZoom={4}
         >
           <Background color="#aaa" gap={16} />
           <Controls />
           <DownloadButton />
-
-          
         </ReactFlow>
       </div>
 
