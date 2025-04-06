@@ -1,6 +1,4 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -19,7 +17,8 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { useYearContext } from '@/components/YearSelector';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import DelitoSelect from '@/components/select/DelitoSelect';
+// Importamos el componente corregido
+import ChartDelitoSelect from '@/components/select/ChartDelitoSelect';
 
 interface MonthlyData {
   month: string;
@@ -35,8 +34,8 @@ export default function CaseTimelineChart() {
   const [caseType, setCaseType] = useState('all'); // "all" | "ecoh"
   const [showComparison, setShowComparison] = useState(true);
   
-  // Estado para el filtro de delito
-  const [tipoDelitoFilter, setTipoDelitoFilter] = useState('');
+  // Estado para el filtro de delito ("all" para "todos")
+  const [tipoDelitoFilter, setTipoDelitoFilter] = useState('all');
 
   // Generar array de años desde 2024 hasta el año actual
   const years = Array.from(
@@ -51,17 +50,16 @@ export default function CaseTimelineChart() {
     }
   }, [selectedYear]);
 
-  // No necesitamos cargar los tipos de delito aquí ya que DelitoSelect lo hace internamente
-
-  const fetchDataForYear = async (year: string, type: string, tipoDelitoId: string) => {
+  // Memoizamos esta función para evitar recreaciones innecesarias
+  const fetchDataForYear = useCallback(async (year: string, type: string, tipoDelitoId: string) => {
     try {
       // Construir URL para la API
       const url = new URL('/api/analytics/case-timeline', window.location.origin);
       url.searchParams.append('type', type);
       url.searchParams.append('year', year);
       
-      // Añadir filtro de tipo de delito si existe
-      if (tipoDelitoId) {
+      // Añadir filtro de tipo de delito solo si no es "all" (todos)
+      if (tipoDelitoId && tipoDelitoId !== 'all') {
         url.searchParams.append('delito_id', tipoDelitoId);
       }
       
@@ -73,9 +71,10 @@ export default function CaseTimelineChart() {
       console.error(`Error fetching case timeline for year ${year}:`, error);
       return [];
     }
-  };
+  }, []);
 
-  const fetchData = async (year: string, type: string, tipoDelitoId: string) => {
+  // Memoizamos esta función para evitar recreaciones innecesarias
+  const fetchData = useCallback(async (year: string, type: string, tipoDelitoId: string) => {
     setIsLoading(true);
     try {
       // Obtener datos del año seleccionado
@@ -102,11 +101,17 @@ export default function CaseTimelineChart() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchDataForYear]);
 
+  // Controlamos las dependencias del efecto para evitar llamadas innecesarias
   useEffect(() => {
     fetchData(localYear, caseType, tipoDelitoFilter);
-  }, [localYear, caseType, tipoDelitoFilter]);
+  }, [localYear, caseType, tipoDelitoFilter, fetchData]);
+
+  // Handler para cambios en el filtro de delito
+  const handleDelitoChange = useCallback((value: string) => {
+    setTipoDelitoFilter(value);
+  }, []);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -129,7 +134,7 @@ export default function CaseTimelineChart() {
 
   // Función para obtener la etiqueta del delito para el título del gráfico
   const getDelitoLabel = () => {
-    return tipoDelitoFilter ? 'Delito seleccionado' : 'Todos los delitos';
+    return tipoDelitoFilter !== 'all' ? 'Delito seleccionado' : 'Todos los delitos';
   };
 
   return (
@@ -181,9 +186,10 @@ export default function CaseTimelineChart() {
               </RadioGroup>
               
               <div className="w-[200px]">
-                <DelitoSelect
+                {/* Usar el componente corregido */}
+                <ChartDelitoSelect
                   value={tipoDelitoFilter}
-                  onValueChange={setTipoDelitoFilter}
+                  onValueChange={handleDelitoChange}
                   className="w-full"
                 />
               </div>

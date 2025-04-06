@@ -53,16 +53,20 @@ export default function DashboardPage() {
             </TabsList>
             
             <TabsContent value="overview" className="space-y-6">
-              {/* Indicadores principales */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-               
-              
-                <CausasCard />
-                <CausasEcohCard />
-                <CausasLegadaCard />
-                <CrimenOrganizadoCard />
-                <EsclarecimientoCard />
+              {/* Nueva disposición de los indicadores principales */}
+              <div className="grid gap-4 md:grid-cols-3">
+                {/* Primera columna - Causas apiladas */}
+                <div className="flex flex-col gap-4">
+                  <CausasCard />
+                  <CausasEcohCard />
+                  <CausasLegadaCard />
+                </div>
                 
+                {/* Segunda columna - Crimen Organizado */}
+                <CrimenOrganizadoCard />
+                
+                {/* Tercera columna - Esclarecimiento */}
+                <EsclarecimientoCard />
               </div>
 
               {/* Línea de tiempo destacada */}

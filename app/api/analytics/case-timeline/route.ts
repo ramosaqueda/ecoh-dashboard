@@ -25,19 +25,32 @@ export async function GET(req: Request) {
       searchParams.get('year') || new Date().getFullYear().toString()
     );
     const type = searchParams.get('type') || 'all';
+    const delitoId = searchParams.get('delito_id');
 
     const startDate = new Date(year, 0, 1);
     const endDate = new Date(year, 11, 31);
 
+    // Construir las condiciones where
+    const whereCondition: any = {
+      fechaDelHecho: {
+        gte: startDate,
+        lte: endDate
+      }
+    };
+
+    // Añadir condición para causas ECOH si se especifica
+    if (type === 'ecoh') {
+      whereCondition.causaEcoh = true;
+    }
+
+    // Añadir filtro de tipo de delito si se proporciona
+    if (delitoId) {
+      whereCondition.delitoId = parseInt(delitoId);
+    }
+
     const cases = await prisma.causa.groupBy({
       by: ['fechaDelHecho'],
-      where: {
-        fechaDelHecho: {
-          gte: startDate,
-          lte: endDate
-        },
-        ...(type === 'ecoh' ? { causaEcoh: true } : {})
-      },
+      where: whereCondition,
       _count: true,
       orderBy: {
         fechaDelHecho: 'asc'

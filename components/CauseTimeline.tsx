@@ -17,7 +17,8 @@ import {
 import { Loader2, ChevronDown, ChevronUp, ExternalLink } from "lucide-react"; 
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import DelitoSelect from '@/components/select/DelitoSelect';
+// Importar el nuevo componente para gráficos en lugar del DelitoSelect original
+import ChartDelitoSelect from '@/components/select/ChartDelitoSelect';
 import { Button } from '@/components/ui/button';
 import { useYearContext } from '@/components/YearSelector';
 
@@ -32,7 +33,8 @@ const CauseTimeline = () => {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [expandedMonth, setExpandedMonth] = useState(null);
   const [showOnlyEcoh, setShowOnlyEcoh] = useState(false);
-  const [selectedDelito, setSelectedDelito] = useState('');
+  // Cambiado el valor inicial a 'all' para representar "todos los delitos"
+  const [selectedDelito, setSelectedDelito] = useState('all');
 
   useEffect(() => {
     const fetchCauses = async () => {
@@ -65,7 +67,8 @@ const CauseTimeline = () => {
       filtered = filtered.filter(cause => cause.causaEcoh);
     }
     
-    if (selectedDelito) {
+    // Actualizada la condición para considerar 'all' como "todos los delitos"
+    if (selectedDelito && selectedDelito !== 'all') {
       filtered = filtered.filter(cause => cause.delito?.id.toString() === selectedDelito);
     }
     
@@ -101,7 +104,8 @@ const CauseTimeline = () => {
   const getTotals = () => {
     const total = filteredCauses.length;
     const ecohTotal = filteredCauses.filter(cause => cause.causaEcoh).length;
-    const delitoTotal = selectedDelito 
+    // Actualizado para considerar 'all' como "todos los delitos"
+    const delitoTotal = selectedDelito && selectedDelito !== 'all'
       ? filteredCauses.filter(cause => cause.delito?.id.toString() === selectedDelito).length 
       : 0;
 
@@ -121,6 +125,11 @@ const CauseTimeline = () => {
 
   const handleMonthClick = (monthIndex) => {
     setExpandedMonth(expandedMonth === monthIndex ? null : monthIndex);
+  };
+
+  // Manejador de cambio para el filtro de delito
+  const handleDelitoChange = (value) => {
+    setSelectedDelito(value);
   };
 
   if (loading) {
@@ -155,9 +164,11 @@ const CauseTimeline = () => {
               </div>
               
               <div className="w-64">
-                <DelitoSelect
+                {/* Reemplazar DelitoSelect con ChartDelitoSelect */}
+                <ChartDelitoSelect
                   value={selectedDelito}
-                  onValueChange={setSelectedDelito}
+                  onValueChange={handleDelitoChange}
+                  placeholder="Filtrar por tipo de delito"
                 />
               </div>
             </div>
@@ -175,7 +186,8 @@ const CauseTimeline = () => {
                 <p className="text-2xl font-bold">{totals.ecohTotal}</p>
               </div>
             )}
-            {selectedDelito && (
+            {/* Mostrar el total por delito solo si no es "all" */}
+            {selectedDelito && selectedDelito !== 'all' && (
               <div className="rounded-lg bg-muted p-3">
                 <p className="text-sm text-muted-foreground">Causas por Delito</p>
                 <p className="text-2xl font-bold">{totals.delitoTotal}</p>
