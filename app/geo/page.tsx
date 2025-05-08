@@ -1,115 +1,196 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-// Importamos directamente los estilos de Leaflet para asegurar que estén disponibles
-import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import 'leaflet-draw/dist/leaflet.draw.css';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-// Carga dinámica del mapa para evitar problemas de SSR
-const LeafletMap = dynamic(() => import('@/components/LeafletMap'), {
-  ssr: false,
-  loading: () => <p>Cargando mapa...</p>
-});
+// Importación dinámica del mapa para evitar SSR
+const LeafletMap = dynamic(
+  () => import('@/components/LeafletMap'),
+  { 
+    ssr: false,
+    loading: () => <div className="flex h-screen w-full items-center justify-center">Cargando mapa...</div>
+  }
+);
+
+interface MapData {
+  causas: any[];
+  showCrimenOrganizado: boolean;
+  delitos: any[];
+  filters: {
+    delito: string;
+    year: string;
+    search: string;
+    ecoh: boolean;
+    crimenOrganizado: boolean;
+  };
+}
 
 export default function FullscreenMapPage() {
-  const [mapData, setMapData] = useState(null);
+  const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    try {
-      // Recuperamos los datos del hash de la URL
-      if (typeof window !== 'undefined') {
+    // Función para extraer los datos del hash de la URL
+    const getMapDataFromHash = () => {
+      if (typeof window === 'undefined') return null;
+      
+      try {
+        // Extraer la porción del hash que contiene los datos
         const hash = window.location.hash;
+        console.log("Hash de URL detectado:", hash ? "Presente" : "No presente");
         
-        if (hash && hash.startsWith('#data=')) {
-          // Extraer los datos serializados del hash
-          const serializedData = hash.substring(6); // Quitar '#data='
-          
-          // Decodificar y parsear los datos
-          const decodedData = decodeURIComponent(serializedData);
-          const parsedData = JSON.parse(decodedData);
-          
-          console.log('Datos recuperados correctamente', {
-            causasCount: parsedData.causas?.length,
-            showCrimenOrganizado: parsedData.showCrimenOrganizado,
-            filters: parsedData.filters
-          });
-          
-          setMapData(parsedData);
-        } else {
-          console.warn('No se encontraron datos en la URL');
+        if (!hash || !hash.startsWith('#data=')) {
+          console.error("Hash no válido o no presente");
+          setError("No se detectaron datos en la URL");
+          return null;
         }
+        
+        // Extraer y decodificar los datos
+        const encodedData = hash.substring(6); // Quitar '#data='
+        console.log("Longitud de datos codificados:", encodedData.length);
+        
+        // Comprobar si los datos son demasiado grandes
+        if (encodedData.length > 1500000) {
+          console.warn("Datos demasiado grandes para ser procesados en URL hash");
+          setError("Datos demasiado grandes. Intente con menos causas.");
+          return null;
+        }
+        
+        const decodedData = decodeURIComponent(encodedData);
+        console.log("Datos decodificados correctamente");
+        
+        try {
+          const parsedData = JSON.parse(decodedData);
+          console.log("Datos parseados correctamente:", parsedData ? "Éxito" : "Fallo");
+          
+          // Validación básica de estructura de datos
+          if (!parsedData.causas || !Array.isArray(parsedData.causas)) {
+            console.error("Estructura de datos inválida: causas no es un array");
+            setError("Estructura de datos inválida");
+            return null;
+          }
+          
+          return parsedData;
+        } catch (parseError) {
+          console.error("Error al parsear JSON:", parseError);
+          setError("Error al interpretar datos JSON");
+          return null;
+        }
+      } catch (error) {
+        console.error('Error al procesar datos del mapa:', error);
+        setError("Error al procesar datos: " + (error instanceof Error ? error.message : String(error)));
+        return null;
       }
-    } catch (error) {
-      console.error('Error al recuperar datos del mapa:', error);
-    } finally {
+    };
+
+    // Intentar cargar los datos en mount y cuando cambie el hash
+    const loadData = () => {
+      setIsLoading(true);
+      setError(null);
+      
+      const data = getMapDataFromHash();
+      if (data) {
+        console.log('Datos cargados:', `${data.causas.length} causas`);
+        setMapData(data);
+      } else {
+        console.error('No se pudieron cargar los datos del mapa');
+      }
+      
       setIsLoading(false);
-    }
+    };
+
+    // Cargar los datos inicialmente
+    loadData();
+
+    // Escuchar cambios en el hash
+    window.addEventListener('hashchange', loadData);
+    return () => window.removeEventListener('hashchange', loadData);
   }, []);
 
-  const closeFullscreen = () => {
-    window.close();
+  const handleGoBack = () => {
+    router.push('/dashboard/geo');
+  };
+
+  const handleRetry = () => {
+    window.location.reload();
   };
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <div className="text-lg">Cargando mapa...</div>
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="text-lg">Cargando datos del mapa...</div>
       </div>
     );
   }
 
   if (!mapData) {
     return (
-      <div className="flex h-screen w-screen flex-col items-center justify-center">
-        <div className="text-lg">No se encontraron datos del mapa</div>
-        <Button onClick={closeFullscreen} className="mt-4">
-          Cerrar ventana
-        </Button>
+      <div className="flex h-screen w-full flex-col items-center justify-center">
+        <div className="mb-4 text-lg text-red-600">
+          No se pudieron cargar los datos del mapa.
+          {error && (
+            <div className="mt-2 text-sm">
+              Error: {error}
+            </div>
+          )}
+        </div>
+        <div className="flex gap-4">
+          <Button onClick={handleGoBack} variant="outline" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Volver al dashboard
+          </Button>
+          <Button onClick={handleRetry} variant="default" className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Reintentar
+          </Button>
+        </div>
       </div>
     );
   }
 
-  const { causas, showCrimenOrganizado, filters } = mapData;
-
   return (
-    <div className="flex h-screen w-screen flex-col">
-      {/* Barra superior con información y botón de cerrar */}
-      <div className="flex items-center justify-between bg-card p-4 shadow">
-        <div className="text-lg font-bold">
-          Mapa de Causas
-          {filters.delito !== 'todos' && ' - Delito específico'}
-          {filters.ecoh && ' - ECOH'}
-          {filters.crimenOrganizado && ' - Crimen Organizado'}
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground">
-            Mostrando {causas.length} causas
+    <div className="relative h-screen w-full">
+      {/* Botón para volver */}
+      <div className="absolute left-4 top-4 z-10">
+        <Button 
+          onClick={handleGoBack}
+          variant="default" 
+          className="flex items-center gap-2 bg-white text-black hover:bg-gray-100"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver al dashboard
+        </Button>
+      </div>
+
+      {/* Información de filtros activos */}
+      <div className="absolute right-4 top-4 z-10 max-w-md rounded-lg bg-white p-3 shadow-lg">
+        <div className="text-sm font-semibold">Filtros aplicados:</div>
+        <div className="mt-1 text-xs">
+          {mapData.filters.delito !== 'todos' && (
+            <div>Delito: {
+              mapData.delitos.find(d => d.id.toString() === mapData.filters.delito)?.nombre || mapData.filters.delito
+            }</div>
+          )}
+          {mapData.filters.year !== 'todos' && <div>Año: {mapData.filters.year}</div>}
+          {mapData.filters.search && <div><p>Búsqueda: &quot;{mapData.filters.search}&quot;</p></div>}
+          {mapData.filters.ecoh && <div>Solo ECOH</div>}
+          {mapData.filters.crimenOrganizado && <div>Solo Crimen Organizado</div>}
+          <div className="mt-1 font-medium">
+            Mostrando {mapData.causas.length} causas
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={closeFullscreen}
-            className="ml-4"
-          >
-            <X className="h-4 w-4 mr-2" />
-            Cerrar
-          </Button>
         </div>
       </div>
 
       {/* Mapa a pantalla completa */}
-      <div className="flex-1">
-        <LeafletMap 
-          causas={causas} 
-          showCrimenOrganizado={showCrimenOrganizado}
-        />
-      </div>
+      <LeafletMap 
+        causas={mapData.causas} 
+        showCrimenOrganizado={mapData.showCrimenOrganizado}
+      />
     </div>
   );
 }

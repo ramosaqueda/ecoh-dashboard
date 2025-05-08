@@ -30,6 +30,22 @@ model Genograma {
   @@index([causaId])
   @@index([rucCausa])
 }
+
+model TimelineHito {
+  id           Int      @id @default(autoincrement())
+  titulo       String
+  fecha        DateTime
+  descripcion  String?  @db.Text
+  icono        String?
+  imagenUrl    String?
+  causaId      Int
+  causa        Causa    @relation(fields: [causaId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([causaId])
+}
+
 model Causa {
   id                        Int               @id @default(autoincrement())
   denominacionCausa         String
@@ -86,6 +102,7 @@ model Causa {
 
   // Nueva relación con Genograma
   genogramas                Genograma[]
+  hitos                     TimelineHito[]
   relato                    RelatoHecho?
    
 }

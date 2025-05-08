@@ -174,7 +174,7 @@ export default function SeguimientoActividadesPage() {
         fechaFin, 
         usuarioId: usuarioId !== 'all' ? usuarioId : undefined,
         tipoActividadId: tipoActividadId !== 'all' ? tipoActividadId : undefined,
-        ruc: ruc.trim() !== '' ? ruc.trim() : undefined
+        ruc: ruc ? (ruc.trim() !== '' ? ruc.trim() : undefined) : undefined
       });
       
       toast.success(`Se encontraron datos de ${total} causas`);

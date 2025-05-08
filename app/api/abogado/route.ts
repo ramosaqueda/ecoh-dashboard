@@ -1,99 +1,118 @@
-// app/api/Abogado/route.ts
-
+// app/api/abogado/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Obtener todos los abogados o uno específico por ID
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-
   try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
     if (id) {
-      // Obtener un Abogado específico
-      const Abogado = await prisma.Abogado.findUnique({
+      // Obtener un abogado específico
+      const abogado = await prisma.abogado.findUnique({
         where: { id: Number(id) }
       });
-      if (Abogado) {
-        return NextResponse.json(Abogado);
+      if (abogado) {
+        return NextResponse.json(abogado);
       } else {
-        return NextResponse.json(
-          { message: 'Abogado no encontrado' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Abogado no encontrado' }, { status: 404 });
       }
     } else {
-      // Obtener todos los Abogados
-      const Abogados = await prisma.Abogado.findMany();
-      return NextResponse.json(Abogados);
+      // Obtener todos los abogados
+      const abogados = await prisma.abogado.findMany({
+        orderBy: {
+          nombre: 'asc'
+        }
+      });
+      return NextResponse.json(abogados);
     }
   } catch (error) {
+    console.error('Error al obtener abogados:', error);
     return NextResponse.json(
-      { message: 'Error al obtener Abogado(s)', error },
+      { error: 'Error al obtener datos de abogados' },
       { status: 500 }
     );
   }
 }
 
+// Crear un nuevo abogado
 export async function POST(request: NextRequest) {
   try {
-    const { nombre } = await request.json();
-    const Abogado = await prisma.Abogado.create({
-      data: { nombre }
+    const data = await request.json();
+    
+    const nuevoAbogado = await prisma.abogado.create({
+      data: {
+        nombre: data.nombre,
+        // No incluimos email, telefono y activo ya que no existen en el modelo
+      }
     });
-    return NextResponse.json(Abogado, { status: 201 });
+    
+    return NextResponse.json(nuevoAbogado, { status: 201 });
   } catch (error) {
+    console.error('Error al crear abogado:', error);
     return NextResponse.json(
-      { message: 'Error al crear Abogado', error },
+      { error: 'Error al crear abogado' },
       { status: 500 }
     );
   }
 }
 
+// Actualizar un abogado existente
 export async function PUT(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-
-  if (!id) {
-    return NextResponse.json(
-      { message: 'Se requiere ID para actualizar' },
-      { status: 400 }
-    );
-  }
-
   try {
-    const { nombre } = await request.json();
-    const Abogado = await prisma.Abogado.update({
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Se requiere ID para actualizar' },
+        { status: 400 }
+      );
+    }
+    
+    const data = await request.json();
+    
+    const abogadoActualizado = await prisma.abogado.update({
       where: { id: Number(id) },
-      data: { nombre }
+      data: {
+        nombre: data.nombre,
+        // No incluimos email, telefono y activo ya que no existen en el modelo
+      }
     });
-    return NextResponse.json(Abogado);
+    
+    return NextResponse.json(abogadoActualizado);
   } catch (error) {
+    console.error('Error al actualizar abogado:', error);
     return NextResponse.json(
-      { message: 'Error al actualizar Abogado', error },
+      { error: 'Error al actualizar abogado' },
       { status: 500 }
     );
   }
 }
 
+// Eliminar un abogado
 export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-
-  if (!id) {
-    return NextResponse.json(
-      { message: 'Se requiere ID para eliminar' },
-      { status: 400 }
-    );
-  }
-
   try {
-    await prisma.Abogado.delete({
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Se requiere ID para eliminar' },
+        { status: 400 }
+      );
+    }
+    
+    await prisma.abogado.delete({
       where: { id: Number(id) }
     });
-    return new NextResponse(null, { status: 204 });
+    
+    return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Error al eliminar abogado:', error);
     return NextResponse.json(
-      { message: 'Error al eliminar Abogado', error },
+      { error: 'Error al eliminar abogado' },
       { status: 500 }
     );
   }

@@ -1,7 +1,7 @@
 'use client';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Edit, Trash2, Users, Eye, ExternalLink, Link2 } from 'lucide-react';
+import { ArrowUpDown, Edit, Trash2, Users, Eye, ExternalLink, Link2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -9,6 +9,16 @@ import { useState } from 'react';
 import ImputadosDrawer from '@/components/drawer/imputados-drawer';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export type Causa = {
   id: string;
@@ -92,6 +102,124 @@ const ImputadosCell = ({ causa }: { causa: Causa }) => {
         causaRuc={causa.ruc}
       />
     </>
+  );
+};
+
+// Componente para el botón de eliminar con confirmación
+const DeleteButton = ({ causa, onDelete }) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { canDelete } = useUserPermissions();
+  
+  // Solo mostrar el botón si el usuario tiene permisos
+  if (!canDelete) return null;
+  
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setShowDeleteDialog(true)}
+        title="Eliminar"
+      >
+        <Trash2 className="h-4 w-4 text-red-600" />
+      </Button>
+      
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Confirmar eliminación
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Está seguro que desea eliminar la causa <strong>{causa.denominacionCausa}</strong> (RUC: {causa.ruc})?
+              <div className="mt-2 text-red-500 font-medium">
+                Esta acción no se puede deshacer y eliminará todos los datos asociados.
+              </div>
+              
+              {(causa._count?.imputados > 0 || 
+                (causa._count?.causasRelacionadasMadre || 0) > 0 || 
+                (causa._count?.causasRelacionadasArista || 0) > 0) && (
+                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                  <p className="text-amber-700 font-medium">¡Atención!</p>
+                  <ul className="list-disc ml-5 text-amber-700 text-sm">
+                    {causa._count?.imputados > 0 && (
+                      <li>Esta causa tiene {causa._count.imputados} imputado(s) que también serán eliminados.</li>
+                    )}
+                    {((causa._count?.causasRelacionadasMadre || 0) + 
+                      (causa._count?.causasRelacionadasArista || 0)) > 0 && (
+                      <li>Esta causa tiene {(causa._count?.causasRelacionadasMadre || 0) + 
+                        (causa._count?.causasRelacionadasArista || 0)} causa(s) relacionada(s).</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowDeleteDialog(false);
+                onDelete(causa.id);
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+// Componente de acciones extraído a un componente separado para poder usar hooks
+const ActionsCell = ({ row, table }) => {
+  const causa = row.original;
+  const { onEdit, onDelete } = table.options.meta || {};
+  const { canEdit } = useUserPermissions(); // Ahora es válido usar hooks aquí
+
+  const totalRelaciones = (causa._count?.causasRelacionadasMadre || 0) + 
+                      (causa._count?.causasRelacionadasArista || 0);
+
+  return (
+    <div className="flex items-center gap-2">
+      <Link href={`/dashboard/causas/view/${causa.id}`} passHref>
+        <Button variant="ghost" size="icon" title="Ver detalles">
+          <Eye className="h-4 w-4 text-primary" />
+        </Button>
+      </Link>
+
+      <Link href={`/dashboard/causas/${causa.id}/relacionadas`} passHref>
+        <Button 
+          variant="ghost" 
+          className="flex items-center gap-1 h-8 px-2" 
+          title="Causas relacionadas"
+        >
+          <div className="flex items-center">
+            <Link2 className="h-4 w-4 text-green-600" />
+            <span className="ml-1 text-xs font-medium">
+              {totalRelaciones}
+            </span>
+          </div>
+        </Button>
+      </Link>
+
+      {canEdit && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onEdit?.(causa)}
+          title="Editar"
+        >
+          <Edit className="h-4 w-4 text-blue-600" />
+        </Button>
+      )}
+      
+      {/* Reemplazamos el botón de eliminar con nuestro componente con confirmación */}
+      <DeleteButton causa={causa} onDelete={onDelete} />
+    </div>
   );
 };
 
@@ -191,60 +319,6 @@ export const columns: ColumnDef<Causa>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row, table }) => {
-      const causa = row.original;
-      const { onEdit, onDelete } = table.options.meta || {};
-      const { canEdit, canDelete } = useUserPermissions();
-
-      const totalRelaciones = (causa._count?.causasRelacionadasMadre || 0) + 
-                          (causa._count?.causasRelacionadasArista || 0);
-
-      return (
-        <div className="flex items-center gap-2">
-          <Link href={`/dashboard/causas/view/${causa.id}`} passHref>
-            <Button variant="ghost" size="icon" title="Ver detalles">
-              <Eye className="h-4 w-4 text-primary" />
-            </Button>
-          </Link>
-
-          <Link href={`/dashboard/causas/${causa.id}/relacionadas`} passHref>
-            <Button 
-              variant="ghost" 
-              className="flex items-center gap-1 h-8 px-2" 
-              title="Causas relacionadas"
-            >
-              <div className="flex items-center">
-                <Link2 className="h-4 w-4 text-green-600" />
-                <span className="ml-1 text-xs font-medium">
-                  {totalRelaciones}
-                </span>
-              </div>
-            </Button>
-          </Link>
-
-          {canEdit && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit?.(causa)}
-              title="Editar"
-            >
-              <Edit className="h-4 w-4 text-blue-600" />
-            </Button>
-          )}
-          
-          {canDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete?.(causa.id)}
-              title="Eliminar"
-            >
-              <Trash2 className="h-4 w-4 text-red-600" />
-            </Button>
-          )}
-        </div>
-      );
-    }
+    cell: (props) => <ActionsCell {...props} />
   }
 ];

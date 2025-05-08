@@ -9,8 +9,16 @@ import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
+
+/*
+consideraciones:
+ API es llamdo de la pagina principal ademas de un de servicios llamado causaService.ts
+ hay un contenedor del formulario (CauseFormContainer)
+que maneja la logica de carga de datos y errores 
+ 
+*/
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-console.log(API_BASE_URL);
 async function getCausas(): Promise<Causa[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/causas`, {

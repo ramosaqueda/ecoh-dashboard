@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,7 +27,14 @@ import { causaSchema } from '@/schemas/causaSchema';
 import type { CausaFormData } from '@/types/causa';
 import DatosRelato from '@/components/relato-hecho/datos-relato';
 import CrimenOrgParamsSelect from "@/components/select/CrimenOrgParamsSelect"
-import CrimenOrgGauge from '@/components/CrimenorgGauge';
+
+/*
+consideraciones:
+ API es llamdo de la pagina principal ademas de un de servicios llamado causaService.ts
+ hay un contenedor del formulario (CauseFormContainer)
+que maneja la logica de carga de datos y errores 
+ 
+*/
 
 interface CausaFormProps {
   initialValues?: Partial<CausaFormData>;
@@ -49,6 +57,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
       causaLegada: false,
       constituyeSs: false,
       homicidioConsumado: false,
+      causasCrimenOrg: [],
       // Sobrescribir con los valores iniciales si existen
       ...initialValues
     }
@@ -56,9 +65,21 @@ const CausaForm: React.FC<CausaFormProps> = ({
   });
 
   const handleSubmit = async (data) => {
-    console.log('Formulario antes de enviar:', data); // Añade este log
-
-    const { ...form } = data;
+    console.log('Formulario antes de enviar:', data);
+    console.log('causasCrimenOrg específico:', data.causasCrimenOrg);
+  
+    // Asegurar que causasCrimenOrg sea un array de números
+    if (!data.causasCrimenOrg || !Array.isArray(data.causasCrimenOrg)) {
+      data.causasCrimenOrg = [];
+    } else {
+      // Asegurar que todos los elementos son números
+      data.causasCrimenOrg = data.causasCrimenOrg.map(id => 
+        typeof id === 'string' ? parseInt(id) : id
+      );
+    }
+    
+    console.log('causasCrimenOrg después de procesamiento:', data.causasCrimenOrg);
+  
     try {
       await onSubmit(data);
       if (!isEditing) {
@@ -66,8 +87,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
       }
     } catch (error) {
       console.error('Error en el formulario:', error);
-    } finally {
-
     }
   };
 
@@ -287,17 +306,17 @@ const CausaForm: React.FC<CausaFormProps> = ({
                 </FormField>
 
                 <FormField form={form} name="atvt" label="Atvt">
-                    <AtvtSelect
-                      value={form.watch('atvt')}
-                      onValueChange={(value) => {
-                        console.log('ATVT seleccionado:', value);
-                        form.setValue('atvt', value, {
-                          shouldValidate: true,
-                          shouldDirty: true
-                        });
-                      }}
-                    />
-                  </FormField>
+                  <AtvtSelect
+                    value={form.watch('atvt')}
+                    onValueChange={(value) => {
+                      console.log('ATVT seleccionado:', value);
+                      form.setValue('atvt', value, {
+                        shouldValidate: true,
+                        shouldDirty: true
+                      });
+                    }}
+                  />
+                </FormField>
 
                 <FormField form={form} name="tribunal" label="Tribunal">
                   <TribunalSelect
@@ -339,8 +358,13 @@ const CausaForm: React.FC<CausaFormProps> = ({
             {/* Sección de Parámetros de Crimen Organizado */}
             <div className="space-y-4">
               <h3 className="font-medium">Parámetros Crimen Organizado</h3>
-              <FormField form={form} name="co" label="Crimen Organizado">
-                <CrimenOrgParamsSelect id={initialValues.causaId || ''} />
+              <FormField
+                form={form}
+                name="causasCrimenOrg"
+                label="Parámetros de Crimen Organizado"
+              >
+                {/* No necesitas usar render props, simplemente pasa causaId */}
+                <CrimenOrgParamsSelect causaId={initialValues.causaId} />
               </FormField>
               <div className="items-top flex space-x-2">
                 <RadioGroup

@@ -101,7 +101,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+
     const { userId } = await auth();
+
    
     if (!userId) {
       return NextResponse.json(
@@ -150,7 +152,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error en POST /api/actividades:', error);
     return NextResponse.json(
-      { message: 'Error interno del servidor', error: error.message },
+      { 
+        message: 'Error interno del servidor', 
+        error: error instanceof Error ? error.message : 'Error desconocido' 
+      },
       { status: 500 }
     );
   }
@@ -194,7 +199,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(actividad);
   } catch (error) {
     console.error('Error en PUT /api/actividades:', error);
-    if (error.code === 'P2025') {
+    if (error instanceof Error && error.name === 'PrismaClientKnownRequestError' && (error as any).code === 'P2025') {
       return NextResponse.json(
         { message: 'Actividad no encontrada' },
         { status: 404 }
@@ -228,7 +233,7 @@ export async function DELETE(req: NextRequest) {
     );
   } catch (error) {
     console.error('Error en DELETE /api/actividades:', error);
-    if (error.code === 'P2025') {
+    if (error instanceof Error && error.name === 'PrismaClientKnownRequestError' && (error as any).code === 'P2025') {
       return NextResponse.json(
         { message: 'Actividad no encontrada' },
         { status: 404 }

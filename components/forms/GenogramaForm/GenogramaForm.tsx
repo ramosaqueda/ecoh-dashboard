@@ -434,7 +434,7 @@ export const GenogramaForm: React.FC<GenogramaFormProps> = ({
                   {...registerRelacion('descripcion')}
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Esta etiqueta se mostrará en la línea de relación cuando el tipo sea \"otro\"
+                  Esta etiqueta se mostrará en la línea de relación cuando el tipo sea &quot;otro&quot;
                 </p>
               </div>
 

@@ -19,10 +19,14 @@ import {
   Scale,
   AlertCircle,  
   UserRoundSearch,
-  Loader2
+  Loader2,
+  Hand
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
+
+
+
 
 interface CausasDrawerProps {
   isOpen: boolean;
@@ -90,7 +94,7 @@ export function CausasDrawer({
                         <div className="flex gap-2">
                           {causa.esImputado && (
                             <Badge className="bg-blue-500">
-                              <Handcuffs className="mr-1 h-3 w-3" />
+                              <Hand className="mr-1 h-3 w-3" />
                               Imputado
                             </Badge>
                           )}

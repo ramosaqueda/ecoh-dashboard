@@ -110,10 +110,9 @@ export const causaService = {
     try {
       console.log('Datos del formulario antes de transformar:', data);
       console.log('Valor de atvt en el formulario:', data.atvt);
-      
+
       const transformedData = this.transformFormData(data);
       console.log('Datos transformados:', transformedData);
- 
 
       const response = await fetch(`/api/causas/${id}`, {
         method: 'PUT',
@@ -166,24 +165,32 @@ export const causaService = {
   /**
    * Transforma los datos del formulario para enviar al servidor
    */
+
+  /**
+   * Transforma los datos del formulario para enviar al servidor
+   */
   transformFormData(data: CausaFormData) {
+    // Log para depuración
+    console.log('Datos originales del formulario:', data);
+    console.log('causasCrimenOrg en datos originales:', data.causasCrimenOrg);
+
     const transformedData = {
       // Campos booleanos
       causaEcoh: data.causaEcoh,
       causaLegada: data.causaLegada,
       constituyeSs: data.constituyeSs,
       homicidioConsumado: data.homicidioConsumado,
-  
+
       // Campos de texto
       denominacionCausa: data.denominacionCausa,
       ruc: data.ruc,
-      foliobw: data.foliobw,
+      folioBw: data.folioBw,
       coordenadasSs: data.coordenadasSs,
       rit: data.rit,
       numeroIta: data.numeroIta,
       numeroPpp: data.numeroPpp,
       observacion: data.observacion,
-  
+
       // Fechas - con validación y manejo de nulos
       fechaHoraTomaConocimiento: data.fechaHoraTomaConocimiento
         ? new Date(data.fechaHoraTomaConocimiento).toISOString()
@@ -197,7 +204,7 @@ export const causaService = {
       fechaPpp: data.fechaPpp
         ? new Date(`${data.fechaPpp}T00:00:00.000Z`).toISOString()
         : null,
-  
+
       // Relaciones - con validación
       delitoId: data.delito ? parseInt(data.delito.toString()) : null,
       focoId: data.foco ? parseInt(data.foco.toString()) : null,
@@ -207,25 +214,62 @@ export const causaService = {
         : null,
       abogadoId: data.abogado ? parseInt(data.abogado.toString()) : null,
       analistaId: data.analista ? parseInt(data.analista.toString()) : null,
-      atvtId: data.atvt ? parseInt(data.atvt.toString()) : null  // Añadir este campo
+      atvtId: data.atvt ? parseInt(data.atvt.toString()) : null,
+
+      // AÑADIR causasCrimenOrg - Asegurarse de que sea un array
+      causasCrimenOrg: Array.isArray(data.causasCrimenOrg)
+        ? data.causasCrimenOrg.map((id) =>
+            typeof id === 'string' ? parseInt(id) : id
+          )
+        : [],
+
+      // Estado de crimen organizado
+      esCrimenOrganizado:
+        data.esCrimenOrganizado === true
+          ? 0
+          : data.esCrimenOrganizado === false
+          ? 1
+          : 2
     };
-  
+
     // Eliminar campos nulos o undefined
     Object.keys(transformedData).forEach((key) => {
       if (transformedData[key] === null || transformedData[key] === undefined) {
         delete transformedData[key];
       }
     });
-  
+
+    // Log para depuración
+    console.log('Datos transformados para enviar al API:', transformedData);
+    console.log(
+      'causasCrimenOrg en datos transformados:',
+      transformedData.causasCrimenOrg
+    );
+
     return transformedData;
   },
 
   /**
    * Transforma los datos iniciales para el formulario
    */
+  /**
+   * Transforma los datos iniciales para el formulario
+   */
   transformInitialData(data: any) {
     if (!data) return {};
-  
+
+    console.log('Datos recibidos para inicializar formulario:', data);
+
+    // Extraer los IDs de los parámetros de crimen organizado si existen
+    let causasCrimenOrg = [];
+    if (data.causasCrimenOrg && Array.isArray(data.causasCrimenOrg)) {
+      causasCrimenOrg = data.causasCrimenOrg.map((item) =>
+        item.parametroId ? item.parametroId : parseInt(item.toString())
+      );
+    }
+
+    console.log('causasCrimenOrg extraídos:', causasCrimenOrg);
+
     return {
       id: data.id,
       causaEcoh: data.causaEcoh || false,
@@ -240,7 +284,7 @@ export const causaService = {
       numeroIta: data.numeroIta || '',
       numeroPpp: data.numeroPpp || '',
       observacion: data.observacion || '',
-  
+
       // Formateo de fechas para los inputs
       fechaHoraTomaConocimiento: data.fechaHoraTomaConocimiento
         ? new Date(data.fechaHoraTomaConocimiento).toISOString().slice(0, 16)
@@ -254,7 +298,7 @@ export const causaService = {
       fechaPpp: data.fechaPpp
         ? new Date(data.fechaPpp).toISOString().slice(0, 10)
         : '',
-  
+
       // Relaciones
       delito: data.delitoId || null,
       foco: data.focoId || null,
@@ -262,7 +306,18 @@ export const causaService = {
       fiscalACargo: data.fiscalId || null,
       abogado: data.abogadoId || null,
       analista: data.analistaId || null,
-      atvt: data.atvtId || null  // Añadir este campo
+      atvt: data.atvtId || null,
+
+      // Añadir causasCrimenOrg
+      causasCrimenOrg: causasCrimenOrg,
+
+      // Estado de crimen organizado
+      esCrimenOrganizado:
+        data.esCrimenOrganizado === 0
+          ? true
+          : data.esCrimenOrganizado === 1
+          ? false
+          : null
     };
   },
 

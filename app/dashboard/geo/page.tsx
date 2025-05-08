@@ -31,6 +31,11 @@ interface Causa {
   delitoId?: number;
   causaEcoh: boolean;  
   esCrimenOrganizado?: boolean | number;
+  coordenadasSs?: string | null;
+  delito?: {
+    id: number;
+    nombre: string;
+  };
 }
 
 const breadcrumbItems = [
@@ -80,7 +85,6 @@ export default function MapPage() {
   ).sort((a, b) => b - a);
 
   // Filtrado de causas
-  // Lógica de filtrado actualizada
   const causasFiltradas = causas
     .filter((causa: Causa) =>
       selectedDelito === 'todos'
@@ -132,14 +136,32 @@ export default function MapPage() {
     }
   }, [showEcohOnly, showCrimenOrganizadoOnly, causas]);
 
-  // Función para abrir el mapa en una nueva ventana
+  // Función mejorada para abrir el mapa en una nueva ventana
   const openMapInNewWindow = () => {
     try {
+      // Filtrar solo los datos necesarios para reducir el tamaño
+      const filteredCausas = causasFiltradas.map(causa => ({
+        id: causa.id,
+        ruc: causa.ruc,
+        denominacionCausa: causa.denominacionCausa || '',
+        coordenadasSs: causa.coordenadasSs,
+        esCrimenOrganizado: causa.esCrimenOrganizado,
+        delito: causa.delito ? { 
+          id: causa.delito.id, 
+          nombre: causa.delito.nombre 
+        } : undefined
+      }));
+
+      // Solo enviar los delitos que se están utilizando
+      const filteredDelitos = delitos.filter(delito => 
+        selectedDelito === 'todos' || delito.id.toString() === selectedDelito
+      );
+      
       // Crear un objeto con los filtros actuales y los datos necesarios
       const mapData = {
-        causas: causasFiltradas,
+        causas: filteredCausas,
         showCrimenOrganizado: showCrimenOrganizadoOnly,
-        delitos: delitos,
+        delitos: filteredDelitos,
         filters: {
           delito: selectedDelito,
           year: selectedYear,
@@ -149,16 +171,34 @@ export default function MapPage() {
         }
       };
       
+      // Verificar tamaño antes de serializar
+      console.log(`Enviando ${filteredCausas.length} causas al mapa`);
+      
+      // Advertencia si hay demasiadas causas
+      if (filteredCausas.length > 1000) {
+        if (!confirm(`Está intentando cargar ${filteredCausas.length} causas en el mapa. Esto puede hacer que el navegador funcione lento. ¿Desea continuar?`)) {
+          return;
+        }
+      }
+      
       // Serializar los datos y codificarlos para pasarlos como parámetro de URL
       const serializedData = encodeURIComponent(JSON.stringify(mapData));
+      console.log(`Tamaño de datos para URL: ${serializedData.length} caracteres`);
+      
+      // Verificar si el tamaño es demasiado grande para un hash de URL
+      if (serializedData.length > 1500000) {
+        alert('Los datos son demasiado grandes para ser mostrados. Por favor, aplique más filtros para reducir la cantidad de causas.');
+        return;
+      }
       
       // Abrir una nueva ventana con parámetros de URL que contienen los datos
-      // Usamos una URL con un hash fragment para evitar límites de tamaño de URL
       const newWindow = window.open(`/geo#data=${serializedData}`, '_blank');
       
       // Asegurarnos de que se enfoque la nueva ventana
       if (newWindow) {
         newWindow.focus();
+      } else {
+        alert('El navegador ha bloqueado la apertura de una nueva ventana. Por favor, permita ventanas emergentes para este sitio.');
       }
     } catch (error) {
       console.error('Error al abrir el mapa en pantalla completa:', error);
@@ -268,9 +308,6 @@ export default function MapPage() {
                 />
               </div>
             </div>
-
-            {/* Botón para abrir el mapa en pantalla completa */}
-          
             
             <div className="text-sm text-muted-foreground ml-auto">
               {causasFiltradas.length} / {causas.length} causas
@@ -279,20 +316,16 @@ export default function MapPage() {
             </div>
 
             <div className="mb-2 flex justify-end">
-            <Button 
-              onClick={openMapInNewWindow}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Maximize2 className="h-4 w-4" />
-              Abrir en pantalla completa
-            </Button>
+              <Button 
+                onClick={openMapInNewWindow}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Maximize2 className="h-4 w-4" />
+                Abrir en pantalla completa
+              </Button>
+            </div>
           </div>
-          </div>
-
-          
-
-          
 
           {/* Mapa con mayor altura */}
           <div 

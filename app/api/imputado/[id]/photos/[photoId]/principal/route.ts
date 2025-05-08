@@ -1,11 +1,10 @@
 // app/api/imputado/[id]/photos/[photoId]/principal/route.ts
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma'
+  
+// Este formato es compatible con Next.js 14
 export async function PUT(
-  req: Request,
+  request: NextRequest,
   { params }: { params: { id: string; photoId: string } }
 ) {
   try {

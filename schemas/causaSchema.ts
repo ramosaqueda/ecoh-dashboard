@@ -76,7 +76,27 @@ export const causaSchema = z.object({
       z.null()
     ])
     .optional()
-    .nullable()
+    .nullable(),
+    
+  atvt: z
+    .union([
+      z.number(),
+      z.string().transform((val) => parseInt(val, 10)),
+      z.null()
+    ])
+    .optional()
+    .nullable(),
+
+  // Parámetros de crimen organizado
+  causasCrimenOrg: z.array(
+    z.union([
+      z.number(),
+      z.string().transform(val => parseInt(val, 10))
+    ])
+  ).optional().default([]),
+  
+  // Estado de crimen organizado
+  esCrimenOrganizado: z.any().optional().nullable()
 });
 
 export type CausaFormData = z.infer<typeof causaSchema>;

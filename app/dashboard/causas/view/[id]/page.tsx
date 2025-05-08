@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
+import { Clock } from 'lucide-react';
 
 interface MedidaCautelar {
   id: string;
@@ -255,6 +256,16 @@ export default function CausaViewPage() {
               <GeneratePdf pdfData={datosCausa} />
         </div>
         </div>
+
+        <div className="mt-4">
+          <Link href={`/causas/${causa.id}/timeline`}>
+            <Button variant="outline" className="gap-2">
+              <Clock className="h-4 w-4" />
+              Ver Línea de Tiempo
+            </Button>
+          </Link>
+        </div>
+
       </div>
 
       <Tabs defaultValue="info" className="space-y-4">

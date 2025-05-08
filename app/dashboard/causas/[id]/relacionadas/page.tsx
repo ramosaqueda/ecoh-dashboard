@@ -223,6 +223,7 @@ export default function CausasRelacionadasPage() {
                 </DialogContent>
               </Dialog>
             </div>
+            
           </div>
         </CardHeader>
         
