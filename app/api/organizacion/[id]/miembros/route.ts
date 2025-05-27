@@ -17,7 +17,7 @@ const MiembroSchema = z.object({
 // GET: Obtener todos los miembros de una organización
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const organizacionId = parseInt(params.id);
@@ -59,7 +59,7 @@ export async function GET(
 // POST: Añadir un nuevo miembro a la organización
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const organizacionId = parseInt(params.id);
@@ -125,7 +125,7 @@ export async function POST(
 // PUT: Actualizar todos los miembros de la organización
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const organizacionId = parseInt(params.id);

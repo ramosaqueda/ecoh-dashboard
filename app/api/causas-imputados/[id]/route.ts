@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma'; // ✅ Cambio 1: Usar prisma singleton en lugar de nueva instancia
 
+// ✅ Cambio 2: Actualizar interface para Next.js 15
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>; // params es ahora Promise
 }
 
 export async function GET(req: Request, { params }: Props) {
   try {
-    const imputadoId = parseInt(params.id);
+    // ✅ Cambio 3: Await params antes de usar
+    const { id } = await params;
+    const imputadoId = parseInt(id);
 
     if (isNaN(imputadoId)) {
       return NextResponse.json(
@@ -94,7 +96,9 @@ export async function GET(req: Request, { params }: Props) {
 // Endpoint para actualizar una causa específica del imputado
 export async function PATCH(req: Request, { params }: Props) {
   try {
-    const imputadoId = parseInt(params.id);
+    // ✅ Cambio 3: Await params antes de usar
+    const { id } = await params;
+    const imputadoId = parseInt(id);
     const data = await req.json();
     const { causaId, ...updateData } = data;
 
@@ -138,9 +142,12 @@ export async function PATCH(req: Request, { params }: Props) {
 
 export async function PUT(req: Request, { params }: Props) {
   try {
-    const imputadoId = parseInt(params.id);
+    // ✅ Cambio 3: Await params antes de usar
+    const { id } = await params;
+    const imputadoId = parseInt(id);
     const data = await req.json();
-    const { causaId, formalizado, fechaFormalizacion, cautelarId, plazo} = data;
+    const { causaId, formalizado, fechaFormalizacion, cautelarId, plazo } = data;
+    
     if (!causaId) {
       return NextResponse.json(
         { error: 'Se requiere el ID de la causa' },
@@ -186,8 +193,3 @@ export async function PUT(req: Request, { params }: Props) {
     );
   }
 }
-
-
-
-
-

@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 // Eliminar una asociación específica entre causa y organización
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = getAuth(request);

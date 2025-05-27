@@ -4,10 +4,12 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // ✅ Ahora params es una Promise
 ) {
   try {
-    const causaId = parseInt(params.id);
+    // ✅ Await the params before using them
+    const { id } = await params;
+    const causaId = parseInt(id);
 
     if (isNaN(causaId)) {
       return NextResponse.json(
