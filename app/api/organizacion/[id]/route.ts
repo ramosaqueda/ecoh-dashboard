@@ -18,7 +18,7 @@ export async function GET(
   try {
     const organizacion = await prisma.organizacionDelictual.findUnique({
       where: {
-        id: parseInt(params.id)
+        id: parseInt((await params).id)
       },
       include: {
         tipoOrganizacion: true,
@@ -73,7 +73,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+      const id = parseInt((await params).id);
     const body = await req.json();
     const validatedData = OrganizacionSchema.parse(body);
 
@@ -119,13 +119,7 @@ export async function PUT(
         { status: 400 }
       );
     }
-    // Error de Prisma cuando no encuentra el registro
-    if (error.code === 'P2025') {
-      return NextResponse.json(
-        { error: 'Organización no encontrada' },
-        { status: 404 }
-      );
-    }
+     
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -140,18 +134,13 @@ export async function DELETE(
   try {
     await prisma.organizacionDelictual.delete({
       where: {
-        id: parseInt(params.id)
+        id: parseInt((await params).id)
       }
     });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    if (error.code === 'P2025') {
-      return NextResponse.json(
-        { error: 'Organización no encontrada' },
-        { status: 404 }
-      );
-    }
+    
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

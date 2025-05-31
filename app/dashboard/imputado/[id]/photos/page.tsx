@@ -3,10 +3,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Imputado,
-  columns
-} from '@/components/tables/imputados-tables/columns';
+import { type Imputado } from '@/types/causaimputado'; // ✅ CORREGIDO: Importar directamente desde tipos
+import { columns } from '@/components/tables/imputados-tables/columns'; // ✅ Solo importar columns
 import { ImputadosDataTable } from '@/components/tables/imputados-tables/imputados-table';
 import ImputadoFormContainer from '@/components/ImputadoFormContainer';
 import { toast } from 'sonner';
@@ -24,28 +22,26 @@ async function getImputados(): Promise<Imputado[]> {
 }
 
 export default function ImputadosPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedImputado, setSelectedImputado] = useState<Imputado | null>(
-    null
-  );
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedImputado, setSelectedImputado] = useState<Imputado | null>(null);
   const queryClient = useQueryClient();
 
-  // Query para obtener imputados
+  // ✅ Query tipada para obtener imputados
   const {
     data: imputados = [],
     isLoading,
     error
-  } = useQuery({
+  } = useQuery<Imputado[]>({
     queryKey: ['imputados'],
     queryFn: getImputados
   });
 
-  const handleEdit = async (imputado: Imputado) => {
+  const handleEdit = (imputado: Imputado): void => {
     setSelectedImputado(imputado);
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string): Promise<void> => {
     try {
       const response = await fetch(`/api/imputado/${id}`, {
         method: 'DELETE'
@@ -64,12 +60,12 @@ export default function ImputadosPage() {
     }
   };
 
-  const handleModalClose = () => {
+  const handleModalClose = (): void => {
     setIsModalOpen(false);
     setSelectedImputado(null);
   };
 
-  const handleFormSuccess = () => {
+  const handleFormSuccess = (): void => {
     handleModalClose();
     // Invalidar la cache después de crear/editar
     queryClient.invalidateQueries({ queryKey: ['imputados'] });

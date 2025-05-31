@@ -168,8 +168,7 @@ export default function MetricasGeneralesActividades({
               ? (metricas.actividadesVencidas / metricas.totalActividades) * 100
               : 0
             } 
-            className="h-2 mt-2 bg-gray-100"
-            indicatorClassName="bg-red-500"
+            className="h-2 mt-2 bg-gray-100 [&>div]:bg-red-500"
           />
         </CardContent>
       </Card>

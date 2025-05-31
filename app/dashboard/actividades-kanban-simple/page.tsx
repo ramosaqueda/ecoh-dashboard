@@ -11,13 +11,69 @@ import PageContainer from '@/components/layout/page-container';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
+// ✅ Definir tipos basados en el schema de Prisma
+interface CausaBasica {
+  id: number;
+  ruc: string;
+  denominacionCausa: string;
+}
+
+interface TipoActividadBasica {
+  id: number;
+  nombre: string;
+}
+
+interface UsuarioBasica {
+  id: number;
+  email: string;
+  nombre: string;
+}
+
+// ✅ Tipo para la actividad que viene del API (con relaciones incluidas)
+interface ActividadAPI {
+  id: number;
+  estado: 'inicio' | 'en_proceso' | 'terminado';
+  fechaInicio: string;
+  fechaTermino: string;
+  observacion?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Relaciones opcionales (pueden venir o no del API)
+  causa?: CausaBasica;
+  tipoActividad?: TipoActividadBasica;
+  usuario?: UsuarioBasica;
+}
+
+// ✅ Tipo para la actividad normalizada (estructura garantizada)
+interface ActividadNormalizada {
+  id: number;
+  estado: 'inicio' | 'en_proceso' | 'terminado';
+  causa: {
+    id: number;
+    ruc: string;
+    denominacionCausa: string;
+  };
+  tipoActividad: {
+    nombre: string;
+  };
+  fechaInicio: string;
+  fechaTermino: string;
+}
+
+// ✅ Tipos para el estado del kanban
+interface EstadoKanban {
+  id: 'inicio' | 'en_proceso' | 'terminado';
+  label: string;
+  color: string;
+}
+
 const breadcrumbItems = [
   { title: 'Dashboard', link: '/dashboard' },
   { title: 'Kanban Actividades', link: '/dashboard/actividades-kanban' }
 ];
 
 // Estos son los estados que espera el componente
-const estados = [
+const estados: EstadoKanban[] = [
   {
     id: 'inicio',
     label: 'Por Iniciar',
@@ -36,12 +92,12 @@ const estados = [
 ];
 
 export default function ActividadesKanbanSimple() {
-  const [actividades, setActividades] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showOnlyUserActivities, setShowOnlyUserActivities] = useState(false);
+  const [actividades, setActividades] = useState<ActividadNormalizada[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showOnlyUserActivities, setShowOnlyUserActivities] = useState<boolean>(false);
 
-  // Función simplificada para normalizar los datos de actividades
-  const normalizarActividad = (act) => {
+  // ✅ Función tipada para normalizar los datos de actividades
+  const normalizarActividad = (act: ActividadAPI): ActividadNormalizada => {
     // Siempre devolvemos un objeto con la estructura esperada
     return {
       id: act.id,
@@ -59,8 +115,8 @@ export default function ActividadesKanbanSimple() {
     };
   };
 
-  // Función para cargar actividades
-  const fetchActividades = async () => {
+  // ✅ Función para cargar actividades con tipos
+  const fetchActividades = async (): Promise<void> => {
     setIsLoading(true);
     try {
       const url = showOnlyUserActivities
@@ -75,12 +131,12 @@ export default function ActividadesKanbanSimple() {
       const jsonData = await response.json();
       console.log('Respuesta del API:', jsonData);
       
-      // Obtenemos el array de actividades
-      const dataArray = jsonData.data || [];
+      // Obtenemos el array de actividades con tipo
+      const dataArray: ActividadAPI[] = jsonData.data || [];
       console.log(`Se encontraron ${dataArray.length} actividades`);
       
-      // Normalizamos cada actividad
-      const actividadesNormalizadas = dataArray.map(normalizarActividad);
+      // Normalizamos cada actividad con tipos seguros
+      const actividadesNormalizadas: ActividadNormalizada[] = dataArray.map(normalizarActividad);
       console.log('Actividades normalizadas:', actividadesNormalizadas);
       
       setActividades(actividadesNormalizadas);
@@ -98,8 +154,8 @@ export default function ActividadesKanbanSimple() {
     fetchActividades();
   }, [showOnlyUserActivities]);
 
-  // Función simple para filtrar por estado
-  const actividadesPorEstado = (estado) => {
+  // ✅ Función tipada para filtrar por estado
+  const actividadesPorEstado = (estado: EstadoKanban['id']): ActividadNormalizada[] => {
     return actividades.filter(act => act.estado === estado);
   };
 
@@ -118,7 +174,7 @@ export default function ActividadesKanbanSimple() {
               <Switch
                 id="user-activities"
                 checked={showOnlyUserActivities}
-                onCheckedChange={(value) => {
+                onCheckedChange={(value: boolean) => {
                   console.log('Switch cambiado a:', value);
                   setShowOnlyUserActivities(value);
                 }}

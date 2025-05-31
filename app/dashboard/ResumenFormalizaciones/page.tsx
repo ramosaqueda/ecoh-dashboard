@@ -26,6 +26,89 @@ import ResumenFormalizaciones from '@/components/dashboard/ResumenFormalizacione
 import FormalizacionesTable from '@/components/tables/FormalizacionesTable/FormalizacionesTable';
 import DistribucionDelitos from '@/components/charts/DistribucionDelitos';
 
+// Interfaces para tipado
+interface Imputado {
+  imputadoId: number;
+  nombreImputado: string;
+  documento: string;
+  alias: string;
+  nacionalidad: string;
+  formalizado: boolean;
+  fechaFormalizacion: string | null;
+  plazo: number | null;
+  diasRestantes: number | null;
+  medidaCautelar: string;
+  cautelarId: number | null;
+  estado: string;
+  alerta: 'vencido' | 'proximo' | 'normal' | 'ninguna';
+}
+
+interface EstadisticasCausa {
+  totalImputados: number;
+  formalizados: number;
+  noFormalizados: number;
+  porcentajeFormalizados: number;
+  porVencer: number;
+  vencidos: number;
+}
+
+interface Formalizacion {
+  causaId: number;
+  ruc: string;
+  denominacion: string;
+  delito: string;
+  fiscal: string;
+  comuna: string;
+  fechaHecho: string;
+  estadisticas: EstadisticasCausa;
+  alertaGeneral: 'vencido' | 'proximo' | 'normal';
+  imputados: Imputado[];
+}
+
+// Alias para compatibilidad con el componente FormalizacionesTable
+type CausaFormalizacion = Formalizacion;
+
+interface Metricas {
+  totalCausas: number;
+  causasConFormalizados: number;
+  causasSinFormalizados: number;
+  totalImputados: number;
+  totalFormalizados: number;
+  noFormalizados: number;
+  porcentajeFormalizados: number;
+  alertas: {
+    porVencer: number;
+    vencidos: number;
+  };
+  promedioDiasFormalizacion: number;
+}
+
+interface DistribucionDelito {
+  delitoId: number;
+  nombre: string;
+  causas: number;
+  imputados: number;
+  formalizados: number;
+  porcentaje: number;
+}
+
+interface Delito {
+  id: number;
+  nombre: string;
+}
+
+interface Fiscal {
+  id: number;
+  nombre: string;
+}
+
+interface SearchParams {
+  ruc?: string;
+  delitoId?: string;
+  fiscalId?: string;
+  estadoId?: string;
+}
+
 export default function FormalizacionesPanelPage() {
   // Estados para filtros
   const [rucBusqueda, setRucBusqueda] = useState<string>('');
@@ -33,9 +116,9 @@ export default function FormalizacionesPanelPage() {
   const [fiscalSeleccionado, setFiscalSeleccionado] = useState<string>('all');
   const [estadoSeleccionado, setEstadoSeleccionado] = useState<string>('all');
   
-  // Estados para datos
-  const [formalizaciones, setFormalizaciones] = useState([]);
-  const [metricas, setMetricas] = useState({
+  // Estados para datos - AQUÍ ESTÁ EL CAMBIO PRINCIPAL
+  const [formalizaciones, setFormalizaciones] = useState<CausaFormalizacion[]>([]);
+  const [metricas, setMetricas] = useState<Metricas>({
     totalCausas: 0,
     causasConFormalizados: 0,
     causasSinFormalizados: 0,
@@ -49,16 +132,11 @@ export default function FormalizacionesPanelPage() {
     },
     promedioDiasFormalizacion: 0
   });
-  const [distribucionDelitos, setDistribucionDelitos] = useState([]);
-  const [delitos, setDelitos] = useState([]);
-  const [fiscales, setFiscales] = useState([]);
+  const [distribucionDelitos, setDistribucionDelitos] = useState<DistribucionDelito[]>([]);
+  const [delitos, setDelitos] = useState<Delito[]>([]);
+  const [fiscales, setFiscales] = useState<Fiscal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [lastSearchParams, setLastSearchParams] = useState<{
-    ruc?: string;
-    delitoId?: string;
-    fiscalId?: string;
-    estadoId?: string;
-  } | null>(null);
+  const [lastSearchParams, setLastSearchParams] = useState<SearchParams | null>(null);
 
   // Fetch de datos
   const fetchFormalizaciones = async (
@@ -96,7 +174,29 @@ export default function FormalizacionesPanelPage() {
       
       const { data, metricas: metricasData, distribucionPorDelito, filtros } = await response.json();
       
-      setFormalizaciones(data);
+      // Transformar los datos para manejar fechaHecho null y completar datos de imputados
+      const formalizacionesTransformadas = data.map((causa: any) => ({
+        ...causa,
+        fechaHecho: causa.fechaHecho || 'No registrada',
+        estadisticas: {
+          ...causa.estadisticas,
+          porcentajeFormalizados: causa.estadisticas.totalImputados > 0 
+            ? (causa.estadisticas.formalizados / causa.estadisticas.totalImputados) * 100 
+            : 0
+        },
+        imputados: causa.imputados.map((imputado: any) => ({
+          ...imputado,
+          imputadoId: imputado.imputadoId || imputado.id, // Usar id si no existe imputadoId
+          cautelarId: imputado.cautelarId || null, // Permitir null
+          alerta: imputado.alerta || (
+            !imputado.formalizado ? 'ninguna' :
+            imputado.diasRestantes !== null && imputado.diasRestantes <= 0 ? 'vencido' :
+            imputado.diasRestantes !== null && imputado.diasRestantes <= 7 ? 'proximo' : 'normal'
+          )
+        }))
+      }));
+      
+      setFormalizaciones(formalizacionesTransformadas);
       setMetricas(metricasData);
       setDistribucionDelitos(distribucionPorDelito);
       setDelitos(filtros.delitos);
@@ -161,14 +261,15 @@ export default function FormalizacionesPanelPage() {
         { 'Métrica': 'Días Promedio entre Hecho y Formalización', 'Valor': metricas.promedioDiasFormalizacion }
       ];
       
-      // Preparar hoja con datos por causa
-      const causasData = formalizaciones.map(causa => ({
+      // Preparar hoja con datos por causa - AHORA CON TIPADO CORRECTO
+      const causasData = formalizaciones.map((causa: CausaFormalizacion) => ({
+        'ID Causa': causa.causaId,
         'RUC': causa.ruc,
         'Denominación': causa.denominacion,
         'Delito': causa.delito,
         'Fiscal': causa.fiscal,
         'Comuna': causa.comuna,
-        'Fecha Hecho': causa.fechaHecho ? format(new Date(causa.fechaHecho), 'dd/MM/yyyy', { locale: es }) : 'No registrada',
+        'Fecha Hecho': causa.fechaHecho === 'No registrada' ? 'No registrada' : format(new Date(causa.fechaHecho), 'dd/MM/yyyy', { locale: es }),
         'Total Imputados': causa.estadisticas.totalImputados,
         'Formalizados': causa.estadisticas.formalizados,
         'No Formalizados': causa.estadisticas.noFormalizados,
@@ -178,10 +279,12 @@ export default function FormalizacionesPanelPage() {
       }));
       
       // Preparar hoja con datos de imputados
-      const imputadosData = [];
-      formalizaciones.forEach(causa => {
-        causa.imputados.forEach(imputado => {
+      const imputadosData: any[] = [];
+      formalizaciones.forEach((causa: CausaFormalizacion) => {
+        causa.imputados.forEach((imputado: Imputado) => {
           imputadosData.push({
+            'ID Causa': causa.causaId,
+            'ID Imputado': imputado.imputadoId,
             'RUC': causa.ruc,
             'Denominación': causa.denominacion,
             'Imputado': imputado.nombreImputado,
@@ -199,13 +302,18 @@ export default function FormalizacionesPanelPage() {
                 : imputado.diasRestantes 
               : 'No aplica',
             'Estado': imputado.estado,
-            'Medida Cautelar': imputado.medidaCautelar
+            'Medida Cautelar': imputado.medidaCautelar,
+            'ID Cautelar': imputado.cautelarId || 'No asignado',
+            'Alerta': imputado.alerta === 'vencido' ? 'Vencido' : 
+                     imputado.alerta === 'proximo' ? 'Próximo a vencer' : 
+                     imputado.alerta === 'normal' ? 'Normal' : 'Sin formalizar'
           });
         });
       });
       
       // Preparar hoja con distribución por delito
-      const delitosData = distribucionDelitos.map(delito => ({
+      const delitosData = distribucionDelitos.map((delito: DistribucionDelito) => ({
+        'ID Delito': delito.delitoId,
         'Delito': delito.nombre,
         'Causas': delito.causas,
         'Imputados': delito.imputados,

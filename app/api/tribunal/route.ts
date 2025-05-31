@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     if (id) {
       // Obtener un Tribunal específico
-      const Tribunal = await prisma.Tribunal.findUnique({
+      const Tribunal = await prisma.tribunal.findUnique({
         where: { id: Number(id) }
       });
       if (Tribunal) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Obtener todos los Tribunales
-      const Tribunales = await prisma.Tribunal.findMany();
+      const Tribunales = await prisma.tribunal.findMany();
       return NextResponse.json(Tribunales);
     }
   } catch (error) {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { nombre } = await request.json();
-    const Tribunal = await prisma.Tribunal.create({
+    const Tribunal = await prisma.tribunal.create({
       data: { nombre }
     });
     return NextResponse.json(Tribunal, { status: 201 });
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { nombre } = await request.json();
-    const Tribunal = await prisma.Tribunal.update({
+    const Tribunal = await prisma.tribunal.update({
       where: { id: Number(id) },
       data: { nombre }
     });
@@ -89,7 +89,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.Tribunal.delete({
+    await prisma.tribunal.delete({
       where: { id: Number(id) }
     });
     return new NextResponse(null, { status: 204 });

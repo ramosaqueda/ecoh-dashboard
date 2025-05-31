@@ -57,31 +57,34 @@ const estados = [
 export default function ActividadesKanban() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [filteredActividades, setFilteredActividades] = useState<Actividad[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showOnlyUserActivities, setShowOnlyUserActivities] = useState(false);
-  const [selectedCausaId, setSelectedCausaId] = useState('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showOnlyUserActivities, setShowOnlyUserActivities] = useState<boolean>(false);
+  const [selectedCausaId, setSelectedCausaId] = useState<string>('');
 
-  // Esta función mapea posibles variaciones de estado a los valores válidos
+  // ✅ Esta función mapea posibles variaciones de estado a los valores válidos
   const mapearEstado = (estado: string): 'inicio' | 'en_proceso' | 'terminado' => {
-    const estadoLower = String(estado).toLowerCase();
+    const estadoLower = estado.toLowerCase();
     
     if (estadoLower.includes('proceso') || estadoLower.includes('progress')) {
       return 'en_proceso';
-    } else if (estadoLower.includes('termin') || estadoLower.includes('done') || estadoLower.includes('complet')) {
-      return 'terminado';
-    } else {
-      return 'inicio'; // Valor por defecto
     }
+    
+    if (estadoLower.includes('terminado') || estadoLower.includes('complete') || estadoLower.includes('done')) {
+      return 'terminado';
+    }
+    
+    // Por defecto, retornar 'inicio'
+    return 'inicio';
   };
 
-  // Función para transformar y validar los datos de actividades
-  const transformarActividades = (actividadesRaw: any[]) => {
+  // ✅ Función para transformar y validar los datos de actividades
+  const transformarActividades = (actividadesRaw: any[]): Actividad[] => {
     if (!Array.isArray(actividadesRaw)) {
       console.error('No se recibió un array de actividades:', actividadesRaw);
       return [];
     }
     
-    return actividadesRaw.map(act => {
+    return actividadesRaw.map((act: any): Actividad => {
       // Vamos a crear un objeto validado asegurándonos que tenga los campos necesarios
       const actividad: Actividad = {
         id: act.id || 0,
@@ -105,7 +108,7 @@ export default function ActividadesKanban() {
     });
   };
 
-  const fetchActividades = async (onlyUser: boolean = false) => {
+  const fetchActividades = async (onlyUser: boolean = false): Promise<void> => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
@@ -143,7 +146,7 @@ export default function ActividadesKanban() {
     }
   };
 
-  const filterActividades = (actividadesList: Actividad[], causaId: string) => {
+  const filterActividades = (actividadesList: Actividad[], causaId: string): void => {
     // Aseguramos que actividadesList sea un array
     const arrayToFilter = Array.isArray(actividadesList) ? actividadesList : [];
     console.log('Filtering actividades. Total count:', arrayToFilter.length);
@@ -155,7 +158,7 @@ export default function ActividadesKanban() {
     }
     
     const filtered = arrayToFilter.filter(
-      actividad => actividad.causa && actividad.causa.id && 
+      (actividad: Actividad) => actividad.causa && actividad.causa.id && 
       actividad.causa.id.toString() === causaId
     );
     console.log('Filtered actividades count:', filtered.length);
@@ -172,33 +175,34 @@ export default function ActividadesKanban() {
     filterActividades(actividades, selectedCausaId);
   }, [selectedCausaId]);
 
-  const actividadesPorEstado = (estado: string) => {
+  const actividadesPorEstado = (estado: string): Actividad[] => {
     // Aseguramos que filteredActividades sea un array
     if (!Array.isArray(filteredActividades)) {
       console.error('filteredActividades no es un array:', filteredActividades);
       return [];
     }
     
-    // Verificar valores de estado en las actividades
+    // ✅ CORREGIDO: Verificar valores de estado en las actividades
     console.log('Estados en las actividades:', 
-      [...new Set(filteredActividades.map(a => a.estado))]);
-    
-    // Mostrar una muestra de las actividades para inspección
+      Array.from(new Set(filteredActividades.map((a: Actividad) => a.estado)))
+    );
+
+    // ✅ CORREGIDO: Mostrar una muestra de las actividades para inspección
     if (filteredActividades.length > 0) {
       console.log('Muestra de actividad:', JSON.stringify(filteredActividades[0], null, 2));
     }
     
-    // Filtrado más tolerante
-    const actividades = filteredActividades.filter((actividad) => {
+    // ✅ CORREGIDO: Filtrado más tolerante
+    const actividades = filteredActividades.filter((actividad: Actividad) => {
       // Si hay un problema con la propiedad estado, lo registramos
       if (!actividad.estado) {
         console.warn('Actividad sin estado:', actividad);
         return false;
       }
       
-      // Convertimos ambos a string para comparar de forma más segura
-      const actividadEstado = String(actividad.estado).toLowerCase();
-      const estadoComparar = String(estado).toLowerCase();
+      // ✅ CORREGIDO: Convertimos ambos a string correctamente
+      const actividadEstado = actividad.estado.toLowerCase();
+      const estadoComparar = estado.toLowerCase();
       
       // Verificamos si coinciden exactamente o si contienen el texto
       const coincide = actividadEstado === estadoComparar || 
@@ -211,11 +215,11 @@ export default function ActividadesKanban() {
     return actividades;
   };
 
-  const handleDragEnd = async (result: any) => {
+  const handleDragEnd = async (result: any): Promise<void> => {
     if (!result.destination) return;
 
     const { draggableId, destination } = result;
-    const newEstado = destination.droppableId;
+    const newEstado = destination.droppableId as 'inicio' | 'en_proceso' | 'terminado';
     const actividadId = parseInt(draggableId);
 
     try {
@@ -231,8 +235,8 @@ export default function ActividadesKanban() {
 
       if (!response.ok) throw new Error('Error al actualizar el estado');
 
-      setActividades((prevActividades) => {
-        const updatedActividades = prevActividades.map((actividad) =>
+      setActividades((prevActividades: Actividad[]) => {
+        const updatedActividades = prevActividades.map((actividad: Actividad) =>
           actividad.id === actividadId
             ? { ...actividad, estado: newEstado }
             : actividad
@@ -264,7 +268,7 @@ export default function ActividadesKanban() {
               <Switch
                 id="user-activities"
                 checked={showOnlyUserActivities}
-                onCheckedChange={(value) => {
+                onCheckedChange={(value: boolean) => {
                   console.log('Switch changed to:', value);
                   setShowOnlyUserActivities(value);
                 }}
@@ -275,7 +279,7 @@ export default function ActividadesKanban() {
           <div className="w-full max-w-md">
             <CausaSelector
               value={selectedCausaId}
-              onChange={(value) => setSelectedCausaId(value)}
+              onChange={(value: string) => setSelectedCausaId(value)}
             />
           </div>
         </div>
@@ -309,7 +313,7 @@ export default function ActividadesKanban() {
                         } p-2 ${snapshot.isDraggingOver ? 'bg-muted/50' : ''}`}
                       >
                         {actividadesPorEstado(estado.id).map(
-                          (actividad, index) => (
+                          (actividad: Actividad, index: number) => (
                             <Draggable
                               key={actividad.id}
                               draggableId={actividad.id.toString()}

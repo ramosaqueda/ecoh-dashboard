@@ -48,13 +48,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    // Si el miembro ya existe, devolver un error 409
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'El imputado ya es miembro de esta organización' },
-        { status: 409 }
-      );
-    }
+    
     return NextResponse.json(
       { error: 'Error interno del servidor', details: error },
       { status: 500 }

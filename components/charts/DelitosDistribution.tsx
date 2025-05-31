@@ -15,6 +15,17 @@ interface DelitoData {
   visible?: boolean;
 }
 
+interface ApiResponse {
+  [key: string]: number;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: DelitoData;
+  }>;
+}
+
 const COLORS = [
   'hsl(var(--chart-1))',
   'hsl(var(--chart-2))',
@@ -26,7 +37,7 @@ const COLORS = [
   'hsl(var(--chart-8))'
 ];
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip: React.FC<TooltipProps> = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     const percentage = ((data.value / data.total) * 100).toFixed(1);
@@ -46,12 +57,12 @@ export function DelitosDistribution() {
   const { selectedYear } = useYearContext();
   const [rawData, setRawData] = useState<DelitoData[]>([]);
   const [filteredData, setFilteredData] = useState<DelitoData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showOnlyECOH, setShowOnlyECOH] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showOnlyECOH, setShowOnlyECOH] = useState<boolean>(false);
 
   // Fetch initial data
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       setIsLoading(true);
       try {
         // Construir URL para la API
@@ -67,14 +78,16 @@ export function DelitosDistribution() {
         
         if (!response.ok) throw new Error('Error al cargar datos');
 
-        const jsonData = await response.json();
+        const jsonData: ApiResponse = await response.json();
+        
+        // ✅ Corrección: Especificar que los valores son números
         const total = Object.values(jsonData).reduce(
-          (a: number, b: number) => a + b,
+          (acc: number, current: number) => acc + current,
           0
         );
 
-        const formattedData = Object.entries(jsonData)
-          .map(([name, value]: [string, any]) => ({
+        const formattedData: DelitoData[] = Object.entries(jsonData)
+          .map(([name, value]: [string, number]) => ({
             name,
             value,
             total,
@@ -117,7 +130,7 @@ export function DelitosDistribution() {
     setFilteredData(updatedData);
   }, [showOnlyECOH, rawData]);
 
-  const toggleSeriesVisibility = (seriesName: string) => {
+  const toggleSeriesVisibility = (seriesName: string): void => {
     const updatedData = filteredData.map(item => {
       if (item.name === seriesName) {
         return { ...item, visible: !item.visible };

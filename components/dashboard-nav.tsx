@@ -115,16 +115,16 @@ const NavItemComponent = ({
 
       {hasSubItems && isExpanded && !isMinimized && (
         <div className="mt-1 space-y-1">
-          {item.subItems.map((subItem, index) => (
-            <NavItemComponent
-              key={subItem.href || index}
-              item={subItem}
-              depth={depth + 1}
-              isMinimized={isMinimized}
-              onOpenChange={onOpenChange}
-            />
-          ))}
-        </div>
+        {item.subItems?.map((subItem, index) => (
+          <NavItemComponent
+            key={subItem.href || index}
+            item={subItem}
+            depth={depth + 1}
+            isMinimized={isMinimized}
+            onOpenChange={onOpenChange}
+          />
+        ))}
+      </div>
       )}
     </div>
   );

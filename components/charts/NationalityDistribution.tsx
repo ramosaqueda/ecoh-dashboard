@@ -67,7 +67,7 @@ export default function NationalityDistribution() {
         const rawData = await response.json();
 
         // Calcular el total
-        const total = Object.values(rawData).reduce(
+        const total = (Object.values(rawData) as number[]).reduce(
           (a: number, b: number) => a + b,
           0
         );

@@ -34,22 +34,27 @@ export async function GET(req: NextRequest) {
   }
 }
 
+
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    console.log('Received data:', data);
+    
 
     const transformedData = {
-      nombre: data.nombre,
+      nombreSujeto: data.nombre,
       docId: data.docId,
-      nacionalidadId: data.nacionalidadId
+      ...(data.nacionalidadId && {
+        nacionalidad: {
+          connect: { id: data.nacionalidadId }
+        }
+      })
     };
 
     const newimputado = await prisma.imputado.create({
       data: transformedData,
       select: {
         id: true,
-        nombre: true,
+        nombreSujeto: true,
         docId: true,
         nacionalidadId: true,
         createdAt: true,

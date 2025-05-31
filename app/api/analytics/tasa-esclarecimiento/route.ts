@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const homicidioConsumado = req.nextUrl.searchParams.get('homicidioConsumado') === 'true';
 
     // Definir las condiciones base de la consulta
-    let whereConditions: any = {};
+    const whereConditions: any = {};
 
     // Filtrar por año si no es "todos"
     if (yearParam && yearParam !== 'todos') {

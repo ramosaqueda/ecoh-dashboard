@@ -9,7 +9,7 @@ import { useYearContext } from '@/components/YearSelector';
 interface FlowData {
   nodes: Array<{
     id: string;
-    color: string;
+    color?: string;
   }>;
   links: Array<{
     source: string;
@@ -21,17 +21,18 @@ interface FlowData {
 export function ImputadosFlow() {
   const { selectedYear } = useYearContext();
   const [data, setData] = useState<FlowData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       setIsLoading(true);
       try {
         const response = await fetch(
           `/api/analytics/imputados-flow?year=${selectedYear}`
         );
-        const data = await response.json();
-        setData(data);
+        if (!response.ok) throw new Error('Error al cargar datos');
+        const responseData: FlowData = await response.json();
+        setData(responseData);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -42,12 +43,30 @@ export function ImputadosFlow() {
     fetchData();
   }, [selectedYear]);
 
+  // ✅ Funciones de tooltip en lugar de componentes React
+  const customNodeTooltip = ({ node }: any) => (
+    <div className="rounded-lg border bg-white p-2 shadow-lg">
+      <strong>{node.id}</strong>: {node.formattedValue || node.value}
+    </div>
+  );
+
+  const customLinkTooltip = ({ link }: any) => (
+    <div className="rounded-lg border bg-white p-2 shadow-lg">
+      <div className="text-sm">
+        <strong>{link.source.id}</strong> → <strong>{link.target.id}</strong>
+      </div>
+      <div className="text-xs text-gray-600">
+        Valor: {link.formattedValue || link.value}
+      </div>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Flujo Gestión de causas con imputados</CardTitle>
         <div className="text-sm text-muted-foreground">
-          Año: {selectedYear}
+          {selectedYear === 'todos' ? 'Todos los años' : `Año: ${selectedYear}`}
         </div>
       </CardHeader>
       <CardContent>
@@ -55,7 +74,7 @@ export function ImputadosFlow() {
           <div className="flex h-[400px] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
-        ) : data ? (
+        ) : data && data.nodes.length > 0 && data.links.length > 0 ? (
           <div className="h-[400px]">
             <ResponsiveSankey
               data={data}
@@ -82,14 +101,15 @@ export function ImputadosFlow() {
               }}
               animate={true}
               motionConfig="gentle"
-              tooltip={({ node, value }) => (
-                <div className="rounded-lg border bg-white p-2 shadow-lg">
-                  <strong>{node.id}</strong>: {value}
-                </div>
-              )}
+              nodeTooltip={customNodeTooltip}
+              linkTooltip={customLinkTooltip}
             />
           </div>
-        ) : null}
+        ) : (
+          <div className="flex h-[400px] items-center justify-center text-sm text-muted-foreground">
+            No hay datos disponibles para mostrar el flujo
+          </div>
+        )}
       </CardContent>
     </Card>
   );

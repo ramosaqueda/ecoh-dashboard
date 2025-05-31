@@ -57,6 +57,19 @@ interface Foco {
   nombre: string;
 }
 
+// ✅ AGREGADO: Tipo para los datos de exportación
+interface DatoExportacion extends Record<string, string | number> {
+  'Comuna': string;
+  'Total Causas': number;
+}
+
+interface DatoTendenciaExportacion {
+  'Comuna': string;
+  'Año': number;
+  'Mes': number;
+  'Cantidad': number;
+}
+
 export default function IncidenciaGeograficaPage() {
   // Estados para filtros
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -70,7 +83,7 @@ export default function IncidenciaGeograficaPage() {
   const [datosIncidencia, setDatosIncidencia] = useState<DatoComuna[]>([]);
   const [delitos, setDelitos] = useState<Delito[]>([]);
   const [focos, setFocos] = useState<Foco[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [lastSearchParams, setLastSearchParams] = useState<{
     fechaInicio: string;
     fechaFin: string;
@@ -84,7 +97,7 @@ export default function IncidenciaGeograficaPage() {
     fechaFin: string,
     delitoId?: string,
     focoId?: string
-  ) => {
+  ): Promise<void> => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
@@ -129,7 +142,7 @@ export default function IncidenciaGeograficaPage() {
   };
 
   // Manejar búsqueda
-  const handleSearch = () => {
+  const handleSearch = (): void => {
     if (!dateRange?.from || !dateRange?.to) {
       toast.error('Debe seleccionar un rango de fechas completo');
       return;
@@ -147,7 +160,7 @@ export default function IncidenciaGeograficaPage() {
   };
 
   // Manejar actualización
-  const handleRefresh = () => {
+  const handleRefresh = (): void => {
     if (lastSearchParams) {
       fetchIncidenciaGeografica(
         lastSearchParams.fechaInicio, 
@@ -161,7 +174,7 @@ export default function IncidenciaGeograficaPage() {
   };
 
   // Manejar limpieza de filtros
-  const handleClearFilters = () => {
+  const handleClearFilters = (): void => {
     setDelitoSeleccionado('all');
     setFocoSeleccionado('all');
     setDateRange({
@@ -170,25 +183,25 @@ export default function IncidenciaGeograficaPage() {
     });
   };
 
-  // Exportar a Excel
-  const handleExportToExcel = () => {
+  // ✅ CORREGIDO: Exportar a Excel con tipos apropiados
+  const handleExportToExcel = (): void => {
     if (datosIncidencia.length === 0) {
       toast.error('No hay datos para exportar');
       return;
     }
     
     // Preparar datos planos para exportación
-    const datosPlanos: any[] = [];
+    const datosPlanos: DatoExportacion[] = [];
     
-    datosIncidencia.forEach(comuna => {
-      // Datos básicos de la comuna
-      const filaPrincipal = {
+    datosIncidencia.forEach((comuna: DatoComuna) => {
+      // ✅ Datos básicos de la comuna con tipo flexible
+      const filaPrincipal: DatoExportacion = {
         'Comuna': comuna.nombre,
         'Total Causas': comuna.cantidadCausas,
       };
       
-      // Agregar distribución por delito
-      comuna.distribucionDelitos.forEach(delito => {
+      // ✅ Agregar distribución por delito (ahora TypeScript permite propiedades dinámicas)
+      comuna.distribucionDelitos.forEach((delito: DelitoDistribucion) => {
         filaPrincipal[`Delito: ${delito.delitoNombre}`] = delito.cantidad;
       });
       
@@ -200,10 +213,10 @@ export default function IncidenciaGeograficaPage() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Incidencia Geográfica');
     
-    // Agregar hoja de tendencia temporal si hay datos
-    const datosTendencia: any[] = [];
-    datosIncidencia.forEach(comuna => {
-      comuna.tendenciaMensual.forEach(tendencia => {
+    // ✅ Agregar hoja de tendencia temporal si hay datos (con tipos correctos)
+    const datosTendencia: DatoTendenciaExportacion[] = [];
+    datosIncidencia.forEach((comuna: DatoComuna) => {
+      comuna.tendenciaMensual.forEach((tendencia: DatoTendencia) => {
         datosTendencia.push({
           'Comuna': comuna.nombre,
           'Año': tendencia.año,
@@ -269,7 +282,7 @@ export default function IncidenciaGeograficaPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los delitos</SelectItem>
-                  {delitos.map((delito) => (
+                  {delitos.map((delito: Delito) => (
                     <SelectItem key={delito.id} value={delito.id.toString()}>
                       {delito.nombre}
                     </SelectItem>
@@ -289,7 +302,7 @@ export default function IncidenciaGeograficaPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los focos</SelectItem>
-                  {focos.map((foco) => (
+                  {focos.map((foco: Foco) => (
                     <SelectItem key={foco.id} value={foco.id.toString()}>
                       {foco.nombre}
                     </SelectItem>

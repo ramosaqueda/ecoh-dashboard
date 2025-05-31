@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Interface para las condiciones de búsqueda
+interface WhereClause {
+  causaEcoh?: boolean;
+  causaLegada?: boolean;
+  homicidioConsumado?: boolean;
+  esCrimenOrganizado?: number;
+  fechaDelHecho?: {
+    gte: Date;
+    lte: Date;
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -9,13 +21,49 @@ export async function GET(req: NextRequest) {
     const causaLegada = searchParams.get('causaLegada');
     const homicidioConsumado = searchParams.get('homicidioConsumado');
     const crimenorg = searchParams.get('esCrimenOrganizado');
-    
-    // Nuevo parámetro para filtrar por año
     const yearParam = searchParams.get('year');
     
-    let whereClause: any = {};
+    // Función helper para crear filtro de fechas
+    const createDateFilter = (year: number) => ({
+      gte: new Date(year, 0, 1),
+      lte: new Date(year, 11, 31, 23, 59, 59, 999)
+    });
 
-    // Aplicar filtros si están presentes
+    // Validar año si está presente
+    let yearFilter = null;
+    if (yearParam && yearParam !== 'todos') {
+      const year = parseInt(yearParam);
+      if (isNaN(year)) {
+        return NextResponse.json(
+          { error: 'El parámetro year debe ser un número válido' },
+          { status: 400 }
+        );
+      }
+      yearFilter = createDateFilter(year);
+    }
+
+    // Caso especial: conteo de crimen organizado
+    if (crimenorg !== null) {
+      const crimeOrgWhereClause: WhereClause = {
+        esCrimenOrganizado: 0
+      };
+      
+      // Añadir filtro de fechas si está presente
+      if (yearFilter) {
+        crimeOrgWhereClause.fechaDelHecho = yearFilter;
+      }
+      
+      const totalCausas = await prisma.causa.count({
+        where: crimeOrgWhereClause
+      });
+      
+      return NextResponse.json({ count: totalCausas });
+    }
+
+    // Construir whereClause para casos normales
+    const whereClause: WhereClause = {};
+
+    // Aplicar filtros booleanos
     if (causaEcoh !== null) {
       whereClause.causaEcoh = causaEcoh === 'true';
     }
@@ -28,48 +76,12 @@ export async function GET(req: NextRequest) {
       whereClause.homicidioConsumado = homicidioConsumado === 'true';
     }
     
-    // Aplicar filtro de año si está presente y no es "todos"
-    if (yearParam && yearParam !== 'todos') {
-      const year = parseInt(yearParam);
-      
-      if (isNaN(year)) {
-        return NextResponse.json(
-          { error: 'El parámetro year debe ser un número válido' },
-          { status: 400 }
-        );
-      }
-      
-      const startDate = new Date(year, 0, 1);
-      const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
-      
-      whereClause.fechaDelHecho = {
-        gte: startDate,
-        lte: endDate
-      };
+    // Aplicar filtro de año
+    if (yearFilter) {
+      whereClause.fechaDelHecho = yearFilter;
     }
 
-    if (crimenorg !== null) {
-      // Crear un objeto de condiciones para crimen organizado
-      const crimeOrgWhereClause = { 
-        esCrimenOrganizado: 0
-      };
-      
-      // Añadir filtro de fechas si se especifica un año que no sea "todos"
-      if (yearParam && yearParam !== 'todos') {
-        const year = parseInt(yearParam);
-        crimeOrgWhereClause['fechaDelHecho'] = {
-          gte: new Date(year, 0, 1),
-          lte: new Date(year, 11, 31, 23, 59, 59, 999)
-        };
-      }
-      
-      const totalCausas = await prisma.causa.count({
-        where: crimeOrgWhereClause
-      });
-      
-      return NextResponse.json({ count: totalCausas });
-    }
-
+    // Ejecutar consulta
     if (count === 'true') {
       console.log('Contando causas con filtros:', whereClause);
       const totalCausas = await prisma.causa.count({
@@ -145,15 +157,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(formattedCausas);
     }
   } catch (error) {
-    console.error('Error fetching causas:', error instanceof Error ? error.message : error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Error fetching causas:', errorMessage);
     return NextResponse.json(
-      { error: 'Error fetching causas' },
+      { error: 'Error fetching causas', details: errorMessage },
       { status: 500 }
     );
   }
 }
-
- 
 
 export async function POST(req: NextRequest) {
   try {
@@ -401,10 +412,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(causaCompleta, { status: 201 });
   } catch (error) {
     console.error('Error al crear o actualizar causa:', error);
+    
+    // Verificar si el error es una instancia de Error
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    
     return NextResponse.json(
-      { error: 'Error al procesar la solicitud', details: error.message },
+      { error: 'Error al procesar la solicitud', details: errorMessage },
       { status: 500 }
     );
   }
 }
- 

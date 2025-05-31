@@ -26,8 +26,51 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Ba
 import { columns, Telefono } from '@/components/tables/telefono-tables/columns';
 import { TelefonosDataTable } from '@/components/tables/telefono-tables/telefonos-table';
 
+// Interfaces TypeScript
+interface DatoGrafico {
+  id: number;
+  nombre: string;
+  cantidad: number;
+}
+
+interface SolicitudesData {
+  trafico: number;
+  imei: number;
+  forense: number;
+  custodia: number;
+}
+
+interface EstadisticasData {
+  porProveedor: DatoGrafico[];
+  porUbicacion: DatoGrafico[];
+  solicitudes: SolicitudesData;
+  totalTelefonos: number;
+}
+
+interface EstadisticasSectionProps {
+  estadisticas: EstadisticasData;
+  isLoading: boolean;
+}
+
+interface Proveedor {
+  id: number;
+  nombre: string;
+}
+
+interface Ubicacion {
+  id: number;
+  nombre: string;
+}
+
+interface SearchParams {
+  ruc?: string;
+  proveedorId?: string;
+  ubicacionId?: string;
+  solicitud?: string;
+}
+
 // Componente estadístico simplificado
-const EstadisticasSection = ({ estadisticas, isLoading }) => {
+const EstadisticasSection = ({ estadisticas, isLoading }: EstadisticasSectionProps) => {
   // Colores para los gráficos
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
@@ -270,7 +313,7 @@ export default function TelefonosPanelPage() {
   
   // Estados para datos
   const [telefonos, setTelefonos] = useState<Telefono[]>([]);
-  const [estadisticas, setEstadisticas] = useState({
+  const [estadisticas, setEstadisticas] = useState<EstadisticasData>({
     porProveedor: [],
     porUbicacion: [],
     solicitudes: {
@@ -281,23 +324,18 @@ export default function TelefonosPanelPage() {
     },
     totalTelefonos: 0
   });
-  const [proveedores, setProveedores] = useState([]);
-  const [ubicaciones, setUbicaciones] = useState([]);
+  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [lastSearchParams, setLastSearchParams] = useState<{
-    ruc?: string;
-    proveedorId?: string;
-    ubicacionId?: string;
-    solicitud?: string;
-  } | null>(null);
+  const [lastSearchParams, setLastSearchParams] = useState<SearchParams | null>(null);
 
   // Funciones para manejar operaciones CRUD (placeholders)
-  const handleEdit = (telefono) => {
+  const handleEdit = (telefono: Telefono) => {
     toast.info(`Editar teléfono: ${telefono.numeroTelefonico}`);
     // Implementación real: Abrir modal de edición o navegar a página de edición
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id: string) => {
     toast.info(`Eliminar teléfono ID: ${id}`);
     // Implementación real: Confirmar y eliminar teléfono
   };

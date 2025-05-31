@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     if (id) {
       // Obtener un Fiscal específico
-      const Fiscal = await prisma.Fiscal.findUnique({
+      const Fiscal = await prisma.fiscal.findUnique({
         where: { id: Number(id) }
       });
       if (Fiscal) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Obtener todos los Fiscals
-      const Fiscals = await prisma.Fiscal.findMany();
+      const Fiscals = await prisma.fiscal.findMany();
       return NextResponse.json(Fiscals);
     }
   } catch (error) {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { nombre } = await request.json();
-    const Fiscal = await prisma.Fiscal.create({
+    const Fiscal = await prisma.fiscal.create({
       data: { nombre }
     });
     return NextResponse.json(Fiscal, { status: 201 });
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { nombre } = await request.json();
-    const Fiscal = await prisma.Fiscal.update({
+    const Fiscal = await prisma.fiscal.update({
       where: { id: Number(id) },
       data: { nombre }
     });
@@ -89,7 +89,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.Fiscal.delete({
+    await prisma.fiscal.delete({
       where: { id: Number(id) }
     });
     return new NextResponse(null, { status: 204 });

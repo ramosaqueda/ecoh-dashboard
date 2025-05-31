@@ -64,7 +64,7 @@ export async function GET(req: Request) {
       });
 
       // Crear array con todos los días del año
-      const allDays = [];
+      const allDays = [] as any[];
       const currentDate = new Date(startDate);
 
       while (currentDate <= endDate) {

@@ -20,10 +20,7 @@ export async function GET(
     // Obtener usuario de la base de datos
     const usuario = await prisma.usuario.findUnique({
       where: { clerk_id: clerkId }, // ✅ Cambio 5: Verificar nombre del campo en tu schema
-      include: {
-        tareas: true
-        // Incluir otras relaciones según necesites
-      }
+       
     });
 
     if (!usuario) {

@@ -12,6 +12,11 @@ interface DatoTendencia {
   cantidad: number;
 }
 
+// ✅ Interfaz extendida para incluir el nombre de la comuna
+interface DatoTendenciaConNombre extends DatoTendencia {
+  comunaNombre: string;
+}
+
 interface DatoComuna {
   id: number;
   nombre: string;
@@ -23,6 +28,25 @@ interface DatoComuna {
 interface GraficoTendenciaProps {
   datos: DatoComuna[];
   isLoading: boolean;
+}
+
+// ✅ Interfaz para los datos procesados del gráfico
+interface DatoProcesado {
+  fecha: string;
+  mes: string;
+  año: number;
+  [key: string]: string | number; // Para las propiedades dinámicas como "comuna-1", "nombre-1", etc.
+}
+
+// ✅ Interfaz para el tooltip
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+    color: string;
+  }>;
+  label?: string;
 }
 
 // Colores para las diferentes líneas del gráfico
@@ -39,20 +63,22 @@ const MESES = [
 
 export default function GraficoTendencia({ datos, isLoading }: GraficoTendenciaProps) {
   // Procesar datos para el gráfico
-  const datosProcesados = useMemo(() => {
-    // Obtener todas las tendencias mensuales
-    const todasTendencias: DatoTendencia[] = [];
+  const datosProcesados = useMemo((): DatoProcesado[] => {
+    // Obtener todas las tendencias mensuales con nombre de comuna
+    const todasTendencias: DatoTendenciaConNombre[] = [];
     datos.forEach(comuna => {
       comuna.tendenciaMensual.forEach(tendencia => {
-        todasTendencias.push({
+        // ✅ Crear objeto con tipo DatoTendenciaConNombre
+        const tendenciaConNombre: DatoTendenciaConNombre = {
           ...tendencia,
           comunaNombre: comuna.nombre
-        });
+        };
+        todasTendencias.push(tendenciaConNombre);
       });
     });
     
     // Agrupar por año-mes
-    const agrupados: Record<string, any> = {};
+    const agrupados: Record<string, DatoProcesado> = {};
     todasTendencias.forEach(tendencia => {
       const key = `${tendencia.año}-${tendencia.mes}`;
       if (!agrupados[key]) {
@@ -71,12 +97,12 @@ export default function GraficoTendencia({ datos, isLoading }: GraficoTendenciaP
     // Convertir a array y ordenar por fecha
     return Object.values(agrupados).sort((a, b) => {
       if (a.año !== b.año) return a.año - b.año;
-      return a.mes - b.mes;
+      return parseInt(a.mes) - parseInt(b.mes);
     });
   }, [datos]);
 
   // Filtrar comunas con datos suficientes (al menos 3 puntos de datos)
-  const comunasConDatos = useMemo(() => {
+  const comunasConDatos = useMemo((): DatoComuna[] => {
     const conteo: Record<number, number> = {};
     
     datos.forEach(comuna => {
@@ -89,13 +115,13 @@ export default function GraficoTendencia({ datos, isLoading }: GraficoTendenciaP
   }, [datos]);
 
   // Personalizar el tooltip del gráfico
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip: React.FC<TooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border rounded shadow-md">
           <p className="text-sm font-medium">{label}</p>
           <div className="mt-2">
-            {payload.map((entry: any, index: number) => (
+            {payload.map((entry, index) => (
               <div key={`item-${index}`} className="flex items-center gap-2 text-sm">
                 <div className="w-3 h-3" style={{ backgroundColor: entry.color }}></div>
                 <span>{entry.name}: </span>
@@ -109,7 +135,7 @@ export default function GraficoTendencia({ datos, isLoading }: GraficoTendenciaP
     return null;
   };
 
-  const formatXAxis = (tickItem: string) => {
+  const formatXAxis = (tickItem: string): string => {
     const [año, mes] = tickItem.split('-');
     return `${MESES[parseInt(mes) - 1]} ${año}`;
   };

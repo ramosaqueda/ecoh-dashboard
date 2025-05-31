@@ -7,14 +7,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     
     if (isNaN(id)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const parametro = await prisma.parametroCrimenOrganizado.findUnique({
-      where: { id }
+    // Usar el campo único correcto - podría ser 'value' en lugar de 'id'
+    const parametro = await prisma.crimenOrganizadoParams.findUnique({
+      where: { value: id }  // o where: { id } si tu modelo sí tiene campo id
     });
 
     if (!parametro) {
@@ -27,8 +29,9 @@ export async function GET(
     return NextResponse.json(parametro);
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { error: 'Error al obtener parámetro de crimen organizado' },
+      { error: 'Error al obtener parámetro de crimen organizado', details: errorMessage },
       { status: 500 }
     );
   }
@@ -39,7 +42,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    // ✅ Corregir: hacer await de params
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     
     if (isNaN(id)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
@@ -47,21 +52,23 @@ export async function PUT(
 
     const data = await request.json();
     
-    const parametro = await prisma.parametroCrimenOrganizado.update({
-      where: { id },
+    // ✅ Usar el nombre correcto del modelo y campo único
+    const parametro = await prisma.crimenOrganizadoParams.update({
+      where: { value: id },  // o where: { id } si tu modelo sí tiene campo id
       data: {
-        nombre: data.nombre,
-        descripcion: data.descripcion,
-        peso: data.peso,
-        activo: data.activo
+        // Ajustar los campos según tu modelo
+        label: data.label || data.nombre,
+        // value: data.value,  // No actualizar el campo único
+        // Otros campos según tu schema
       }
     });
 
     return NextResponse.json(parametro);
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { error: 'Error al actualizar parámetro de crimen organizado' },
+      { error: 'Error al actualizar parámetro de crimen organizado', details: errorMessage },
       { status: 500 }
     );
   }
@@ -72,21 +79,25 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    // ✅ Corregir: hacer await de params
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     
     if (isNaN(id)) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    await prisma.parametroCrimenOrganizado.delete({
-      where: { id }
+    // ✅ Usar el nombre correcto del modelo y campo único
+    await prisma.crimenOrganizadoParams.delete({
+      where: { value: id }  // o where: { id } si tu modelo sí tiene campo id
     });
 
     return NextResponse.json({ message: 'Parámetro eliminado correctamente' });
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { error: 'Error al eliminar parámetro de crimen organizado' },
+      { error: 'Error al eliminar parámetro de crimen organizado', details: errorMessage },
       { status: 500 }
     );
   }

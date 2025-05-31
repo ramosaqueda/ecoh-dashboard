@@ -3,24 +3,23 @@ import { NextResponse } from 'next/server';
 
 import { unlink } from 'fs/promises';
 import { join } from 'path';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string; photoId: string } }
+  { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
-    const imputadoId = parseInt(params.id);
-    const photoId = parseInt(params.photoId);
+    const { id, photoId } = await params;
+    const imputadoId = parseInt(id);
+    const photoIdNum = parseInt(photoId);
 
-    if (isNaN(imputadoId) || isNaN(photoId)) {
+    if (isNaN(imputadoId) || isNaN(photoIdNum)) {
       return NextResponse.json({ error: 'IDs inválidos' }, { status: 400 });
     }
 
     const foto = await prisma.fotografia.findFirst({
       where: {
-        id: photoId,
+        id: photoIdNum,
         imputadoId
       }
     });
@@ -38,7 +37,7 @@ export async function DELETE(
       const siguienteFoto = await prisma.fotografia.findFirst({
         where: {
           imputadoId,
-          id: { not: photoId }
+          id: { not: photoIdNum }
         }
       });
 
@@ -58,12 +57,20 @@ export async function DELETE(
     }
 
     // Eliminar el archivo físico
+    // ✅ Verificar que foto.url existe antes de construir la ruta
+    if (!foto.url) {
+      return NextResponse.json(
+        { error: 'La foto no tiene URL asociada' },
+        { status: 400 }
+      );
+    }
+
     const filePath = join(process.cwd(), 'public', foto.url);
     await unlink(filePath).catch(() => {}); // Ignorar error si el archivo no existe
 
     // Eliminar el registro de la base de datos
     await prisma.fotografia.delete({
-      where: { id: photoId }
+      where: { id: photoIdNum }
     });
 
     return NextResponse.json({ success: true });

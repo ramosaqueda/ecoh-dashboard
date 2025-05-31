@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { nombre } = await request.json();
-    const  Atvt = await prisma. Atvt.create({
+    const  Atvt = await prisma. atvt.create({
       data: { nombre }
     });
     return NextResponse.json( Atvt, { status: 201 });
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { nombre } = await request.json();
-    const  Atvt = await prisma. Atvt.update({
+    const  Atvt = await prisma. atvt.update({
       where: { id: Number(id) },
       data: { nombre }
     });

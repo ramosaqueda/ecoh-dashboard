@@ -162,7 +162,9 @@ export async function GET(req: NextRequest) {
     }
     
     // 7. Obtener información de usuarios
-    const usuariosIds = [...new Set(actividades.map(a => a.usuario_id))];
+    //const usuariosIds = [...new Set(actividades.map(a => a.usuario_id))];
+    const usuariosIds = Array.from(new Set(actividades.map(a => a.usuario_id)));
+
     
     const usuarios = await prisma.usuario.findMany({
       where: {
@@ -179,7 +181,10 @@ export async function GET(req: NextRequest) {
     });
     
     // 8. Obtener todos los tipos de actividad
-    const tiposActividadIds = [...new Set(actividades.map(a => a.tipo_actividad_id))];
+    //const tiposActividadIds = [...new Set(actividades.map(a => a.tipo_actividad_id))];
+    const tiposActividadIds = Array.from(new Set(actividades.map(a => a.tipo_actividad_id)));
+    //const usuariosIds = Array.from(new Set(actividades.map(a => a.usuario_id)));
+
     
     const tiposActividad = await prisma.tipoActividad.findMany({
       where: {

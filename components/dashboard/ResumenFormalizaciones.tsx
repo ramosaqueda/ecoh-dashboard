@@ -168,7 +168,7 @@ export default function ResumenFormalizaciones({ metricas, isLoading }: ResumenF
 
         {/* Alerta: Próximos a Vencer */}
         {metricas.alertas.porVencer > 0 && (
-          <Alert variant="warning" className="bg-yellow-50 border-yellow-200 text-yellow-800">
+          <Alert variant="default" className="bg-yellow-50 border-yellow-200 text-yellow-800">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Plazos Próximos a Vencer</AlertTitle>
             <AlertDescription>

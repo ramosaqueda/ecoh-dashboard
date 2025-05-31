@@ -9,7 +9,7 @@ export async function GET(
   try {
     const telefono = await prisma.telefono.findUnique({
       where: {
-        id: parseInt(params.id)
+        id: parseInt((await params).id)
       },
       include: {
         proveedorServicio: true,
@@ -62,7 +62,7 @@ export async function PUT(
 
     const telefono = await prisma.telefono.update({
       where: {
-        id: parseInt(params.id)
+        id: parseInt((await params).id)
       },
       data: {
         numeroTelefonico: body.numeroTelefonico || null,
@@ -75,7 +75,7 @@ export async function PUT(
         solicitaImei: convertCheckboxValue(body.solicitaImei),
         extraccionForense: convertCheckboxValue(body.extraccionForense),
         enviar_custodia: convertCheckboxValue(body.enviar_custodia), // Nuevo campo
-        id_ubicacion: parseInt(body.id_ubicacion), // Nuevo campo
+        id_ubicacion: parseInt(body.id_ubicacion) as any, // Nuevo campo
         observacion: body.observacion || null
       },
       include: {
@@ -108,10 +108,21 @@ export async function PUT(
     return NextResponse.json(telefono);
   } catch (error) {
     console.error('Error en PUT:', error);
+  
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { 
+          error: 'Error al actualizar teléfono',
+          details: error.message 
+        },
+        { status: 500 }
+      );
+    }
+  
     return NextResponse.json(
-      { 
+      {
         error: 'Error al actualizar teléfono',
-        details: error.message 
+        details: 'Error desconocido'
       },
       { status: 500 }
     );
@@ -125,7 +136,7 @@ export async function DELETE(
   try {
     await prisma.telefono.delete({
       where: {
-        id: parseInt(params.id)
+        id: parseInt((await params).id)
       }
     });
 

@@ -1,59 +1,93 @@
-// app/api/Victima/route.ts
+// app/api/victima/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Victima } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { 
+  createErrorResponse, 
+  createSuccessResponse,
+  createNotFoundResponse,
+  createValidationErrorResponse,
+  validateRequiredFields,
+  parseQueryId
+} from '@/lib/api-utils';
 
 const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const id = parseQueryId(searchParams.get('id'));
 
   try {
     if (id) {
-      // Obtener un Victima específico
-      const Victima = await prisma.Victima.findUnique({
-        where: { id: Number(id) }
+      // Obtener una Victima específica
+      const victima = await prisma.victima.findUnique({
+        where: { id },
+        include: {
+          nacionalidad: true,
+          causas: {
+            include: {
+              causa: true
+            }
+          }
+        }
       });
-      if (Victima) {
-        return NextResponse.json(Victima);
-      } else {
-        return NextResponse.json(
-          { message: 'Victima no encontrado' },
-          { status: 404 }
-        );
+      
+      if (!victima) {
+        return createNotFoundResponse('Victima', id);
       }
+      
+      return createSuccessResponse(victima);
     } else {
-      // Obtener todos los Victimas
-      const Victimas = await prisma.Victima.findMany();
-      return NextResponse.json(Victimas);
+      // Obtener todas las Victimas
+      const victimas = await prisma.victima.findMany({
+        include: {
+          nacionalidad: true,
+          causas: {
+            include: {
+              causa: true
+            }
+          }
+        }
+      });
+      return createSuccessResponse(victimas);
     }
   } catch (error) {
-    return NextResponse.json(
-      { message: 'Error al obtener Victima(s)', error },
-      { status: 500 }
-    );
+    return createErrorResponse('Error al obtener victima(s)', error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { nombre } = await request.json();
-    const Victima = await prisma.Victima.create({
-      data: { nombre }
+    const data = await request.json();
+    
+    // Validar campos requeridos
+    const { isValid, missingFields } = validateRequiredFields(data, ['nombreVictima', 'docId']);
+    if (!isValid) {
+      return createValidationErrorResponse(missingFields);
+    }
+
+    const { nombreVictima, docId, nacionalidadId } = data;
+
+    const victima = await prisma.victima.create({
+      data: { 
+        nombreVictima,
+        docId,
+        nacionalidadId: nacionalidadId ? Number(nacionalidadId) : null
+      },
+      include: {
+        nacionalidad: true
+      }
     });
-    return NextResponse.json(Victima, { status: 201 });
+    
+    return createSuccessResponse(victima, 201, 'Victima creada exitosamente');
   } catch (error) {
-    return NextResponse.json(
-      { message: 'Error al crear Victima', error },
-      { status: 500 }
-    );
+    return createErrorResponse('Error al crear victima', error);
   }
 }
 
 export async function PUT(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const id = parseQueryId(searchParams.get('id'));
 
   if (!id) {
     return NextResponse.json(
@@ -63,23 +97,37 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    const { nombre } = await request.json();
-    const Victima = await prisma.Victima.update({
-      where: { id: Number(id) },
-      data: { nombre }
+    const data = await request.json();
+    
+    // Validar campos requeridos
+    const { isValid, missingFields } = validateRequiredFields(data, ['nombreVictima', 'docId']);
+    if (!isValid) {
+      return createValidationErrorResponse(missingFields);
+    }
+
+    const { nombreVictima, docId, nacionalidadId } = data;
+
+    const victima = await prisma.victima.update({
+      where: { id },
+      data: { 
+        nombreVictima,
+        docId,
+        nacionalidadId: nacionalidadId ? Number(nacionalidadId) : null
+      },
+      include: {
+        nacionalidad: true
+      }
     });
-    return NextResponse.json(Victima);
+    
+    return createSuccessResponse(victima, 200, 'Victima actualizada exitosamente');
   } catch (error) {
-    return NextResponse.json(
-      { message: 'Error al actualizar Victima', error },
-      { status: 500 }
-    );
+    return createErrorResponse('Error al actualizar victima', error);
   }
 }
 
 export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  const id = parseQueryId(searchParams.get('id'));
 
   if (!id) {
     return NextResponse.json(
@@ -89,14 +137,21 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.Victima.delete({
-      where: { id: Number(id) }
+    // Verificar si la víctima existe
+    const victima = await prisma.victima.findUnique({
+      where: { id }
     });
+
+    if (!victima) {
+      return createNotFoundResponse('Victima', id);
+    }
+
+    await prisma.victima.delete({
+      where: { id }
+    });
+    
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return NextResponse.json(
-      { message: 'Error al eliminar Victima', error },
-      { status: 500 }
-    );
+    return createErrorResponse('Error al eliminar victima', error);
   }
 }

@@ -1,16 +1,14 @@
 // app/api/imputado/[id]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const id = parseInt((await params).id);
 
     if (isNaN(id)) {
       return NextResponse.json({ message: 'ID inválido' }, { status: 400 });
@@ -71,7 +69,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const id = parseInt((await params).id);
 
     if (isNaN(id)) {
       return NextResponse.json({ message: 'ID inválido' }, { status: 400 });
@@ -166,7 +164,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+      const id = parseInt((await params).id);
 
     if (isNaN(id)) {
       return NextResponse.json({ message: 'ID inválido' }, { status: 400 });

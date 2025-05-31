@@ -10,7 +10,7 @@ import Image from 'next/image';
 
 interface TimelineHito {
   id: number;
-  titulo: String;
+  titulo: string;
   fecha: string;
   descripcion?: string;
   icono?: string;
@@ -36,7 +36,14 @@ export default function HitoCard({ hito, onEdit, onDelete }: HitoCardProps) {
       { ssr: false, loading: () => <div className="w-6 h-6" /> }
     );
     
-    return <IconComponent className="h-6 w-6 text-primary" />;
+    
+    return (
+      <div className="flex items-center justify-center h-6 w-6 text-primary">
+        <IconComponent />
+      </div>
+    );
+
+
   };
 
   return (

@@ -20,7 +20,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const organizacionId = parseInt(params.id);
+    const organizacionId = parseInt((await params).id);
 
     // Primero verificamos si la organización existe
     const organizacion = await prisma.organizacionDelictual.findUnique({
@@ -62,7 +62,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const organizacionId = parseInt(params.id);
+    const organizacionId = parseInt((await params).id);
     const body = await req.json();
     const validatedData = MiembroSchema.parse(body);
 
@@ -109,12 +109,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'El imputado ya es miembro de esta organización' },
-        { status: 409 }
-      );
-    }
+    
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -128,7 +123,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const organizacionId = parseInt(params.id);
+    const organizacionId = parseInt((await params).id);
     const body = await req.json();
     
     // Validar el array de miembros

@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const id = params.id;
+  try {    
+    const { id } = await params;
     const causa = await prisma.causa.findUnique({
       where: { id: parseInt(id) },
       include: {
@@ -45,7 +43,8 @@ export async function PUT(
 ) {
   try {
     const data = await req.json();
-    const id = params.id;
+    const { id } = await params;
+
 
     console.log('Received data:', data);
     console.log('Updating causa with ID:', id);
@@ -111,7 +110,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
+
     await prisma.causa.delete({
       where: { id: parseInt(id) }
     });

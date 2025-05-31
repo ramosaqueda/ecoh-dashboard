@@ -17,6 +17,7 @@ export interface Persona {
   segundoNombre?: string;
   apellido: string;
   segundoApellido?: string;
+  nombreCompleto?: string; // ✅ AGREGADO: Propiedad faltante
   genero: Genero;
   fechaNacimiento?: string;
   fechaFallecimiento?: string;

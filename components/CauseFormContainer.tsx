@@ -15,13 +15,25 @@ import { causaService, ApiError } from '@/lib/services/causaService';
 import type { CausaFormData, Causa } from '@/types/causa';
 import { Loader2 } from 'lucide-react';
 
+// ✅ Tipo más robusto que acepta cualquier objeto con id opcional
 interface CauseFormContainerProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  initialData?: Partial<Causa> | null;
+  initialData?: { id?: string | number; [key: string]: any } | null | undefined;
   isEditing?: boolean;
 }
+
+// ✅ Función helper para transformar null a undefined
+const transformNullToUndefined = <T extends Record<string, any>>(obj: T): T => {
+  const result = { ...obj };
+  (Object.keys(result) as Array<keyof T>).forEach(key => {
+    if (result[key] === null) {
+      result[key] = undefined as T[keyof T];
+    }
+  });
+  return result;
+};
 
 const CauseFormContainer: React.FC<CauseFormContainerProps> = ({
   isOpen,
@@ -35,16 +47,29 @@ const CauseFormContainer: React.FC<CauseFormContainerProps> = ({
   const [error, setError] = React.useState<string | null>(null);
   const [formData, setFormData] = React.useState<Partial<CausaFormData>>({});
 
-  // Cargar datos iniciales si estamos editando
+  // ✅ Cargar datos iniciales si estamos editando
   React.useEffect(() => {
     const loadInitialData = async () => {
       if (isEditing && initialData?.id) {
         try {
           setIsLoading(true);
           setError(null);
-          const causa = await causaService.getById(initialData.id);
+          
+          // ✅ Convertir id a number solo para la llamada a la API
+          const causaId = typeof initialData.id === 'string' 
+            ? parseInt(initialData.id, 10) 
+            : initialData.id;
+            
+          if (isNaN(causaId)) {
+            throw new Error('ID de causa inválido');
+          }
+          
+          const causa = await causaService.getById(causaId);
           const transformedData = causaService.transformInitialData(causa);
-          setFormData(transformedData);
+          
+          // ✅ Transformar null a undefined para compatibilidad con el tipo
+          const cleanedData = transformNullToUndefined(transformedData) as Partial<CausaFormData>;
+          setFormData(cleanedData);
         } catch (err) {
           const message =
             err instanceof ApiError
@@ -79,7 +104,16 @@ const CauseFormContainer: React.FC<CauseFormContainerProps> = ({
       setError(null);
 
       if (isEditing && initialData?.id) {
-        await causaService.update(initialData.id, data);
+        // ✅ Convertir id a number si es necesario para el servicio
+        const causaId = typeof initialData.id === 'string' 
+          ? parseInt(initialData.id, 10) 
+          : initialData.id;
+          
+        if (isNaN(causaId)) {
+          throw new Error('ID de causa inválido');
+        }
+        
+        await causaService.update(causaId, data);
         toast.success('Causa actualizada exitosamente');
       } else {
         await causaService.create(data);

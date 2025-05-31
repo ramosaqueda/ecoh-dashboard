@@ -1,8 +1,6 @@
 // app/api/imputado-causas/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +8,8 @@ export async function GET(
 ) {
   try {
     // Usar el mismo formato de parámetros que tu endpoint existente
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;  // Resolver la Promise primero
+    const id = parseInt(idParam);           // Luego usar el valor
 
     if (isNaN(id)) {
       return NextResponse.json({ message: 'ID inválido' }, { status: 400 });
@@ -52,12 +51,13 @@ export async function GET(
       fechaHecho: rel.causa.fechaDelHecho,
       delito: rel.causa.delito?.nombre || 'Sin delito asignado',
       tribunal: rel.causa.tribunal?.nombre,
-      esImputado: rel.esImputado,
+      esImputado: rel.esimputado,
       esSujetoInteres: rel.essujetoInteres,
       formalizado: rel.formalizado,
       fechaFormalizacion: rel.fechaFormalizacion,
       cautelar: rel.cautelar?.nombre,
-      causaImputadoId: rel.id
+      // ✅ Posibles nombres para el ID de la relación intermedia:
+      causaImputadoId: (rel as any).id || rel.causaId || rel.imputadoId || null
     }));
 
     // Filtrar para excluir la causa actual (si se proporciona en la query)
@@ -74,8 +74,10 @@ export async function GET(
     return NextResponse.json(causasFiltradas);
   } catch (error) {
     console.error('Error al obtener causas del imputado:', error);
+    // ✅ Corrección del manejo de errores
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { message: 'Error interno del servidor', error: error.message },
+      { message: 'Error interno del servidor', error: errorMessage },
       { status: 500 }
     );
   }

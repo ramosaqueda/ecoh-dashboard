@@ -4,11 +4,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string, memberId: string } }
+  { params }: { params: Promise<{ id: string; memberId: string }> }
 ) {
   try {
-    const organizacionId = parseInt(params.id);
-    const memberId = parseInt(params.memberId);
+    const organizacionId = parseInt((await params).id);
+    const memberId = parseInt((await params).memberId);
 
     // Verificar si el miembro existe y pertenece a la organización
     const miembro = await prisma.miembrosOrganizacion.findFirst({

@@ -2,12 +2,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Role, hasPermission } from '@/utils/roles';
-import { getAuth } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: Request) {
   try {
-    const { userId } = getAuth(request);
-    console.log('Verificando userId en API:', userId);
+    const { userId } = await auth(); // ✅ Correcto - no necesita request
 
     if (!userId) {
       console.log('No hay userId en la petición');
@@ -23,9 +22,12 @@ export async function GET(request: Request) {
       );
     }
 
-    const user = await prisma.usuarios.findUnique({
+    const user = await prisma.usuario.findUnique({
       where: {
         clerk_id: userId
+      },
+      include: {
+        rol: true  // ✅ Esto incluye la relación rol
       }
     });
 
@@ -39,7 +41,7 @@ export async function GET(request: Request) {
       );
     }
 
-    if (!hasPermission(user.rol as Role, Role.ADMIN)) {
+    if (!hasPermission(user.rol as unknown as Role, Role.ADMIN)) {
       console.log('Usuario sin permisos de admin');
       return NextResponse.json(
         { error: 'Sin permisos suficientes' },

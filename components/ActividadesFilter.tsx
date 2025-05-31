@@ -133,7 +133,7 @@ export default function ActividadesFilter() {
                     </TableCell>
                     <TableCell>
                       <Badge 
-                        className={cn(
+                        className={ (
                           getEstadoBadgeColor(actividad.estado),
                           'text-white'
                         )}

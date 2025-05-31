@@ -62,8 +62,13 @@ export async function GET(req: NextRequest) {
       },
     });
     
-    // 4. Obtener información completa de los delitos
-    const delitosIds = [...new Set(delitosPorComuna.map(item => item.delitoId).filter(id => id !== null))] as number[];
+    // 4. ✅ Obtener información completa de los delitos - CORREGIDO
+    const delitosIdsSet = new Set(
+      delitosPorComuna
+        .map(item => item.delitoId)
+        .filter((id): id is number => id !== null)
+    );
+    const delitosIds = Array.from(delitosIdsSet);
     
     const delitos = await prisma.delito.findMany({
       where: {
@@ -102,24 +107,24 @@ export async function GET(req: NextRequest) {
     });
 
     // 8. Obtener distribución por mes para análisis temporal
-    let distribucionMensual = [];
+    let distribucionMensual: unknown = [];
     
     // Construir la consulta adecuadamente sin interpolación de strings
-    let queryFiltros = [];
-    let queryParams = [];
+    const queryFiltros = [];
+    const queryParams = [];
     
     if (fechaInicio && fechaFin) {
-      queryFiltros.push(`"fechaDelHecho" >= $1 AND "fechaDelHecho" <= $2`);
+      queryFiltros.push(`"fechaDelHecho" >= $${queryParams.length + 1} AND "fechaDelHecho" <= $${queryParams.length + 2}`);
       queryParams.push(new Date(fechaInicio), new Date(fechaFin));
     }
     
     if (whereConditions.delitoId) {
-      queryFiltros.push(`"delitoId" = ${queryParams.length + 1}`);
+      queryFiltros.push(`"delitoId" = $${queryParams.length + 1}`);
       queryParams.push(whereConditions.delitoId);
     }
     
     if (whereConditions.focoId) {
-      queryFiltros.push(`"focoId" = ${queryParams.length + 1}`);
+      queryFiltros.push(`"focoId" = $${queryParams.length + 1}`);
       queryParams.push(whereConditions.focoId);
     }
     
@@ -188,8 +193,12 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error al obtener datos de incidencia geográfica:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { 
+        error: 'Error interno del servidor',
+        details: errorMessage 
+      },
       { status: 500 }
     );
   }

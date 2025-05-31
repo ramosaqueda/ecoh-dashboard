@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 import ImputadoPhotos from '@/components/forms/ImputadoForm/ImputadoPhotos';
 import ImputadoPdfGenerator from '@/components/ImputadoPdfGenerator';
+import { use, Suspense } from 'react'; // ✅ Importar use de React
 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -25,17 +26,17 @@ const DetailRow = ({ label, value }: DetailField) => (
   </div>
 );
 
-export default function ImputadoDetailPage({
-  params
-}: {
-  params: { id: string };
-}) {
+// ✅ Componente interno que maneja los datos
+function ImputadoDetailContent({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  
+  // ✅ Usar use() para obtener los parámetros de la Promise
+  const { id } = use(params);
 
   const { data: imputado, isLoading } = useQuery<ImputadoDetail>({
-    queryKey: ['imputado-detail', params.id],
+    queryKey: ['imputado-detail', id],
     queryFn: async () => {
-      const response = await fetch(`/api/imputado/${params.id}`);
+      const response = await fetch(`/api/imputado/${id}`);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Error al cargar datos del imputado');
@@ -85,15 +86,9 @@ export default function ImputadoDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-            
-            <ImputadoPdfGenerator imputadoData={imputado} />
-          </div>
-
-
-
+          <ImputadoPdfGenerator imputadoData={imputado} />
+        </div>
       </div>
-
-      
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Datos Personales */}
@@ -153,7 +148,7 @@ export default function ImputadoDetailPage({
         {/* Fotografías */}
         <div className="lg:col-span-2 print:hidden">
           <div className="rounded-lg border p-6">
-            <ImputadoPhotos imputadoId={params.id} />
+            <ImputadoPhotos imputadoId={id} />
           </div>
         </div>
 
@@ -254,5 +249,22 @@ export default function ImputadoDetailPage({
         </p>
       </div>
     </div>
+  );
+}
+
+// ✅ Componente principal con Suspense
+export default function ImputadoDetailPage({
+  params
+}: {
+  params: Promise<{ id: string }>; // ✅ Cambio: params es Promise
+}) {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <ImputadoDetailContent params={params} />
+    </Suspense>
   );
 }

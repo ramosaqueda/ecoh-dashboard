@@ -87,7 +87,7 @@ export default function CausaRelacionadaForm({
             value={selectedCausaId}
             onChange={handleCausaSelect}
             isDisabled={isSubmitting}
-            error={error}
+            error={error || undefined}
           />
           {error && (
             <p className="text-sm text-red-500">
@@ -107,7 +107,8 @@ export default function CausaRelacionadaForm({
           disabled={isSubmitting}
           required
           rows={4}
-          className={!observacion.trim() && 'border-red-500'}
+          className={(!observacion.trim() && 'border-red-500') || undefined}
+
         />
       </div>
 

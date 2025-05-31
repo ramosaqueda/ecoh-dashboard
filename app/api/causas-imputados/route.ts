@@ -90,18 +90,14 @@ export async function GET(req: Request) {
     return NextResponse.json(causasConCount);
   } catch (error) {
     console.error('Error detallado:', {
-      message: error.message,
-      stack: error.stack
+      message: error instanceof Error ? error.message : 'Error desconocido',
+      stack: error instanceof Error ? error.stack : undefined
     });
-
-    return NextResponse.json(
-      {
-        error: 'Error interno del servidor',
-        details:
-          process.env.NODE_ENV === 'development' ? error.message : undefined
-      },
-      { status: 500 }
-    );
+    
+    return NextResponse.json({ 
+      error: 'Error interno del servidor',
+      message: error instanceof Error ? error.message : 'Error desconocido'
+    }, { status: 500 });
   }
 }
 
@@ -170,12 +166,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Ya existe una relación entre esta causa y este imputado' },
-        { status: 409 }
-      );
-    }
+    
 
     return NextResponse.json(
       { error: 'Error interno del servidor' },
@@ -214,12 +205,7 @@ export async function DELETE(req: Request) {
   } catch (error) {
     console.error('Error deleting CausaImputado:', error);
 
-    if (error.code === 'P2025') {
-      return NextResponse.json(
-        { error: 'No se encontró la relación causa-imputado' },
-        { status: 404 }
-      );
-    }
+   
 
     return NextResponse.json(
       { error: 'Error interno del servidor' },

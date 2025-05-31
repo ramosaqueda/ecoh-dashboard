@@ -25,7 +25,7 @@ export async function GET() {
     return NextResponse.json(
       {
         error: 'Error al obtener proveedores',
-        details: error.message
+        details: error instanceof Error ? error.message : 'Error desconocido'
       },
       { status: 500 }
     );

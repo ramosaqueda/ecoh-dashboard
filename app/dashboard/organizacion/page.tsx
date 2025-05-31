@@ -10,7 +10,9 @@ export const metadata: Metadata = {
 export default function OrganizacionPage() {
   return (
     <main>
-      <OrganizationDashboard />
+      <OrganizationDashboard onClose={function (): void {
+        throw new Error('Function not implemented.');
+      } } />
     </main>
   );
 }

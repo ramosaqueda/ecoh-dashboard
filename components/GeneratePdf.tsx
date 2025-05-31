@@ -48,8 +48,9 @@ interface CausaImputado {
     };
 }
 
+// ✅ CORREGIDO: Cambiar id de number a string para consistencia
 interface DatosCausa {
-    id: number;
+    id: string; // ✅ Cambiado de number a string
     RUC: string;
     denominacion: string;
     fiscal: string | null;
@@ -68,8 +69,7 @@ interface PdfProps {
 }
 
 const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
-    const [isLoading, setIsLoading] = useState(false);
-
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const formatDate = (date: string | null): string => {
         if (!date) return '-';
@@ -97,6 +97,7 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
     const fetchImputadosData = async (): Promise<CausaImputado[]> => {
         try {
             console.log('Fetching imputados for causa ID:', pdfData.id);
+            // ✅ Las URLs funcionan igual con string que con number
             const response = await fetch(`/api/causas-imputados/${pdfData.id}`);
             if (!response.ok) throw new Error('Error fetching imputados');
             const data = await response.json();
@@ -111,6 +112,7 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
     const fetchActividadesData = async (): Promise<Actividad[]> => {
         try {
             console.log('Fetching actividades for causa ID:', pdfData.id);
+            // ✅ Las URLs funcionan igual con string que con number
             const response = await fetch(`/api/actividades/causa/${pdfData.id}`);
             if (!response.ok) throw new Error('Error fetching actividades');
             const data = await response.json();
@@ -122,7 +124,7 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
         }
     };
 
-    const generatePdf = async () => {
+    const generatePdf = async (): Promise<void> => {
         if (!pdfData.id) {
             toast.error('ID de causa no válido');
             return;

@@ -36,8 +36,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       {process.env.NODE_ENV === 'development' && (
         <ReactQueryDevtools
           initialIsOpen={false}
-          position="bottom-right"
-          buttonPosition="bottom-right"
+          position={"bottom-right" as any}
+          buttonPosition={"bottom-right" as any}
         />
       )}
     </QueryClientProvider>

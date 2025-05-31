@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Chrono } from 'react-chrono';
+import { Chrono, ChronoRef, TimelineItem } from 'react-chrono';
 import { Button } from '@/components/ui/button';
 import { Plus, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -28,11 +28,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GiJumpAcross } from 'react-icons/gi';
 
 interface TimelineHito {
   id: number;
-  titulo: String;
+  titulo: string;
   fecha: string;
   descripcion?: string;
   icono?: string;
@@ -59,11 +58,18 @@ interface HitoFormData {
   imagenUrl?: string;
 }
 
-export default function TimelinePage() {
-  const params = useParams();
+export default function TimelinePage({
+  params
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  // ✅ TODOS los hooks al inicio - ANTES de cualquier return condicional
   const router = useRouter();
-  const causaId = params.id as string;
+  const chronoRef = useRef<ChronoRef>(null);
   
+  // Estados
+  const [id, setId] = useState<string | null>(null);
+  const [isParamsLoaded, setIsParamsLoaded] = useState(false);
   const [causa, setCausa] = useState<Causa | null>(null);
   const [hitos, setHitos] = useState<TimelineHito[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,16 +80,24 @@ export default function TimelinePage() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'chrono' | 'list'>('chrono');
-  
-  // Estado para eliminar todos los hitos
   const [showDeleteAllAlert, setShowDeleteAllAlert] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
-  // Fetch causa details
+  // ✅ useEffect para resolver params Promise
   useEffect(() => {
+    params.then((resolvedParams) => {
+      setId(resolvedParams.id);
+      setIsParamsLoaded(true);
+    });
+  }, [params]);
+
+  // ✅ Fetch causa details
+  useEffect(() => {
+    if (!id) return;
+    
     const fetchCausa = async () => {
       try {
-        const response = await fetch(`/api/causas/${causaId}`);
+        const response = await fetch(`/api/causas/${id}`);
         if (!response.ok) throw new Error('Error al cargar la causa');
         const data = await response.json();
         setCausa(data);
@@ -94,13 +108,15 @@ export default function TimelinePage() {
     };
     
     fetchCausa();
-  }, [causaId]);
+  }, [id]);
 
-  // Fetch timeline hitos
+  // ✅ Fetch timeline hitos
   useEffect(() => {
+    if (!id) return;
+    
     const fetchHitos = async () => {
       try {
-        const response = await fetch(`/api/timeline-hitos?causaId=${causaId}`);
+        const response = await fetch(`/api/timeline-hitos?causaId=${id}`);
         if (!response.ok) throw new Error('Error al cargar los hitos');
         const data = await response.json();
         setHitos(data);
@@ -113,7 +129,18 @@ export default function TimelinePage() {
     };
     
     fetchHitos();
-  }, [causaId]);
+  }, [id]);
+
+  // ✅ AHORA sí podemos hacer returns condicionales (después de todos los hooks)
+  if (!isParamsLoaded || !id) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
+      </div>
+    );
+  }
+
+  const causaId = id as string;
 
   const handleSubmit = async (data: HitoFormData) => {
     setIsSubmitting(true);
@@ -251,9 +278,8 @@ export default function TimelinePage() {
     }
   };
 
-  // Format timeline items for react-chrono
-  const chronoRef = useRef<any>(null);
-  const timelineItems = hitos
+  // Format timeline items for react-chrono with proper typing
+  const timelineItems: TimelineItem[] = hitos
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
     .map(hito => ({
       title: new Date(hito.fecha).toLocaleDateString('es-CL'),
@@ -264,7 +290,7 @@ export default function TimelinePage() {
         source: {
           url: hito.imagenUrl
         },
-        type: 'IMAGE'
+        type: 'IMAGE' as const
       } : undefined,
       timelineContent: (
         <EnhancedHitoCard 
@@ -280,7 +306,6 @@ export default function TimelinePage() {
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
-
             <Link href={`/dashboard/causas/view/${causaId}`}>
               <Button variant="ghost" size="icon">
                 <ArrowLeft className="h-5 w-5" />
@@ -397,7 +422,6 @@ export default function TimelinePage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* CORRECCIÓN: El componente Tabs envuelve correctamente TabsContent */}
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'chrono' | 'list')} className="px-6">
         <TabsList>
           <TabsTrigger value="chrono">Vista Cronológica</TabsTrigger>
@@ -419,7 +443,6 @@ export default function TimelinePage() {
                     next: 'Siguiente',
                     previous: 'anterior'
                   }}
-                  
                   cardHeight={200}
                   theme={{
                     primary: 'hsl(var(--primary))',
@@ -465,4 +488,4 @@ export default function TimelinePage() {
       </Tabs>
     </div>
   );
-}   
+}

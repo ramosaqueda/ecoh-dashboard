@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     if (id) {
       // Obtener un Cautelar específico
-      const Cautelar = await prisma.Cautelar.findUnique({
+      const Cautelar = await prisma.cautelar.findUnique({
         where: { id: Number(id) }
       });
       if (Cautelar) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Obtener todos los Cautelars
-      const Cautelars = await prisma.Cautelar.findMany();
+      const Cautelars = await prisma.cautelar.findMany();
       return NextResponse.json(Cautelars);
     }
   } catch (error) {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { nombre } = await request.json();
-    const Cautelar = await prisma.Cautelar.create({
+    const Cautelar = await prisma.cautelar.create({
       data: { nombre }
     });
     return NextResponse.json(Cautelar, { status: 201 });
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { nombre } = await request.json();
-    const Cautelar = await prisma.Cautelar.update({
+    const Cautelar = await prisma.cautelar.update({
       where: { id: Number(id) },
       data: { nombre }
     });
@@ -89,7 +89,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.Cautelar.delete({
+    await prisma.cautelar.delete({
       where: { id: Number(id) }
     });
     return new NextResponse(null, { status: 204 });

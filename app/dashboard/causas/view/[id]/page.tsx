@@ -2,7 +2,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -13,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft,ExternalLink } from 'lucide-react';
+import { Loader2, ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -60,12 +59,12 @@ interface CausaImputado {
   imputado: {
     nombreSujeto: string;
     fotoPrincipal: string;
-    docId:string;
+    docId: string;
   };
   cautelar: {
     nombre: string;
   };
-  datosImputado:Imputado;
+  datosImputado: Imputado;
 }
 
 interface Causa {
@@ -97,18 +96,36 @@ interface Causa {
   }>;
 }
 
-export default function CausaViewPage() {
-  const params = useParams();
+export default function CausaViewPage({
+  params
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  // ✅ TODOS los hooks al inicio - ANTES de cualquier return condicional
+  
+  // Estados
+  const [id, setId] = useState<string | null>(null);
+  const [isParamsLoaded, setIsParamsLoaded] = useState(false);
   const [causa, setCausa] = useState<Causa | null>(null);
   const [imputados, setImputados] = useState<CausaImputado[]>([]);
-  const [causaImputado, setCausaImputado] = useState<CausaImputado | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ useEffect para resolver params Promise
   useEffect(() => {
+    params.then((resolvedParams) => {
+      setId(resolvedParams.id);
+      setIsParamsLoaded(true);
+    });
+  }, [params]);
+
+  // ✅ useEffect para cargar datos de la causa
+  useEffect(() => {
+    if (!id) return;
+    
     const fetchCausa = async () => {
       try {
         // 1. Obtener la causa con sus relaciones básicas
-        const causaResponse = await fetch(`/api/causas/${params.id}`);
+        const causaResponse = await fetch(`/api/causas/${id}`);
         if (!causaResponse.ok) throw new Error('Error al cargar la causa');
         const causaData = await causaResponse.json();
         setCausa(causaData);
@@ -117,7 +134,7 @@ export default function CausaViewPage() {
 
         // 2. Obtener los imputados de la causa
         const imputadosResponse = await fetch(
-          `/api/causas-imputados?causaId=${params.id}`
+          `/api/causas-imputados?causaId=${id}`
         );
         if (!imputadosResponse.ok)
           throw new Error('Error al cargar los imputados');
@@ -131,60 +148,19 @@ export default function CausaViewPage() {
       } finally {
         setLoading(false);
       }
-
     };
 
     fetchCausa();
-    
-    
-    /*
-    const fetchCautelaresImputado = async () => {
-     // 3. Para cada imputado, obtener sus medidas cautelares
-        const imputadosConMedidas = await Promise.all(
-          imputadosData.map(async (imputado: any) => {
-            try {
-              const medidasResponse = await fetch(
-                `/api/medidas-cautelares?imputadoId=${imputado.id}`
-              );
-              const medidas = medidasResponse.ok
-                ? await medidasResponse.json()
-                : [];
-              return {
-                ...imputado,
-                medidasCautelares: medidas
-              };
-            } catch (error) {
-              console.error(
-                `Error al cargar medidas para imputado ${imputado.id}:`,
-                error
-              );
-              return imputado;
-            }
-          })
-        );
+  }, [id]);
 
-      imputados.map(async (imputado: any) => { 
-        try {
-          //Obtener datos de cada imputado
-          const imputadosResponse = await fetch(
-            `/api/imputado/id=${imputado.imputado.imputadoId}`
-          )
-          if(!imputadosResponse.ok) 
-          throw new Error('Error al cargar los datos de los imputados');
-          const imputadosData = await imputadosResponse.json();
-
-          setDatosImputado(imputadosData);
-        } catch (error) {
-          console.error('Error al cargar los datos:', error);
-        }
-      });
-      
-        
-    };
-    
-    fetchCautelaresImputado();
-    */
-  }, [params.id]);
+  // ✅ AHORA sí podemos hacer returns condicionales (después de todos los hooks)
+  if (!isParamsLoaded || !id) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
+      </div>
+    );
+  }
   
   if (loading) {
     return (
@@ -202,16 +178,16 @@ export default function CausaViewPage() {
           <Button variant="outline">Volver</Button>
         </Link>
       </div>
-      
     );
   }
  
   const GeneratePdf = dynamic(() => import('@/components/GeneratePdf'), {
-      ssr: false,
+    ssr: false,
   });
   
+  // ✅ PROBLEMA RESUELTO: Ya no necesitamos conversión, usamos el ID como string
   const datosCausa = {
-    id: causa.id, // Agregamos el ID
+    id: causa.id, // ✅ Mantener como string - consistente con la interfaz actualizada
     RUC: causa.ruc,
     denominacion: causa.denominacionCausa,
     fiscal: causa.fiscal?.nombre ?? null,
@@ -227,8 +203,7 @@ export default function CausaViewPage() {
     estado_ecoh: causa.causaEcoh,
     nombre_imputado: imputados.map(causaImputado => causaImputado.imputado.nombreSujeto) || null,
     rut_imputado: imputados.map(causaImputado => causaImputado.imputado.docId) || null
-};
- 
+  };
 
   return (
     <div className="container mx-auto space-y-6 py-10">
@@ -243,18 +218,18 @@ export default function CausaViewPage() {
             <h1 className="text-2xl font-bold">Detalles de la Causa</h1>
             <p className="text-muted-foreground">RUC: {causa.ruc}</p>
             <a 
-            href={`${process.env.NEXT_PUBLIC_FICHACASORUC}?ruc=${causa.ruc}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button variant="ghost" size="icon" className="h-6 w-6">
-              <ExternalLink className="h-4 w-4 text-blue-600" />
-            </Button>
-          </a>
+              href={`${process.env.NEXT_PUBLIC_FICHACASORUC}?ruc=${causa.ruc}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                <ExternalLink className="h-4 w-4 text-blue-600" />
+              </Button>
+            </a>
           </div>
           <div className="hidden items-center space-x-2 md:flex ml-10">
-              <GeneratePdf pdfData={datosCausa} />
-        </div>
+            <GeneratePdf pdfData={datosCausa} /> {/* ✅ LÍNEA 230: Error resuelto */}
+          </div>
         </div>
 
         <div className="mt-4">
@@ -265,7 +240,6 @@ export default function CausaViewPage() {
             </Button>
           </Link>
         </div>
-
       </div>
 
       <Tabs defaultValue="info" className="space-y-4">
@@ -375,7 +349,7 @@ export default function CausaViewPage() {
                           {causaImputado.imputado.nombreSujeto}
                         </h4>
                         <p className="text-sm text-muted-foreground">
-                          RUT: {causaImputado.imputado.docId|| '-'}
+                          RUT: {causaImputado.imputado.docId || '-'}
                         </p>
                       </div>
                       

@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     let causa;
-    let genogramaData: any = {
+    const genogramaData: any = {
       personas,
       relaciones,
       mermaidCode,
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar si ya existe un genograma con ese RUC o causaId
-    let whereClause: any = {};
+    const whereClause: any = {};
     
     if (causaId) {
       whereClause.causaId = parseInt(causaId);
@@ -190,7 +190,7 @@ export async function DELETE(request: NextRequest) {
     const causaId = searchParams.get('causaId');
     const id = searchParams.get('id');
 
-    let whereClause: any = {};
+    const whereClause: any = {};
 
     if (id) {
       whereClause.id = parseInt(id);

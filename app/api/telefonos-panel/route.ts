@@ -127,18 +127,25 @@ export async function GET(req: NextRequest) {
       porProveedor: proveedores.map(proveedor => ({
         id: proveedor.id,
         nombre: proveedor.nombre,
-        cantidad: telefonosFormateados.filter(t => t.proveedorServicio.id === proveedor.id).length
+        //cantidad: telefonosFormateados.filter(t => t.proveedorServicio.id === proveedor.id).length
+        cantidad: telefonosFormateados.filter(
+          t => t != null && t.proveedorServicio?.id === proveedor.id
+        ).length
       })),
       porUbicacion: ubicaciones.map(ubicacion => ({
         id: ubicacion.id,
         nombre: ubicacion.nombre,
-        cantidad: telefonosFormateados.filter(t => t.ubicacionId === ubicacion.id).length
+        //cantidad: telefonosFormateados.filter(t => t.ubicacionId === ubicacion.id).length
+        cantidad: telefonosFormateados.filter(
+          t => t != null && t.proveedorServicio?.id === ubicacion.id
+        ).length
       })),
       solicitudes: {
-        trafico: telefonosFormateados.filter(t => t.solicitaTrafico).length,
-        imei: telefonosFormateados.filter(t => t.solicitaImei).length,
-        forense: telefonosFormateados.filter(t => t.extraccionForense).length,
-        custodia: telefonosFormateados.filter(t => t.enviaCustodia).length
+        //trafico: telefonosFormateados.filter(t => t.solicitaTrafico).length,
+        trafico: telefonosFormateados.filter(t => t != null && t.solicitaTrafico).length,
+        imei: telefonosFormateados.filter(t => t != null && t.solicitaImei).length,
+        forense: telefonosFormateados.filter(t => t != null && t.extraccionForense).length,
+        custodia: telefonosFormateados.filter(t => t != null && t.enviaCustodia).length,
       }
     };
 

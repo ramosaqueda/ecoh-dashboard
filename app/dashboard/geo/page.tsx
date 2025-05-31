@@ -22,7 +22,6 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import PageContainer from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 
-
 interface Causa {
   id: number;
   ruc: string;
@@ -36,6 +35,12 @@ interface Causa {
     id: number;
     nombre: string;
   };
+}
+
+// ✅ AGREGADO: Interfaz para delitos
+interface Delito {
+  id: number;
+  nombre: string;
 }
 
 const breadcrumbItems = [
@@ -52,40 +57,40 @@ const LeafletMap = dynamic(() => import('@/components/LeafletMap'), {
 export default function MapPage() {
   const [selectedDelito, setSelectedDelito] = useState<string>('todos');
   const [selectedYear, setSelectedYear] = useState<string>('todos');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showEcohOnly, setShowEcohOnly] = useState(false);
-  const [showCrimenOrganizadoOnly, setShowCrimenOrganizadoOnly] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [showEcohOnly, setShowEcohOnly] = useState<boolean>(false);
+  const [showCrimenOrganizadoOnly, setShowCrimenOrganizadoOnly] = useState<boolean>(false);
 
-  // Fetch de causas
-  const { data: causas = [], isLoading: isLoadingCausas } = useQuery({
+  // ✅ CORREGIDO: Fetch de causas con tipado correcto
+  const { data: causas = [], isLoading: isLoadingCausas } = useQuery<Causa[]>({
     queryKey: ['causas'],
-    queryFn: async () => {
-      const { data } = await axios.get('/api/causas');
+    queryFn: async (): Promise<Causa[]> => {
+      const { data } = await axios.get<Causa[]>('/api/causas');
       return data;
     }
   });
 
-  // Fetch de delitos
-  const { data: delitos = [], isLoading: isLoadingDelitos } = useQuery({
+  // ✅ CORREGIDO: Fetch de delitos con tipado correcto
+  const { data: delitos = [], isLoading: isLoadingDelitos } = useQuery<Delito[]>({
     queryKey: ['delitos'],
-    queryFn: async () => {
-      const { data } = await axios.get('/api/delito');
+    queryFn: async (): Promise<Delito[]> => {
+      const { data } = await axios.get<Delito[]>('/api/delito');
       return data;
     }
   });
 
-  // Obtener años únicos de las causas
-  const yearsAvailable = Array.from(
+  // ✅ Obtener años únicos de las causas (ahora con tipos correctos)
+  const yearsAvailable: number[] = Array.from(
     new Set(
-      causas.map((causa) => {
+      causas.map((causa: Causa) => { // ✅ Tipo explícito para mayor claridad
         const date = new Date(causa.fechaDelHecho);
         return date.getFullYear();
       })
     )
   ).sort((a, b) => b - a);
 
-  // Filtrado de causas
-  const causasFiltradas = causas
+  // ✅ Filtrado de causas (ahora con tipos correctos)
+  const causasFiltradas: Causa[] = causas
     .filter((causa: Causa) =>
       selectedDelito === 'todos'
         ? true
@@ -121,6 +126,15 @@ export default function MapPage() {
       return false;
     });
 
+  // ✅ Transformar causas para que coincidan con lo que espera LeafletMap
+  const causasParaMapa = causasFiltradas.map((causa: Causa) => ({
+    id: causa.id,
+    ruc: causa.ruc,
+    denominacionCausa: causa.denominacionCausa || 'Sin denominación', // ✅ Proporcionar valor por defecto
+    coordenadasSs: causa.coordenadasSs ?? null, // ✅ Convertir undefined a null
+    delito: causa.delito
+  }));
+
   // Para debugging
   useEffect(() => {
     if (showEcohOnly) {
@@ -136,24 +150,21 @@ export default function MapPage() {
     }
   }, [showEcohOnly, showCrimenOrganizadoOnly, causas]);
 
-  // Función mejorada para abrir el mapa en una nueva ventana
-  const openMapInNewWindow = () => {
+  // ✅ Función mejorada para abrir el mapa en una nueva ventana
+  const openMapInNewWindow = (): void => {
     try {
-      // Filtrar solo los datos necesarios para reducir el tamaño
-      const filteredCausas = causasFiltradas.map(causa => ({
+      // Usar las causas ya transformadas para mayor consistencia
+      const filteredCausas = causasParaMapa.map((causa) => ({
         id: causa.id,
         ruc: causa.ruc,
-        denominacionCausa: causa.denominacionCausa || '',
+        denominacionCausa: causa.denominacionCausa, // Ya está garantizado que no es undefined
         coordenadasSs: causa.coordenadasSs,
-        esCrimenOrganizado: causa.esCrimenOrganizado,
-        delito: causa.delito ? { 
-          id: causa.delito.id, 
-          nombre: causa.delito.nombre 
-        } : undefined
+        esCrimenOrganizado: causasFiltradas.find(c => c.id === causa.id)?.esCrimenOrganizado,
+        delito: causa.delito
       }));
 
       // Solo enviar los delitos que se están utilizando
-      const filteredDelitos = delitos.filter(delito => 
+      const filteredDelitos = delitos.filter((delito: Delito) => 
         selectedDelito === 'todos' || delito.id.toString() === selectedDelito
       );
       
@@ -228,9 +239,8 @@ export default function MapPage() {
           {/* Panel reducido de estadísticas */}
           <div className="mb-4">
             <StatsPanel
-              causas={causasFiltradas}
+              causas={causasParaMapa}
               selectedDelito={selectedDelito}
-              compact={true} // Añadir una prop para versión compacta
             />
           </div>
 
@@ -268,7 +278,7 @@ export default function MapPage() {
                 <SelectContent>
                   <SelectGroup>
                     <SelectItem value="todos">Todos los delitos</SelectItem>
-                    {delitos.map((delito) => (
+                    {delitos.map((delito: Delito) => (
                       <SelectItem key={delito.id} value={delito.id.toString()}>
                         {delito.nombre}
                       </SelectItem>
@@ -287,7 +297,7 @@ export default function MapPage() {
                 <SelectContent>
                   <SelectGroup>
                     <SelectItem value="todos">Todos</SelectItem>
-                    {yearsAvailable.map((year) => (
+                    {yearsAvailable.map((year: number) => (
                       <SelectItem key={year} value={year.toString()}>
                         {year}
                       </SelectItem>
@@ -310,7 +320,7 @@ export default function MapPage() {
             </div>
             
             <div className="text-sm text-muted-foreground ml-auto">
-              {causasFiltradas.length} / {causas.length} causas
+              {causasParaMapa.length} / {causas.length} causas
               {showEcohOnly && ' (ECOH)'}
               {showCrimenOrganizadoOnly && ' (Crimen Org.)'}
             </div>
@@ -333,7 +343,7 @@ export default function MapPage() {
             className="h-[calc(100vh-300px)] min-h-[600px] w-full rounded-lg border"
           >
             <LeafletMap 
-              causas={causasFiltradas} 
+              causas={causasParaMapa} 
               showCrimenOrganizado={showCrimenOrganizadoOnly}
             />
           </div>

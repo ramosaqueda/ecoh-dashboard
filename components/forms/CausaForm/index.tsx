@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,16 +27,14 @@ import type { CausaFormData } from '@/types/causa';
 import DatosRelato from '@/components/relato-hecho/datos-relato';
 import CrimenOrgParamsSelect from "@/components/select/CrimenOrgParamsSelect"
 
-/*
-consideraciones:
- API es llamdo de la pagina principal ademas de un de servicios llamado causaService.ts
- hay un contenedor del formulario (CauseFormContainer)
-que maneja la logica de carga de datos y errores 
- 
-*/
+// ✅ Función helper para conversión segura de string a number
+const parseSelectValue = (value: string): number => {
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? 0 : parsed;
+};
 
 interface CausaFormProps {
-  initialValues?: Partial<CausaFormData>;
+  initialValues?: Partial<CausaFormData> & { causaId?: string | number }; // ✅ Extender el tipo
   onSubmit: (data: CausaFormData) => Promise<void>;
   isSubmitting: boolean;
   isEditing?: boolean;
@@ -61,10 +58,9 @@ const CausaForm: React.FC<CausaFormProps> = ({
       // Sobrescribir con los valores iniciales si existen
       ...initialValues
     }
-
   });
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (data: CausaFormData) => {
     console.log('Formulario antes de enviar:', data);
     console.log('causasCrimenOrg específico:', data.causasCrimenOrg);
   
@@ -73,9 +69,16 @@ const CausaForm: React.FC<CausaFormProps> = ({
       data.causasCrimenOrg = [];
     } else {
       // Asegurar que todos los elementos son números
-      data.causasCrimenOrg = data.causasCrimenOrg.map(id => 
-        typeof id === 'string' ? parseInt(id) : id
-      );
+      data.causasCrimenOrg = (data.causasCrimenOrg as unknown[]).map(id => {
+        if (typeof id === 'string') {
+          const parsed = parseInt(id, 10);
+          return isNaN(parsed) ? 0 : parsed;
+        }
+        if (typeof id === 'number') {
+          return id;
+        }
+        return 0; // valor por defecto para tipos no esperados
+      });
     }
     
     console.log('causasCrimenOrg después de procesamiento:', data.causasCrimenOrg);
@@ -92,19 +95,18 @@ const CausaForm: React.FC<CausaFormProps> = ({
 
   React.useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
-      // Asegurarse de que los IDs sean strings para los selects
       console.log('Initial values received:', initialValues);
 
       const formattedValues = {
         ...initialValues,
-        abogado: initialValues.abogado?.toString(),
-        analista: initialValues.analista?.toString(),
-        atvt: initialValues.atvt?.toString(),
-        fiscalACargo: initialValues.fiscalACargo?.toString(),
-        tribunal: initialValues.tribunal?.toString(),
-        delito: initialValues.delito?.toString(),
-        foco: initialValues.foco?.toString(),
-        causaId: initialValues.causaId?.toString() || '',
+        // ✅ Convertir IDs a números para el formulario
+        abogado: initialValues.abogado ? parseSelectValue(initialValues.abogado.toString()) : undefined,
+        analista: initialValues.analista ? parseSelectValue(initialValues.analista.toString()) : undefined,
+        atvt: initialValues.atvt ? parseSelectValue(initialValues.atvt.toString()) : undefined,
+        fiscalACargo: initialValues.fiscalACargo ? parseSelectValue(initialValues.fiscalACargo.toString()) : undefined,
+        tribunal: initialValues.tribunal ? parseSelectValue(initialValues.tribunal.toString()) : undefined,
+        delito: initialValues.delito ? parseSelectValue(initialValues.delito.toString()) : undefined,
+        foco: initialValues.foco ? parseSelectValue(initialValues.foco.toString()) : undefined,
         esCrimenOrganizado: initialValues.esCrimenOrganizado,
         // Asegurarse de que las fechas estén en el formato correcto
         fechaHoraTomaConocimiento: initialValues.fechaHoraTomaConocimiento
@@ -135,8 +137,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
   }, [initialValues, form]);
 
   const selectedDelito = form.watch('delito');
-  // Corrección aquí: comparar como string o como número
-  const isHomicidio = selectedDelito === 1 || selectedDelito === "1";
+  const isHomicidio = selectedDelito?.toString() === "1";
   const isFormDirty = Object.keys(form.formState.dirtyFields).length > 0;
 
   return (
@@ -227,23 +228,22 @@ const CausaForm: React.FC<CausaFormProps> = ({
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <FormField form={form} name="delito" label="Delito" required>
                   <DelitoSelect
-                    value={form.watch('delito')}
+                    value={form.watch('delito')?.toString() || ''}
                     onValueChange={(value) =>
-                      form.setValue('delito', value, {
+                      form.setValue('delito', parseSelectValue(value), { // ✅ Convertir a number
                         shouldValidate: true,
                         shouldDirty: true
                       })
                     }
                     error={form.formState.errors.delito?.message}
-                    required
                   />
                 </FormField>
 
                 <FormField form={form} name="foco" label="Foco">
                   <FocoSelect
-                    value={form.watch('foco')}
+                    value={form.watch('foco')?.toString() || ''}
                     onValueChange={(value) =>
-                      form.setValue('foco', value, {
+                      form.setValue('foco', parseSelectValue(value), { // ✅ Convertir a number
                         shouldValidate: true,
                         shouldDirty: true
                       })
@@ -271,9 +271,9 @@ const CausaForm: React.FC<CausaFormProps> = ({
                   label="Fiscal a Cargo"
                 >
                   <FiscalSelect
-                    value={form.watch('fiscalACargo')}
+                    value={form.watch('fiscalACargo')?.toString() || ''}
                     onValueChange={(value) =>
-                      form.setValue('fiscalACargo', value, {
+                      form.setValue('fiscalACargo', parseSelectValue(value), { // ✅ Convertir a number
                         shouldValidate: true,
                         shouldDirty: true
                       })
@@ -283,9 +283,9 @@ const CausaForm: React.FC<CausaFormProps> = ({
 
                 <FormField form={form} name="abogado" label="Abogado">
                   <AbogadoSelect
-                    value={form.watch('abogado')}
+                    value={form.watch('abogado')?.toString() || ''}
                     onValueChange={(value) =>
-                      form.setValue('abogado', value, {
+                      form.setValue('abogado', parseSelectValue(value), { // ✅ Convertir a number
                         shouldValidate: true,
                         shouldDirty: true
                       })
@@ -295,9 +295,9 @@ const CausaForm: React.FC<CausaFormProps> = ({
 
                 <FormField form={form} name="analista" label="Analista">
                   <AnalistaSelect
-                    value={form.watch('analista')}
+                    value={form.watch('analista')?.toString() || ''}
                     onValueChange={(value) =>
-                      form.setValue('analista', value, {
+                      form.setValue('analista', parseSelectValue(value), { // ✅ Convertir a number
                         shouldValidate: true,
                         shouldDirty: true
                       })
@@ -307,10 +307,10 @@ const CausaForm: React.FC<CausaFormProps> = ({
 
                 <FormField form={form} name="atvt" label="Atvt">
                   <AtvtSelect
-                    value={form.watch('atvt')}
+                    value={form.watch('atvt')?.toString() || ''}
                     onValueChange={(value) => {
                       console.log('ATVT seleccionado:', value);
-                      form.setValue('atvt', value, {
+                      form.setValue('atvt', parseSelectValue(value), { // ✅ Convertir a number
                         shouldValidate: true,
                         shouldDirty: true
                       });
@@ -320,9 +320,9 @@ const CausaForm: React.FC<CausaFormProps> = ({
 
                 <FormField form={form} name="tribunal" label="Tribunal">
                   <TribunalSelect
-                    value={form.watch('tribunal')}
+                    value={form.watch('tribunal')?.toString() || ''}
                     onValueChange={(value) =>
-                      form.setValue('tribunal', value, {
+                      form.setValue('tribunal', parseSelectValue(value), { // ✅ Convertir a number
                         shouldValidate: true,
                         shouldDirty: true
                       })
@@ -363,7 +363,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
                 name="causasCrimenOrg"
                 label="Parámetros de Crimen Organizado"
               >
-                {/* No necesitas usar render props, simplemente pasa causaId */}
                 <CrimenOrgParamsSelect causaId={initialValues.causaId} />
               </FormField>
               <div className="items-top flex space-x-2">
@@ -400,18 +399,15 @@ const CausaForm: React.FC<CausaFormProps> = ({
             {/* Sección de Observaciones */}
             <div className="space-y-4">
               <h3 className="font-medium">Observaciones</h3>
-              <div className='relative'>
-                <FormField form={form} name="datosRelevantes" label={
-                  <div className='flex items-center gap-2'>
-                    <h3 className="text-[16px] ">Datos Relevantes</h3>
-                    <TriangleAlert size={20} className='text-red-500' />
-                  </div>
-                } >
-                  <DatosRelato causaId={initialValues.causaId || ''} />
-                </FormField>
+              
+              {/* Campo Datos Relevantes con label personalizado */}
+              <div className="space-y-2">
+                <div className='flex items-center gap-2'>
+                  <label className="text-sm font-medium">Datos Relevantes</label>
+                  <TriangleAlert size={20} className='text-red-500' />
+                </div>
+                <DatosRelato causaId={initialValues.causaId?.toString() || ''} />
               </div>
-
-
 
               <FormField form={form} name="observacion" label="Observación">
                 <Textarea
@@ -420,8 +416,6 @@ const CausaForm: React.FC<CausaFormProps> = ({
                 />
               </FormField>
             </div>
-
-
 
             <Separator />
 
@@ -457,7 +451,7 @@ const CausaForm: React.FC<CausaFormProps> = ({
           </form>
         </Form>
       </CardContent>
-    </Card >
+    </Card>
   );
 };
 

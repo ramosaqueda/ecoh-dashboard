@@ -10,7 +10,7 @@ export interface CausaFormData {
   fechaPpp?: string | null;
   ruc: string;
   folioBw: string;
-
+  causaId?: string; // ✅ Agregar esta línea
   coordenadasSs: string;
   delito: number;
   foco: number;

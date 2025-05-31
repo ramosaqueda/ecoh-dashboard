@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     if (id) {
       // Obtener un Delito específico
-      const Delito = await prisma.Delito.findUnique({
+      const Delito = await prisma.delito.findUnique({
         where: { id: Number(id) }
       });
       if (Delito) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Obtener todos los Delitos
-      const Delitos = await prisma.Delito.findMany();
+      const Delitos = await prisma.delito.findMany();
       return NextResponse.json(Delitos);
     }
   } catch (error) {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { nombre } = await request.json();
-    const Delito = await prisma.Delito.create({
+    const Delito = await prisma.delito.create({
       data: { nombre }
     });
     return NextResponse.json(Delito, { status: 201 });
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { nombre } = await request.json();
-    const Delito = await prisma.Delito.update({
+    const Delito = await prisma.delito.update({
       where: { id: Number(id) },
       data: { nombre }
     });
@@ -89,7 +89,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.Delito.delete({
+    await prisma.delito.delete({
       where: { id: Number(id) }
     });
     return new NextResponse(null, { status: 204 });

@@ -22,27 +22,60 @@ import ChartDelitoSelect from '@/components/select/ChartDelitoSelect';
 import { Button } from '@/components/ui/button';
 import { useYearContext } from '@/components/YearSelector';
 
-const CauseTimeline = () => {
+// Interfaces TypeScript
+interface Delito {
+  id: number;
+  nombre: string;
+}
+
+interface Fiscal {
+  id: number;
+  nombre: string;
+}
+
+interface Causa {
+  id: number;
+  denominacionCausa: string;
+  ruc: string;
+  rit?: string;
+  fechaDelHecho: string;
+  causaEcoh: boolean;
+  delito?: Delito;
+  fiscal?: Fiscal;
+}
+
+interface CausaDetails extends Causa {
+  // Propiedades adicionales que pueden venir en los detalles
+  [key: string]: any;
+}
+
+interface Totals {
+  total: number;
+  ecohTotal: number;
+  delitoTotal: number;
+}
+
+const CauseTimeline: React.FC = () => {
   const { selectedYear } = useYearContext();
-  const [causes, setCauses] = useState([]);
-  const [filteredCauses, setFilteredCauses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCause, setSelectedCause] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedCauseDetails, setSelectedCauseDetails] = useState(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
-  const [expandedMonth, setExpandedMonth] = useState(null);
-  const [showOnlyEcoh, setShowOnlyEcoh] = useState(false);
+  const [causes, setCauses] = useState<Causa[]>([]);
+  const [filteredCauses, setFilteredCauses] = useState<Causa[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedCause, setSelectedCause] = useState<Causa | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [selectedCauseDetails, setSelectedCauseDetails] = useState<CausaDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
+  const [expandedMonth, setExpandedMonth] = useState<number | null>(null);
+  const [showOnlyEcoh, setShowOnlyEcoh] = useState<boolean>(false);
   // Cambiado el valor inicial a 'all' para representar "todos los delitos"
-  const [selectedDelito, setSelectedDelito] = useState('all');
+  const [selectedDelito, setSelectedDelito] = useState<string>('all');
 
   useEffect(() => {
-    const fetchCauses = async () => {
+    const fetchCauses = async (): Promise<void> => {
       try {
         const response = await fetch('/api/causas');
         if (!response.ok) throw new Error('Failed to fetch causes');
-        const data = await response.json();
-        const causesWithDate = data.filter(cause => cause.fechaDelHecho);
+        const data: Causa[] = await response.json();
+        const causesWithDate = data.filter((cause: Causa) => cause.fechaDelHecho);
         setCauses(causesWithDate);
       } catch (error) {
         console.error('Error fetching causes:', error);
@@ -55,7 +88,7 @@ const CauseTimeline = () => {
   }, []);
 
   useEffect(() => {
-    let filtered = [...causes];
+    let filtered: Causa[] = [...causes];
     
     // Filtrar por año seleccionado (usando el año global)
     filtered = filtered.filter(cause => {
@@ -75,12 +108,12 @@ const CauseTimeline = () => {
     setFilteredCauses(filtered);
   }, [causes, showOnlyEcoh, selectedDelito, selectedYear]);
 
-  const fetchCauseDetails = async (id) => {
+  const fetchCauseDetails = async (id: number): Promise<void> => {
     setLoadingDetails(true);
     try {
       const response = await fetch(`/api/causas/${id}`);
       if (!response.ok) throw new Error('Failed to fetch cause details');
-      const data = await response.json();
+      const data: CausaDetails = await response.json();
       setSelectedCauseDetails(data);
     } catch (error) {
       console.error('Error fetching cause details:', error);
@@ -94,14 +127,14 @@ const CauseTimeline = () => {
     end: endOfYear(new Date(parseInt(selectedYear), 0))
   });
 
-  const getCausesForMonth = (month) => {
+  const getCausesForMonth = (month: Date): Causa[] => {
     return filteredCauses.filter(cause => {
       const causeDate = parseISO(cause.fechaDelHecho);
       return causeDate.getMonth() === month.getMonth();
     });
   };
 
-  const getTotals = () => {
+  const getTotals = (): Totals => {
     const total = filteredCauses.length;
     const ecohTotal = filteredCauses.filter(cause => cause.causaEcoh).length;
     // Actualizado para considerar 'all' como "todos los delitos"
@@ -116,19 +149,19 @@ const CauseTimeline = () => {
     };
   };
 
-  const handleCauseClick = async (cause, event) => {
+  const handleCauseClick = async (cause: Causa, event: React.MouseEvent): Promise<void> => {
     event.stopPropagation();
     setSelectedCause(cause);
     setIsDialogOpen(true);
     await fetchCauseDetails(cause.id);
   };
 
-  const handleMonthClick = (monthIndex) => {
+  const handleMonthClick = (monthIndex: number): void => {
     setExpandedMonth(expandedMonth === monthIndex ? null : monthIndex);
   };
 
   // Manejador de cambio para el filtro de delito
-  const handleDelitoChange = (value) => {
+  const handleDelitoChange = (value: string): void => {
     setSelectedDelito(value);
   };
 

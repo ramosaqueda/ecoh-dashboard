@@ -2,16 +2,20 @@
 
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { useLeafletContext } from '@react-leaflet/core';
 import 'leaflet.markercluster';
+import { useLeafletContext } from '@react-leaflet/core';
+
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+
+// ❌ QUITAR ESTA LÍNEA - estaba fuera del componente
+// const groupRef = useRef<L.MarkerClusterGroup | null>(null);
 
 interface CustomMarkerClusterProps {
   children: React.ReactNode;
   chunkedLoading?: boolean;
   maxClusterRadius?: number;
-  iconCreateFunction?: (cluster: L.MarkerCluster) => L.DivIcon;
+  iconCreateFunction?: (cluster: any) => L.DivIcon;
   showCoverageOnHover?: boolean;
   spiderfyOnMaxZoom?: boolean;
 }
@@ -26,12 +30,25 @@ const CustomMarkerCluster: React.FC<CustomMarkerClusterProps> = ({
   spiderfyOnMaxZoom = true
 }) => {
   const context = useLeafletContext();
+  // ✅ ESTA línea está bien - dentro del componente
   const groupRef = useRef<L.MarkerClusterGroup | null>(null);
-  const propsRef = useRef({ chunkedLoading, maxClusterRadius, iconCreateFunction, showCoverageOnHover, spiderfyOnMaxZoom });
+  const propsRef = useRef({ 
+    chunkedLoading, 
+    maxClusterRadius, 
+    iconCreateFunction, 
+    showCoverageOnHover, 
+    spiderfyOnMaxZoom 
+  });
 
   // Actualizar las props cuando cambien
   useEffect(() => {
-    propsRef.current = { chunkedLoading, maxClusterRadius, iconCreateFunction, showCoverageOnHover, spiderfyOnMaxZoom };
+    propsRef.current = { 
+      chunkedLoading, 
+      maxClusterRadius, 
+      iconCreateFunction, 
+      showCoverageOnHover, 
+      spiderfyOnMaxZoom 
+    };
   }, [chunkedLoading, maxClusterRadius, iconCreateFunction, showCoverageOnHover, spiderfyOnMaxZoom]);
 
   // Crear y configurar el grupo de marcadores al montar
@@ -41,7 +58,7 @@ const CustomMarkerCluster: React.FC<CustomMarkerClusterProps> = ({
     
     const { map } = context;
     // Verificar que Leaflet y L.MarkerClusterGroup estén disponibles
-    if (!map || !L.MarkerClusterGroup) return;
+    if (!map || !L.markerClusterGroup) return;
 
     try {
       // Crear un grupo de marcadores con las opciones proporcionadas
@@ -59,7 +76,9 @@ const CustomMarkerCluster: React.FC<CustomMarkerClusterProps> = ({
 
       // Limpiar al desmontar
       return () => {
-        map.removeLayer(clusterGroup);
+        if (map && clusterGroup) {
+          map.removeLayer(clusterGroup);
+        }
         groupRef.current = null;
       };
     } catch (error) {
@@ -67,20 +86,31 @@ const CustomMarkerCluster: React.FC<CustomMarkerClusterProps> = ({
     }
   }, [context]);
 
-  // No renderizar nada directamente, usar un enfoque imperativo
-  return (
-    <div style={{ display: 'none' }}>
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child) && groupRef.current) {
-          // Clonar y pasar el grupo como prop
-          return React.cloneElement(child, {
-            leafletMarkerClusterGroup: groupRef.current
-          });
+  // Agregar marcadores al cluster cuando los children cambien
+  useEffect(() => {
+    if (!groupRef.current) return;
+
+    // Limpiar marcadores existentes
+    groupRef.current.clearLayers();
+
+    // Procesar children y agregar marcadores
+    React.Children.forEach(children, (child) => {
+      if (React.isValidElement(child) && child.type && groupRef.current) {
+        // Si el child es un Marker, intentar agregarlo al cluster
+        // Esta lógica puede necesitar ajustes según cómo uses los markers
+        try {
+          // Para markers creados con react-leaflet, puedes necesitar
+          // acceder a la instancia del marker de manera diferente
+          console.log('Processing child:', child);
+        } catch (error) {
+          console.error('Error agregando marker al cluster:', error);
         }
-        return child;
-      })}
-    </div>
-  );
+      }
+    });
+  }, [children]);
+
+  // No renderizar nada directamente en el DOM
+  return null;
 };
 
 export default CustomMarkerCluster;

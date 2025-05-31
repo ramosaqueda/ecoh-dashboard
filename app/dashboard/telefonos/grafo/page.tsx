@@ -7,12 +7,47 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function TelefonosGrafoPage() {
-  const [graphData, setGraphData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedCausa, setSelectedCausa] = useState('');
+// Interfaces TypeScript para el grafo
+interface GraphNode {
+  id: string;
+  label: string;
+  type: 'telefono' | 'causa';
+  denominacion?: string; // Solo para nodos de tipo 'causa'
+}
 
-  const fetchData = async (causaId = '') => {
+interface GraphLink {
+  source: string;
+  target: string;
+}
+
+interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+// Interfaces para los datos de la API
+interface Causa {
+  id: number;
+  ruc: string;
+  denominacionCausa: string;
+}
+
+interface TelefonoCausa {
+  causa: Causa;
+}
+
+interface Telefono {
+  id: number;
+  numeroTelefonico?: string;
+  telefonosCausa: TelefonoCausa[];
+}
+
+export default function TelefonosGrafoPage() {
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedCausa, setSelectedCausa] = useState<string>('');
+
+  const fetchData = async (causaId: string = ''): Promise<void> => {
     setIsLoading(true);
     try {
       // Construir la URL con el filtro de causa si existe
@@ -22,12 +57,12 @@ export default function TelefonosGrafoPage() {
       }
 
       const response = await fetch(url);
-      const telefonos = await response.json();
+      const telefonos: Telefono[] = await response.json();
 
-      // Preparar los datos para el grafo
-      const nodes = [];
-      const links = [];
-      const causasSet = new Set();
+      // Preparar los datos para el grafo con tipos específicos
+      const nodes: GraphNode[] = [];
+      const links: GraphLink[] = [];
+      const causasSet = new Set<string>();
 
       // Procesar teléfonos y sus causas
       telefonos.forEach(telefono => {
@@ -46,23 +81,23 @@ export default function TelefonosGrafoPage() {
 
           // Procesar causas asociadas
           telefonosCausa.forEach(tc => {
-            const causaId = `causa-${tc.causa.id}`;
+            const causaNodeId = `causa-${tc.causa.id}`;
             
             // Agregar nodo de causa si no existe
-            if (!causasSet.has(causaId)) {
+            if (!causasSet.has(causaNodeId)) {
               nodes.push({
-                id: causaId,
+                id: causaNodeId,
                 label: tc.causa.ruc,
                 denominacion: tc.causa.denominacionCausa,
                 type: 'causa'
               });
-              causasSet.add(causaId);
+              causasSet.add(causaNodeId);
             }
 
             // Agregar enlace entre teléfono y causa
             links.push({
               source: `tel-${telefono.id}`,
-              target: causaId
+              target: causaNodeId
             });
           });
         }
@@ -83,7 +118,7 @@ export default function TelefonosGrafoPage() {
   }, []);
 
   // Manejar cambio de causa seleccionada
-  const handleCausaChange = (causaId) => {
+  const handleCausaChange = (causaId: string): void => {
     setSelectedCausa(causaId);
     fetchData(causaId);
   };

@@ -35,25 +35,73 @@ import {
 import { toast } from 'sonner';
 import CausaSelector from '@/components/select/CausaSelector';
 
-// Componente para añadir una nueva causa asociada
-const AddCausaForm = ({ organization, onClose, onSuccess }) => {
-  const [formData, setFormData] = useState({
+// ✅ Interfaces TypeScript
+interface Organization {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+}
+
+interface Delito {
+  id: number;
+  nombre: string;
+}
+
+interface Causa {
+  id: number;
+  ruc: string;
+  denominacionCausa: string;
+  delito?: Delito;
+}
+
+interface CausaAsociada {
+  id: number;
+  fechaAsociacion: string;
+  observacion?: string | null;
+  causa: Causa;
+}
+
+interface AddCausaFormData {
+  causaId: string;
+  fechaAsociacion: string;
+  observacion: string;
+  selectedCausa: any | null;
+}
+
+interface AddCausaFormProps {
+  organization: Organization;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
+
+interface CausasFormProps {
+  organization: Organization;
+  onClose: () => void;
+}
+
+// ✅ Componente para añadir una nueva causa asociada
+const AddCausaForm: React.FC<AddCausaFormProps> = ({ 
+  organization, 
+  onClose, 
+  onSuccess 
+}) => {
+  const [formData, setFormData] = useState<AddCausaFormData>({
     causaId: '',
     fechaAsociacion: new Date().toISOString().split('T')[0],
     observacion: '',
     selectedCausa: null
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleCausaChange = (causaId) => {
+  const handleCausaChange = (causaId: string): void => {
     setFormData({
       ...formData,
       causaId
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     
     if (!formData.causaId) {
@@ -85,11 +133,16 @@ const AddCausaForm = ({ organization, onClose, onSuccess }) => {
       onSuccess?.();
       onClose();
     } catch (error) {
-      toast.error(error.message);
-      setError(error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleInputChange = (field: keyof AddCausaFormData, value: string): void => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -120,7 +173,7 @@ const AddCausaForm = ({ organization, onClose, onSuccess }) => {
             <Input
               type="date"
               value={formData.fechaAsociacion}
-              onChange={(e) => setFormData({...formData, fechaAsociacion: e.target.value})}
+              onChange={(e) => handleInputChange('fechaAsociacion', e.target.value)}
               required
             />
           </div>
@@ -129,7 +182,7 @@ const AddCausaForm = ({ organization, onClose, onSuccess }) => {
             <label className="block text-sm font-medium mb-1">Observación</label>
             <Textarea
               value={formData.observacion}
-              onChange={(e) => setFormData({...formData, observacion: e.target.value})}
+              onChange={(e) => handleInputChange('observacion', e.target.value)}
               placeholder="Detalles sobre la relación entre la causa y la organización"
               rows={3}
               className="min-h-[100px]"
@@ -159,14 +212,14 @@ const AddCausaForm = ({ organization, onClose, onSuccess }) => {
   );
 };
 
-// Componente principal para gestionar causas asociadas
-const CausasForm = ({ organization, onClose }) => {
-  const [causas, setCausas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showAddCausa, setShowAddCausa] = useState(false);
-  const [causaToDelete, setCausaToDelete] = useState(null);
-  const [deleteError, setDeleteError] = useState(null);
+// ✅ Componente principal para gestionar causas asociadas
+const CausasForm: React.FC<CausasFormProps> = ({ organization, onClose }) => {
+  const [causas, setCausas] = useState<CausaAsociada[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddCausa, setShowAddCausa] = useState<boolean>(false);
+  const [causaToDelete, setCausaToDelete] = useState<CausaAsociada | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (organization) {
@@ -174,22 +227,23 @@ const CausasForm = ({ organization, onClose }) => {
     }
   }, [organization]);
 
-  const fetchCausas = async () => {
+  const fetchCausas = async (): Promise<void> => {
     try {
       setLoading(true);
       const response = await fetch(`/api/organizacion/${organization.id}/causas`);
       if (!response.ok) throw new Error('Error al cargar las causas asociadas');
-      const data = await response.json();
+      const data: CausaAsociada[] = await response.json();
       setCausas(data);
     } catch (error) {
-      setError(error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setError(errorMessage);
       toast.error('Error al cargar las causas asociadas');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteCausa = async (causaId) => {
+  const handleDeleteCausa = async (causaId: number): Promise<void> => {
     try {
       const response = await fetch(
         `/api/organizacion/causas/${causaId}`, 
@@ -205,8 +259,22 @@ const CausasForm = ({ organization, onClose }) => {
       setDeleteError(null);
       toast.success('Causa desvinculada correctamente');
     } catch (error) {
-      setDeleteError(error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setDeleteError(errorMessage);
       toast.error('Error al desvincular la causa');
+    }
+  };
+
+  const handleSuccessAdd = (): void => {
+    setShowAddCausa(false);
+    fetchCausas();
+  };
+
+  const formatDate = (dateString: string): string => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return 'Fecha inválida';
     }
   };
 
@@ -236,10 +304,7 @@ const CausasForm = ({ organization, onClose }) => {
         <AddCausaForm 
           organization={organization}
           onClose={() => setShowAddCausa(false)}
-          onSuccess={() => {
-            setShowAddCausa(false);
-            fetchCausas();
-          }}
+          onSuccess={handleSuccessAdd}
         />
       </div>
     );
@@ -287,16 +352,16 @@ const CausasForm = ({ organization, onClose }) => {
                 <TableBody>
                   {causas.map((causa) => (
                     <TableRow key={causa.id}>
-                      <TableCell>{causa.causa.ruc || '-'}</TableCell>
-                      <TableCell>{causa.causa.denominacionCausa}</TableCell>
+                      <TableCell>{causa.causa?.ruc || '-'}</TableCell>
+                      <TableCell>{causa.causa?.denominacionCausa || '-'}</TableCell>
                       <TableCell>
-                        {causa.causa.delito ? (
+                        {causa.causa?.delito ? (
                           <span className="px-2 py-0.5 rounded-full bg-secondary text-xs">
                             {causa.causa.delito.nombre}
                           </span>
                         ) : '-'}
                       </TableCell>
-                      <TableCell>{new Date(causa.fechaAsociacion).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatDate(causa.fechaAsociacion)}</TableCell>
                       <TableCell className="max-w-xs truncate">
                         {causa.observacion || '-'}
                       </TableCell>

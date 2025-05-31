@@ -114,17 +114,19 @@ export const CausasGrid = ({
               className="rounded-lg border px-2"
             >
               <div className="flex items-center justify-between">
-                <AccordionTrigger className="flex-1 hover:no-underline">
-                  <div className="flex flex-1 items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{causa.causa.ruc}</span>
-                    </div>
-                    <span className="truncate text-sm font-normal text-muted-foreground">
-                      {causa.causa.denominacionCausa}
-                    </span>
+              <AccordionTrigger className="flex-1 hover:no-underline">
+                <div className="flex flex-1 items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{causa.causa?.ruc || 'Sin RUC'}</span>
                   </div>
-                </AccordionTrigger>
+                  <span className="truncate text-sm font-normal text-muted-foreground">
+                    {causa.causa?.denominacionCausa || 'Sin denominación'}
+                  </span>
+                </div>
+              </AccordionTrigger>
+
+                 
                 <Button
                   variant="ghost"
                   size="sm"

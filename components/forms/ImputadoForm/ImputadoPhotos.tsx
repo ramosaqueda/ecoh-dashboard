@@ -82,7 +82,9 @@ const ImputadoPhotos = ({ imputadoId }: ImputadoPhotosProps) => {
       }
 
       // Recargar las fotos después de la subida
-      queryClient.invalidateQueries(['imputado-photos', imputadoId]);
+      queryClient.invalidateQueries({
+        queryKey: ['imputado-photos', imputadoId]
+      });
       toast.success('Fotos subidas exitosamente');
     } catch (error) {
       console.error('Error:', error);
@@ -111,7 +113,10 @@ const ImputadoPhotos = ({ imputadoId }: ImputadoPhotosProps) => {
       }
 
       // Recargar las fotos después de eliminar
-      queryClient.invalidateQueries(['imputado-photos', imputadoId]);
+     // queryClient.invalidateQueries(['imputado-photos', imputadoId]);
+      queryClient.refetchQueries({
+        queryKey: ['imputado-photos', imputadoId]
+      });
       toast.success('Foto eliminada exitosamente');
     } catch (error) {
       console.error('Error:', error);
@@ -135,7 +140,10 @@ const ImputadoPhotos = ({ imputadoId }: ImputadoPhotosProps) => {
       }
 
       // Recargar las fotos después de actualizar
-      queryClient.invalidateQueries(['imputado-photos', imputadoId]);
+     // queryClient.invalidateQueries(['imputado-photos', imputadoId]);
+      queryClient.refetchQueries({
+        queryKey: ['imputado-photos', imputadoId]
+      });
       toast.success('Foto principal actualizada');
     } catch (error) {
       console.error('Error:', error);

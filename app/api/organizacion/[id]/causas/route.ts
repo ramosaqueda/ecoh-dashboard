@@ -19,7 +19,7 @@ export async function GET(
       );
     }
 
-    const organizacionId = parseInt(params.id);
+    const organizacionId = parseInt((await params).id);
 
     const causasAsociadas = await prisma.causaOrganizacion.findMany({
       where: {

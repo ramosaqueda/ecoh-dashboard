@@ -90,18 +90,32 @@ export async function POST(request: Request) {
 
     return NextResponse.json(telefono);
   } catch (error) {
-    console.error('Error detallado:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
-
+    if (error instanceof Error) {
+      console.error('Error detallado:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+  
+      return NextResponse.json(
+        {
+          error: 'Error al crear teléfono',
+          details: error.message
+        },
+        { status: 500 }
+      );
+    }
+  
+    // fallback si no es una instancia de Error
+    console.error('Error desconocido:', error);
+  
     return NextResponse.json(
       {
         error: 'Error al crear teléfono',
-        details: error.message
+        details: 'Error desconocido'
       },
       { status: 500 }
     );
   }
+  
 }

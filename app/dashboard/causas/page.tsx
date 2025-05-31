@@ -9,16 +9,15 @@ import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 
-
 /*
 consideraciones:
- API es llamdo de la pagina principal ademas de un de servicios llamado causaService.ts
+ API es llamado de la pagina principal ademas de un servicio llamado causaService.ts
  hay un contenedor del formulario (CauseFormContainer)
 que maneja la logica de carga de datos y errores 
- 
 */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 async function getCausas(): Promise<Causa[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/causas`, {
@@ -47,7 +46,8 @@ export default function CausasPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCausa, setSelectedCausa] = useState<Causa | null>(null);
+  // ✅ CAMBIO 1: Usar undefined en lugar de null
+  const [selectedCausa, setSelectedCausa] = useState<Causa | undefined>(undefined);
   const { canCreate } = useUserPermissions();
 
   // Cargar causas
@@ -97,7 +97,8 @@ export default function CausasPage() {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
-    setSelectedCausa(null);
+    // ✅ CAMBIO 2: Usar undefined en lugar de null
+    setSelectedCausa(undefined);
   };
 
   const handleFormSuccess = () => {
@@ -148,7 +149,7 @@ export default function CausasPage() {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSuccess={handleFormSuccess}
-        initialData={selectedCausa}
+        initialData={selectedCausa} // ✅ LÍNEA 135: Ahora funciona correctamente
         isEditing={!!selectedCausa}
       />
 

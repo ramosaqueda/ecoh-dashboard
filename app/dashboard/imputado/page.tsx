@@ -3,8 +3,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Imputado,
+import { type Imputado } from '@/types/causaimputado'; // ✅ CORREGIDO: Importar directamente desde tipos
+import { 
   columns
 } from '@/components/tables/imputados-tables/columns';
 import { ImputadosDataTable } from '@/components/tables/imputados-tables/imputados-table';

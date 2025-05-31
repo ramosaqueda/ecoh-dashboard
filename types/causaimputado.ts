@@ -50,6 +50,8 @@ export interface CausaImputado {
   cautelar?: {
     nombre: string;
   };
+  principalImputado?: boolean; // ✅ Agregar esta propiedad
+
 }
 /**
  * Representa los valores del formulario para crear/editar una relación causa-imputado

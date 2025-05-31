@@ -2,6 +2,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Función helper para convertir fechas de forma segura
+function safeDate(fecha: Date | string | null | undefined): Date | null {
+  if (!fecha) return null;
+  
+  if (fecha instanceof Date) {
+    return isNaN(fecha.getTime()) ? null : fecha;
+  }
+  
+  if (typeof fecha === 'string') {
+    const parsedDate = new Date(fecha);
+    return isNaN(parsedDate.getTime()) ? null : parsedDate;
+  }
+  
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -85,22 +101,26 @@ export async function GET(req: NextRequest) {
           let alerta = 'ninguna';
           
           if (ci.formalizado && ci.fechaFormalizacion && ci.plazo) {
-            const fechaFormalizacion = new Date(ci.fechaFormalizacion);
-            const fechaVencimiento = new Date(fechaFormalizacion);
-            fechaVencimiento.setDate(fechaVencimiento.getDate() + ci.plazo);
+            // ✅ Usar función helper para convertir fecha
+            const fechaFormalizacion = safeDate(ci.fechaFormalizacion);
             
-            const tiempoRestante = fechaVencimiento.getTime() - fechaActual.getTime();
-            diasRestantes = Math.ceil(tiempoRestante / (1000 * 3600 * 24));
-            
-            if (diasRestantes <= 0) {
-              estado = 'Vencido';
-              alerta = 'vencido';
-            } else if (diasRestantes <= 10) {
-              estado = 'Por vencer';
-              alerta = 'proximo';
-            } else {
-              estado = 'En plazo';
-              alerta = 'normal';
+            if (fechaFormalizacion) {
+              const fechaVencimiento = new Date(fechaFormalizacion);
+              fechaVencimiento.setDate(fechaVencimiento.getDate() + ci.plazo);
+              
+              const tiempoRestante = fechaVencimiento.getTime() - fechaActual.getTime();
+              diasRestantes = Math.ceil(tiempoRestante / (1000 * 3600 * 24));
+              
+              if (diasRestantes <= 0) {
+                estado = 'Vencido';
+                alerta = 'vencido';
+              } else if (diasRestantes <= 10) {
+                estado = 'Por vencer';
+                alerta = 'proximo';
+              } else {
+                estado = 'En plazo';
+                alerta = 'normal';
+              }
             }
           }
           
@@ -193,16 +213,24 @@ export async function GET(req: NextRequest) {
     let conteoFormalizados = 0;
     
     formalizacionesData.forEach(causa => {
-      if (causa.fechaHecho) {
+      // ✅ Usar la función helper para convertir fecha de forma segura
+      const fechaHecho = safeDate(causa.fechaHecho);
+      
+      if (fechaHecho) {
         causa.imputados.forEach(imputado => {
           if (imputado.formalizado && imputado.fechaFormalizacion) {
-            const fechaHecho = new Date(causa.fechaHecho);
-            const fechaFormalizacion = new Date(imputado.fechaFormalizacion);
-            const diasDiferencia = Math.floor((fechaFormalizacion.getTime() - fechaHecho.getTime()) / (1000 * 3600 * 24));
+            // ✅ También convertir fecha de formalización de forma segura
+            const fechaFormalizacion = safeDate(imputado.fechaFormalizacion);
             
-            if (diasDiferencia >= 0) { // Solo contar si la formalización es posterior al hecho
-              sumaDias += diasDiferencia;
-              conteoFormalizados++;
+            if (fechaFormalizacion) {
+              const diasDiferencia = Math.floor(
+                (fechaFormalizacion.getTime() - fechaHecho.getTime()) / (1000 * 3600 * 24)
+              );
+              
+              if (diasDiferencia >= 0) { // Solo contar si la formalización es posterior al hecho
+                sumaDias += diasDiferencia;
+                conteoFormalizados++;
+              }
             }
           }
         });
@@ -213,7 +241,7 @@ export async function GET(req: NextRequest) {
 
     // 7. Ordenar causas por prioridad de alerta (vencidos, proximos, normales)
     formalizacionesData.sort((a, b) => {
-      const prioridad = { vencido: 0, proximo: 1, normal: 2 };
+      const prioridad: Record<string, number> = { vencido: 0, proximo: 1, normal: 2 };
       return prioridad[a.alertaGeneral] - prioridad[b.alertaGeneral];
     });
     
@@ -241,8 +269,12 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error al obtener datos de formalizaciones:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { 
+        error: 'Error interno del servidor',
+        details: errorMessage 
+      },
       { status: 500 }
     );
   }

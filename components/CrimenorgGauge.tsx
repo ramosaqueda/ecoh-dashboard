@@ -55,7 +55,6 @@ const CrimenOrgGauge: React.FC<CrimenOrgGaugeProps> = ({
         />
         <RadialBar
           background
-          clockWise
           dataKey="value"
           cornerRadius={10}
           fill={getColor(percentage)}

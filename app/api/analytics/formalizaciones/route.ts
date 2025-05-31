@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const ecoh = searchParams.get('ecoh');
 
     // Base query conditions
-    let whereClause: any = {
+    const whereClause: any = {
       formalizado: true,
       causa: {
         fechaDelHecho: {

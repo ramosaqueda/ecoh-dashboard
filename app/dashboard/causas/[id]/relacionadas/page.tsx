@@ -1,16 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Plus, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import CausaRelacionadaForm from '@/components/forms/causa-relacionada/CausaRelacionadaForm';
-import CausasGraph  from '@/components/graph/CausasGraph';
-
-import { Trash2} from 'lucide-react';
-
+import CausasGraph from '@/components/graph/CausasGraph';
+import { Trash2 } from 'lucide-react';
 
 import {
   Dialog,
@@ -73,11 +70,16 @@ interface CausaPrincipal {
   denominacionCausa: string;
 }
 
-
-export default function CausasRelacionadasPage() {
-  const params = useParams();
-  const causaId = params.id as string;
+export default function CausasRelacionadasPage({
+  params
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  // ✅ TODOS los hooks al inicio - ANTES de cualquier return condicional
   
+  // Estados
+  const [id, setId] = useState<string | null>(null);
+  const [isParamsLoaded, setIsParamsLoaded] = useState(false);
   const [relaciones, setRelaciones] = useState<CausaRelacionada[]>([]);
   const [causaPrincipal, setCausaPrincipal] = useState<CausaPrincipal | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +87,33 @@ export default function CausasRelacionadasPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+
+  // ✅ useEffect para resolver params Promise
+  useEffect(() => {
+    params.then((resolvedParams) => {
+      setId(resolvedParams.id);
+      setIsParamsLoaded(true);
+    });
+  }, [params]);
+
+  // ✅ useEffect para cargar dados (cuando tenemos el ID)
+  useEffect(() => {
+    if (!id) return;
+    
+    fetchCausaPrincipal();
+    fetchRelaciones();
+  }, [id]);
+
+  // ✅ AHORA sí podemos hacer returns condicionales (después de todos los hooks)
+  if (!isParamsLoaded || !id) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
+      </div>
+    );
+  }
+
+  const causaId = id as string;
 
   const fetchCausaPrincipal = async () => {
     try {
@@ -111,11 +140,6 @@ export default function CausasRelacionadasPage() {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchCausaPrincipal();
-    fetchRelaciones();
-  }, [causaId]);
 
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -166,16 +190,6 @@ export default function CausasRelacionadasPage() {
     }
   };
 
-  const getTipoRelacionText = (tipo: string) => {
-    const tipos = {
-      'MISMO_HECHO': 'Mismo Hecho',
-      'MISMO_IMPUTADO': 'Mismo Imputado',
-      'MISMA_VICTIMA': 'Misma Víctima',
-      'OTRO': 'Otro'
-    };
-    return tipos[tipo as keyof typeof tipos] || tipo;
-  };
-
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center p-6">
@@ -223,7 +237,6 @@ export default function CausasRelacionadasPage() {
                 </DialogContent>
               </Dialog>
             </div>
-            
           </div>
         </CardHeader>
         
@@ -231,7 +244,6 @@ export default function CausasRelacionadasPage() {
           <Tabs defaultValue="graph" className="space-y-4">
             <TabsList>
               <TabsTrigger value="graph">Vista de Grafo</TabsTrigger>
-
               <TabsTrigger value="table">Vista de Tabla</TabsTrigger>
             </TabsList>
 
@@ -248,8 +260,6 @@ export default function CausasRelacionadasPage() {
                 </div>
               )}
             </TabsContent>
-
-         
 
             <TabsContent value="table">
               {relaciones.length > 0 ? (

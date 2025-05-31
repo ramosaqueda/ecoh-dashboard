@@ -19,7 +19,7 @@ export async function DELETE(
       );
     }
 
-    const id = parseInt(params.id);
+      const id = parseInt((await params).id);
 
     // Verificar que la asociación existe
     const asociacion = await prisma.causaOrganizacion.findUnique({

@@ -9,7 +9,7 @@ export async function GET(
   try {
     const telefonoCausa = await prisma.telefonoCausa.findUnique({
       where: {
-        id: parseInt(params.id)
+        id: parseInt((await params).id)
       },
       include: {
         telefono: true,
@@ -47,7 +47,7 @@ export async function DELETE(
   try {
     await prisma.telefonoCausa.delete({
       where: {
-        id: parseInt(params.id)
+        id: parseInt((await params).id)
       }
     });
 

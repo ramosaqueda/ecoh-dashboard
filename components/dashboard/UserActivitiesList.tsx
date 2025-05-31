@@ -54,12 +54,14 @@ export function UserActivitiesList() {
         setActividades(data);
       } catch (error) {
         console.error('Error:', error);
-        setError(error.message);
+        // ✅ Verificación de tipo segura
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     fetchActividades();
   }, []);
 

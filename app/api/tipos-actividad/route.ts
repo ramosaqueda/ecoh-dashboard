@@ -54,12 +54,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(tipoActividad, { status: 201 });
   } catch (error) {
     console.error('Error en POST /api/tipos-actividad:', error);
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { message: 'Ya existe un tipo de actividad con ese nombre' },
-        { status: 400 }
-      );
-    }
+    
     return NextResponse.json(
       { message: 'Error interno del servidor' },
       { status: 500 }
@@ -101,12 +96,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(tipoActividad);
   } catch (error) {
     console.error('Error en PUT /api/tipos-actividad:', error);
-    if (error.code === 'P2025') {
-      return NextResponse.json(
-        { message: 'Tipo de actividad no encontrado' },
-        { status: 404 }
-      );
-    }
+    
     return NextResponse.json(
       { message: 'Error interno del servidor' },
       { status: 500 }
@@ -137,12 +127,7 @@ export async function DELETE(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error en DELETE /api/tipos-actividad:', error);
-    if (error.code === 'P2025') {
-      return NextResponse.json(
-        { message: 'Tipo de actividad no encontrado' },
-        { status: 404 }
-      );
-    }
+   
     return NextResponse.json(
       { message: 'Error interno del servidor' },
       { status: 500 }

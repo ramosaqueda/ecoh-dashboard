@@ -54,8 +54,9 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { message: 'Error al obtener medida(s) intrusiva(s)', error },
+      { message: 'Error al obtener medida(s) intrusiva(s)', error: errorMessage },
       { status: 500 }
     );
   }
@@ -73,12 +74,21 @@ export async function POST(request: NextRequest) {
       nombreJuez,
       unidadPolicial,
       resolucion,
+      tipoMedida,  // ✅ Agregar este campo
       numDomiciliosSolicitud,
       numDomiciliosAprobados,
       numDetenidos,
       hallazgos,
       observaciones
     } = data;
+
+    // Validaciones básicas
+    if (!tipoMedida) {
+      return NextResponse.json(
+        { message: 'El tipo de medida es requerido' },
+        { status: 400 }
+      );
+    }
 
     // Crear la medida intrusiva
     const medida = await prisma.medidaIntrusiva.create({
@@ -87,6 +97,7 @@ export async function POST(request: NextRequest) {
         fiscal_id: parseInt(fiscalSolicitante),
         tribunal_id: parseInt(tribunal),
         unidad_policial_id: parseInt(unidadPolicial),
+        tipo_medida_id: parseInt(tipoMedida), // ✅ Campo faltante agregado
         fecha_solicitud: new Date(fechaSolicitud),
         nombre_juez: nombreJuez,
         id_resolucion: parseInt(resolucion),
@@ -117,8 +128,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(medida, { status: 201 });
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { message: 'Error al crear medida intrusiva', error },
+      { message: 'Error al crear medida intrusiva', error: errorMessage },
       { status: 500 }
     );
   }
@@ -146,12 +158,21 @@ export async function PUT(request: NextRequest) {
       nombreJuez,
       unidadPolicial,
       resolucion,
+      tipoMedida,  // ✅ Agregar este campo también
       numDomiciliosSolicitud,
       numDomiciliosAprobados,
       numDetenidos,
       hallazgos,
       observaciones
     } = data;
+
+    // Validación básica
+    if (!tipoMedida) {
+      return NextResponse.json(
+        { message: 'El tipo de medida es requerido' },
+        { status: 400 }
+      );
+    }
 
     // Primero eliminar las relaciones existentes con hallazgos
     await prisma.medidaHallazgo.deleteMany({
@@ -168,6 +189,7 @@ export async function PUT(request: NextRequest) {
         fiscal_id: parseInt(fiscalSolicitante),
         tribunal_id: parseInt(tribunal),
         unidad_policial_id: parseInt(unidadPolicial),
+        tipo_medida_id: parseInt(tipoMedida), // ✅ Campo faltante agregado
         fecha_solicitud: new Date(fechaSolicitud),
         nombre_juez: nombreJuez,
         id_resolucion: parseInt(resolucion),
@@ -198,8 +220,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(medida);
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { message: 'Error al actualizar medida intrusiva', error },
+      { message: 'Error al actualizar medida intrusiva', error: errorMessage },
       { status: 500 }
     );
   }
@@ -232,8 +255,9 @@ export async function DELETE(request: NextRequest) {
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     return NextResponse.json(
-      { message: 'Error al eliminar medida intrusiva', error },
+      { message: 'Error al eliminar medida intrusiva', error: errorMessage },
       { status: 500 }
     );
   }

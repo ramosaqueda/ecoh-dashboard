@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// ✅ Tipos mejorados y consistentes
 interface Actividad {
   id: number;
   causa: {
@@ -51,8 +52,9 @@ interface Actividad {
   };
 }
 
-interface ActividadEditing {
-  id: number;
+// ✅ Tipo para datos de edición que coincide con lo que espera ActividadForm
+interface ActividadFormData {
+  id?: number;
   causaId: string;
   tipoActividadId: string;
   fechaInicio: string;
@@ -66,26 +68,38 @@ interface TipoActividad {
   nombre: string;
 }
 
+// ✅ Tipo para la respuesta de la API con metadata
+interface ActividadesResponse {
+  data: Actividad[];
+  metadata: {
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  };
+}
+
 export default function ActividadesPage() {
   const [actividades, setActividades] = useState<Actividad[]>([]);
   const [tiposActividad, setTiposActividad] = useState<TipoActividad[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [tipoActividadFilter, setTipoActividadFilter] = useState('all');
-  const [actividadEditing, setActividadEditing] = useState<ActividadEditing | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [tipoActividadFilter, setTipoActividadFilter] = useState<string>('all');
+  // ✅ Cambiar null por undefined para consistencia con el componente
+  const [actividadEditing, setActividadEditing] = useState<ActividadFormData | undefined>(undefined);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize] = useState(10);
-  const [pageCount, setPageCount] = useState(0);
-  const [totalRecords, setTotalRecords] = useState(0);
+  const [showDeleteAlert, setShowDeleteAlert] = useState<boolean>(false);
+  const [pageIndex, setPageIndex] = useState<number>(1);
+  const [pageSize] = useState<number>(10);
+  const [pageCount, setPageCount] = useState<number>(0);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
 
-  const fetchTiposActividad = async () => {
+  const fetchTiposActividad = async (): Promise<void> => {
     try {
       const response = await fetch('/api/tipos-actividad');
       if (!response.ok) throw new Error('Error al cargar tipos de actividad');
-      const data = await response.json();
+      const data: TipoActividad[] = await response.json();
       setTiposActividad(data);
     } catch (error) {
       console.error('Error:', error);
@@ -93,7 +107,7 @@ export default function ActividadesPage() {
     }
   };
 
-  const fetchActividades = async (tipoId?: string, pageNum: number = 1) => {
+  const fetchActividades = async (tipoId?: string, pageNum: number = 1): Promise<void> => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
@@ -109,11 +123,11 @@ export default function ActividadesPage() {
       
       const response = await fetch(url);
       if (!response.ok) throw new Error('Error al cargar actividades');
-      const { data, metadata } = await response.json();
+      const result: ActividadesResponse = await response.json();
       
-      setTotalRecords(metadata.total);
-      setPageCount(Math.ceil(metadata.total / pageSize));
-      setActividades(data);
+      setTotalRecords(result.metadata.total);
+      setPageCount(Math.ceil(result.metadata.total / pageSize));
+      setActividades(result.data);
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar las actividades');
@@ -127,14 +141,15 @@ export default function ActividadesPage() {
     fetchActividades();
   }, []);
 
-  const handleSubmit = async (data: any) => {
+  // ✅ Tipar el parámetro data correctamente
+  const handleSubmit = async (data: ActividadFormData): Promise<void> => {
     setIsSubmitting(true);
     try {
-      const url = actividadEditing
+      const url = actividadEditing?.id
         ? `/api/actividades?id=${actividadEditing.id}`
         : '/api/actividades';
 
-      const method = actividadEditing ? 'PUT' : 'POST';
+      const method = actividadEditing?.id ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
@@ -149,12 +164,12 @@ export default function ActividadesPage() {
       setPageIndex(1);
       await fetchActividades(tipoActividadFilter, 1);
       toast.success(
-        actividadEditing
+        actividadEditing?.id
           ? 'Actividad actualizada exitosamente'
           : 'Actividad creada exitosamente'
       );
       setDialogOpen(false);
-      setActividadEditing(null);
+      setActividadEditing(undefined); // ✅ Usar undefined en lugar de null
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al guardar la actividad');
@@ -163,13 +178,13 @@ export default function ActividadesPage() {
     }
   };
 
-  const handleClearFilters = () => {
+  const handleClearFilters = (): void => {
     setTipoActividadFilter('all');
     setPageIndex(1);
     fetchActividades(undefined, 1);
   };
 
-  const handleEdit = (actividad: Actividad) => {
+  const handleEdit = (actividad: Actividad): void => {
     setActividadEditing({
       id: actividad.id,
       causaId: actividad.causa.id.toString(),
@@ -182,12 +197,12 @@ export default function ActividadesPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number): void => {
     setDeleteId(id);
     setShowDeleteAlert(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (): Promise<void> => {
     if (!deleteId) return;
 
     try {
@@ -206,7 +221,7 @@ export default function ActividadesPage() {
     }
   };
 
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = (newPage: number): void => {
     setPageIndex(newPage);
     fetchActividades(tipoActividadFilter, newPage);
   };
@@ -220,7 +235,7 @@ export default function ActividadesPage() {
           onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) {
-              setActividadEditing(null);
+              setActividadEditing(undefined); // ✅ Usar undefined en lugar de null
             }
           }}
         >
@@ -239,7 +254,7 @@ export default function ActividadesPage() {
             <ActividadForm
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
-              initialData={actividadEditing}
+              initialData={actividadEditing} // ✅ Ahora funciona correctamente
             />
           </DialogContent>
         </Dialog>
@@ -248,7 +263,7 @@ export default function ActividadesPage() {
       <div className="flex gap-4">
         <Select
           value={tipoActividadFilter}
-          onValueChange={(value) => {
+          onValueChange={(value: string) => {
             setTipoActividadFilter(value);
             setPageIndex(1);
             fetchActividades(value, 1);

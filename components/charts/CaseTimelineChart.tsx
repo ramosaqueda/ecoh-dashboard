@@ -26,16 +26,26 @@ interface MonthlyData {
   countPrevYear?: number;
 }
 
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    color: string;
+    value: number;
+    dataKey: string;
+  }>;
+  label?: string;
+}
+
 export default function CaseTimelineChart() {
   const { selectedYear } = useYearContext();
-  const [localYear, setLocalYear] = useState(new Date().getFullYear().toString());
+  const [localYear, setLocalYear] = useState<string>(new Date().getFullYear().toString());
   const [data, setData] = useState<MonthlyData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [caseType, setCaseType] = useState('all'); // "all" | "ecoh"
-  const [showComparison, setShowComparison] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [caseType, setCaseType] = useState<'all' | 'ecoh'>('all');
+  const [showComparison, setShowComparison] = useState<boolean>(true);
   
   // Estado para el filtro de delito ("all" para "todos")
-  const [tipoDelitoFilter, setTipoDelitoFilter] = useState('all');
+  const [tipoDelitoFilter, setTipoDelitoFilter] = useState<string>('all');
 
   // Generar array de años desde 2024 hasta el año actual
   const years = Array.from(
@@ -51,7 +61,7 @@ export default function CaseTimelineChart() {
   }, [selectedYear]);
 
   // Memoizamos esta función para evitar recreaciones innecesarias
-  const fetchDataForYear = useCallback(async (year: string, type: string, tipoDelitoId: string) => {
+  const fetchDataForYear = useCallback(async (year: string, type: string, tipoDelitoId: string): Promise<MonthlyData[]> => {
     try {
       // Construir URL para la API
       const url = new URL('/api/analytics/case-timeline', window.location.origin);
@@ -74,7 +84,7 @@ export default function CaseTimelineChart() {
   }, []);
 
   // Memoizamos esta función para evitar recreaciones innecesarias
-  const fetchData = useCallback(async (year: string, type: string, tipoDelitoId: string) => {
+  const fetchData = useCallback(async (year: string, type: 'all' | 'ecoh', tipoDelitoId: string): Promise<void> => {
     setIsLoading(true);
     try {
       // Obtener datos del año seleccionado
@@ -113,12 +123,12 @@ export default function CaseTimelineChart() {
     setTipoDelitoFilter(value);
   }, []);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip: React.FC<TooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="rounded-lg border bg-white p-3 shadow-lg">
           <p className="font-medium">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               <span className="font-semibold">{entry.value}</span> casos
               {entry.dataKey === 'countPrevYear' 
@@ -133,7 +143,7 @@ export default function CaseTimelineChart() {
   };
 
   // Función para obtener la etiqueta del delito para el título del gráfico
-  const getDelitoLabel = () => {
+  const getDelitoLabel = (): string => {
     return tipoDelitoFilter !== 'all' ? 'Delito seleccionado' : 'Todos los delitos';
   };
 
@@ -172,7 +182,7 @@ export default function CaseTimelineChart() {
               <RadioGroup
                 defaultValue="all"
                 value={caseType}
-                onValueChange={setCaseType}
+                onValueChange={(value: 'all' | 'ecoh') => setCaseType(value)}
                 className="flex space-x-4"
               >
                 <div className="flex items-center space-x-2">
@@ -225,7 +235,9 @@ export default function CaseTimelineChart() {
                 <XAxis
                   dataKey="month"
                   height={60}
-                  tick={{ angle: -45, textAnchor: 'end' }}
+                  angle={-45}
+                  textAnchor="end"
+                  interval={0}
                 >
                   <Label value="Meses" position="bottom" offset={20} />
                 </XAxis>

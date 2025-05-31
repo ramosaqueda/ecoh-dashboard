@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     if (id) {
       // Obtener un Nacionalidad específico
-      const Nacionalidad = await prisma.Nacionalidad.findUnique({
+      const Nacionalidad = await prisma.nacionalidad.findUnique({
         where: { id: Number(id) }
       });
       if (Nacionalidad) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Obtener todos los Nacionalidades
-      const Nacionalidades = await prisma.Nacionalidad.findMany();
+      const Nacionalidades = await prisma.nacionalidad.findMany();
       return NextResponse.json(Nacionalidades);
     }
   } catch (error) {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { nombre } = await request.json();
-    const Nacionalidad = await prisma.Nacionalidad.create({
+    const Nacionalidad = await prisma.nacionalidad.create({
       data: { nombre }
     });
     return NextResponse.json(Nacionalidad, { status: 201 });
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const { nombre } = await request.json();
-    const Nacionalidad = await prisma.Nacionalidad.update({
+    const Nacionalidad = await prisma.nacionalidad.update({
       where: { id: Number(id) },
       data: { nombre }
     });
@@ -89,7 +89,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    await prisma.Nacionalidad.delete({
+    await prisma.nacionalidad.delete({
       where: { id: Number(id) }
     });
     return new NextResponse(null, { status: 204 });

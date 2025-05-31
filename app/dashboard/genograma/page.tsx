@@ -201,7 +201,7 @@ export default function GenogramaPage() {
         [persona.nombre, persona.segundoNombre, persona.apellido, persona.segundoApellido]
           .filter(Boolean).join(' ');
           
-      // Agregar indicador de rol especial si existe
+      // ✅ CORREGIDO: Agregar indicador de rol especial si existe (verificación segura)
       if (persona.rolEspecial && persona.rolEspecial !== 'ninguno') {
         nombreMostrar += `<br>${persona.rolEspecial.toUpperCase()}`;
       }
@@ -474,7 +474,8 @@ export default function GenogramaPage() {
                             </strong> 
                             {persona.esFallecido ? ' †' : ''} - 
                             {persona.genero === 'masculino' ? ' Hombre' : ' Mujer'} - 
-                            {persona.rolEspecial !== 'ninguno' && 
+                            {/* ✅ CORREGIDO: Verificación segura de rolEspecial */}
+                            {persona.rolEspecial && persona.rolEspecial !== 'ninguno' && 
                               <span className={`ml-1 font-semibold ${
                                 persona.rolEspecial === 'victima' ? 'text-red-600' : 
                                 persona.rolEspecial === 'imputado' ? 'text-amber-600' : ''
