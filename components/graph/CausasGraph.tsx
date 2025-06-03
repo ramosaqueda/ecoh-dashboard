@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCallback, useMemo } from 'react';
@@ -12,7 +11,10 @@ import {
   Position,
   MarkerType,
   Node,
-  Edge
+  Edge,
+  Connection,
+  NodeMouseHandler,
+  OnConnect
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Card } from '@/components/ui/card';
@@ -26,6 +28,7 @@ const ReactFlow = dynamic(() => import('reactflow'), {
   ),
 });
 
+// Interfaces de tipos
 interface Causa {
   id: number;
   ruc: string;
@@ -59,15 +62,30 @@ interface FlowNode extends Node {
   targetPosition?: Position;
 }
 
+interface NodeLabelProps {
+  ruc: string;
+  denominacionCausa: string;
+}
+
 const nodeWidth = 250;
 const nodeHeight = 80;
+
+// Componente para el contenido del nodo
+const NodeLabel: React.FC<NodeLabelProps> = ({ ruc, denominacionCausa }) => (
+  <div className="p-2">
+    <div className="font-medium text-sm">{ruc}</div>
+    <div className="text-xs text-gray-600 truncate" title={denominacionCausa}>
+      {denominacionCausa}
+    </div>
+  </div>
+);
 
 export default function CausasGraph({ causaId, relaciones, causaPrincipal }: CausasGraphProps) {
   // Crear nodos y enlaces iniciales
   const { initialNodes, initialEdges } = useMemo(() => {
     const nodes: FlowNode[] = [];
     const edges: Edge[] = [];
-    const processedNodes = new Set();
+    const processedNodes = new Set<string>();
     let currentLevel = 0;
     let nodesInCurrentLevel = 0;
 
@@ -77,12 +95,10 @@ export default function CausasGraph({ causaId, relaciones, causaPrincipal }: Cau
       type: 'default',
       data: {
         label: (
-          <div className="p-2">
-            <div className="font-medium text-sm">{causaPrincipal.ruc}</div>
-            <div className="text-xs text-gray-600 truncate" title={causaPrincipal.denominacionCausa}>
-              {causaPrincipal.denominacionCausa}
-            </div>
-          </div>
+          <NodeLabel 
+            ruc={causaPrincipal.ruc}
+            denominacionCausa={causaPrincipal.denominacionCausa}
+          />
         )
       },
       position: { x: 0, y: 0 },
@@ -107,12 +123,10 @@ export default function CausasGraph({ causaId, relaciones, causaPrincipal }: Cau
             type: 'default',
             data: {
               label: (
-                <div className="p-2">
-                  <div className="font-medium text-sm">{causa.ruc}</div>
-                  <div className="text-xs text-gray-600 truncate" title={causa.denominacionCausa}>
-                    {causa.denominacionCausa}
-                  </div>
-                </div>
+                <NodeLabel 
+                  ruc={causa.ruc}
+                  denominacionCausa={causa.denominacionCausa}
+                />
               )
             },
             position: {
@@ -148,14 +162,19 @@ export default function CausasGraph({ causaId, relaciones, causaPrincipal }: Cau
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
+  const onConnect: OnConnect = useCallback(
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
-  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    const ruc = (node.data.label as any).props.children[0].props.children;
-    window.open(`${process.env.NEXT_PUBLIC_FICHACASORUC}?ruc=${ruc}`, '_blank');
+  const handleNodeClick: NodeMouseHandler = useCallback((event: React.MouseEvent, node: Node) => {
+    // Extraer RUC del nodo de manera type-safe
+    const nodeData = node.data as { label: React.ReactElement<NodeLabelProps> };
+    const ruc = nodeData.label.props.ruc;
+    
+    if (process.env.NEXT_PUBLIC_FICHACASORUC) {
+      window.open(`${process.env.NEXT_PUBLIC_FICHACASORUC}?ruc=${ruc}`, '_blank');
+    }
   }, []);
 
   return (

@@ -1,21 +1,91 @@
 // components/graph/hooks/useGraphData.tsx
 import { useState, useEffect } from 'react';
-import { GraphData, GraphFilters, Organization } from '../types/graph.types';
 
-export const useGraphData = (filters: GraphFilters) => {
-  const [rawData, setRawData] = useState<{ organizations: Organization[], tipos: any[] }>({
+// Interfaces de tipos (si no están importadas desde graph.types)
+interface GraphNode {
+  id: string;
+  name: string;
+  val: number;
+  type: 'organization' | 'imputado' | 'causa';
+  color: string;
+  org?: Organization;
+  imputado?: Imputado;
+}
+
+interface GraphLink {
+  source: string;
+  target: string;
+  value: number;
+  rol?: string;
+}
+
+interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+interface GraphFilters {
+  searchTerm: string;
+  tipoOrganizacion: string;
+  showActiveOnly: boolean;
+}
+
+interface TipoOrganizacion {
+  id: number;
+  nombre: string;
+}
+
+interface Imputado {
+  id: number;
+  nombreSujeto: string;
+  docId?: string;
+  fotoPrincipal?: string;
+}
+
+interface Miembro {
+  id: number;
+  imputadoId: number;
+  rol?: string;
+  activo?: boolean;
+  imputado: Imputado;
+}
+
+interface Organization {
+  id: number;
+  nombre: string;
+  activa: boolean;
+  tipoOrganizacionId: number;
+  miembros?: Miembro[];
+}
+
+interface RawData {
+  organizations: Organization[];
+  tipos: TipoOrganizacion[];
+}
+
+interface UseGraphDataReturn {
+  graphData: GraphData;
+  loading: boolean;
+  error: string | null;
+  tipos: TipoOrganizacion[];
+}
+
+export const useGraphData = (filters: GraphFilters): UseGraphDataReturn => {
+  const [rawData, setRawData] = useState<RawData>({
     organizations: [],
     tipos: []
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
 
   // Cargar datos iniciales
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       try {
         setLoading(true);
+        setError(null);
+        
         const [orgResponse, tiposResponse] = await Promise.all([
           fetch('/api/organizacion'),
           fetch('/api/tipo-organizacion')
@@ -29,12 +99,14 @@ export const useGraphData = (filters: GraphFilters) => {
         const tiposData = await tiposResponse.json();
 
         setRawData({
-          organizations: orgData.data,
+          organizations: orgData.data || orgData,
           tipos: tiposData
         });
       } catch (error) {
         console.error('Error:', error);
-        setError(error.message);
+        // Manejo correcto de errores unknown
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar datos';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -45,9 +117,9 @@ export const useGraphData = (filters: GraphFilters) => {
 
   // Procesar datos según filtros
   useEffect(() => {
-    const processGraphData = () => {
-      const nodes = [];
-      const links = [];
+    const processGraphData = (): void => {
+      const nodes: GraphNode[] = [];
+      const links: GraphLink[] = [];
       
       rawData.organizations
         .filter(org => {
@@ -74,6 +146,7 @@ export const useGraphData = (filters: GraphFilters) => {
           org.miembros?.forEach(member => {
             const imputadoNodeId = `imp-${member.imputadoId}`;
             
+            // Verificar si el nodo del imputado ya existe
             if (!nodes.find(n => n.id === imputadoNodeId)) {
               nodes.push({
                 id: imputadoNodeId,
@@ -85,6 +158,7 @@ export const useGraphData = (filters: GraphFilters) => {
               });
             }
 
+            // Añadir enlace entre organización e imputado
             links.push({
               source: `org-${org.id}`,
               target: imputadoNodeId,
@@ -97,8 +171,15 @@ export const useGraphData = (filters: GraphFilters) => {
       setGraphData({ nodes, links });
     };
 
-    processGraphData();
+    if (rawData.organizations.length > 0) {
+      processGraphData();
+    }
   }, [rawData, filters]);
 
-  return { graphData, loading, error, tipos: rawData.tipos };
+  return { 
+    graphData, 
+    loading, 
+    error, 
+    tipos: rawData.tipos 
+  };
 };

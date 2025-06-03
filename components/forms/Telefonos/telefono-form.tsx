@@ -24,8 +24,38 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
- 
- 
+// Interfaces de tipos
+interface Proveedor {
+  id: number;
+  nombre: string;
+}
+
+interface Ubicacion {
+  id: number;
+  nombre: string;
+}
+
+interface TelefonoData {
+  numeroTelefonico?: string | number;
+  idProveedorServicio?: number;
+  id_ubicacion?: number;
+  imei?: string;
+  abonado?: string;
+  solicitaTrafico?: boolean | null;
+  solicitaImei?: boolean | null;
+  extraccionForense?: boolean | null;
+  enviar_custodia?: boolean | null;
+  observacion?: string;
+}
+
+type FormValues = z.infer<typeof formSchema>;
+
+interface TelefonoFormProps {
+  initialData?: TelefonoData;
+  onSubmit: (values: FormValues) => Promise<void>;
+  onCancel: () => void;
+}
+
 const formSchema = z.object({
   numeroTelefonico: z.string()
     .min(9, 'El número debe tener al menos 9 dígitos')
@@ -46,14 +76,13 @@ export function TelefonoForm({
   initialData,
   onSubmit,
   onCancel
-}) {
-  const [proveedores, setProveedores] = useState([]);
-  const [ubicaciones, setUbicaciones] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+}: TelefonoFormProps) {
+  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Preparación de valores iniciales
-  const initialValues = {
-    ...initialData,
+  const initialValues: FormValues = {
     numeroTelefonico: initialData?.numeroTelefonico 
       ? initialData.numeroTelefonico.toString() 
       : '',
@@ -72,13 +101,13 @@ export function TelefonoForm({
     observacion: initialData?.observacion || ''
   };
 
-  const form = useForm({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues
   });
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       try {
         setIsLoading(true);
         const [proveedoresResponse, ubicacionesResponse] = await Promise.all([
@@ -89,8 +118,8 @@ export function TelefonoForm({
         if (!proveedoresResponse.ok) throw new Error('Error al cargar proveedores');
         if (!ubicacionesResponse.ok) throw new Error('Error al cargar ubicaciones');
 
-        const proveedoresData = await proveedoresResponse.json();
-        const ubicacionesData = await ubicacionesResponse.json();
+        const proveedoresData: Proveedor[] = await proveedoresResponse.json();
+        const ubicacionesData: Ubicacion[] = await ubicacionesResponse.json();
 
         setProveedores(proveedoresData);
         setUbicaciones(ubicacionesData);
@@ -105,7 +134,7 @@ export function TelefonoForm({
     fetchData();
   }, []);
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async (values: FormValues): Promise<void> => {
     try {
       const formattedValues = {
         ...values,
@@ -119,7 +148,7 @@ export function TelefonoForm({
   };
 
   // Función auxiliar para manejar los cambios en los checkboxes
-  const handleCheckboxChange = (field, value) => {
+  const handleCheckboxChange = (field: any, value: boolean): void => {
     field.onChange(value === field.value ? null : value);
   };
 
@@ -227,7 +256,7 @@ export function TelefonoForm({
                 <FormControl>
                   <Checkbox
                     checked={field.value ?? false}
-                    onCheckedChange={(checked) => handleCheckboxChange(field, checked)}
+                    onCheckedChange={(checked) => handleCheckboxChange(field, checked as boolean)}
                   />
                 </FormControl>
                 <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -245,7 +274,7 @@ export function TelefonoForm({
                 <FormControl>
                   <Checkbox
                     checked={field.value ?? false}
-                    onCheckedChange={(checked) => handleCheckboxChange(field, checked)}
+                    onCheckedChange={(checked) => handleCheckboxChange(field, checked as boolean)}
                   />
                 </FormControl>
                 <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -263,7 +292,7 @@ export function TelefonoForm({
                 <FormControl>
                   <Checkbox
                     checked={field.value ?? false}
-                    onCheckedChange={(checked) => handleCheckboxChange(field, checked)}
+                    onCheckedChange={(checked) => handleCheckboxChange(field, checked as boolean)}
                   />
                 </FormControl>
                 <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -273,8 +302,7 @@ export function TelefonoForm({
             )}
           />
 
-
-        <FormField
+          <FormField
             control={form.control}
             name="enviar_custodia"
             render={({ field }) => (
@@ -282,7 +310,7 @@ export function TelefonoForm({
                 <FormControl>
                   <Checkbox
                     checked={field.value ?? false}
-                    onCheckedChange={(checked) => handleCheckboxChange(field, checked)}
+                    onCheckedChange={(checked) => handleCheckboxChange(field, checked as boolean)}
                   />
                 </FormControl>
                 <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -291,7 +319,6 @@ export function TelefonoForm({
               </FormItem>
             )}
           />
-
         </div>
 
         <FormField

@@ -93,7 +93,7 @@ ${colorConfig
   .join('\n')}
 }
 `
-        )
+        ).join('') // 🔧 SOLUCIÓN: Agregar .join('') para convertir array a string
       }}
     />
   );

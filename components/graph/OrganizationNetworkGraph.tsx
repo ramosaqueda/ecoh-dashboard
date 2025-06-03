@@ -128,14 +128,14 @@ const OrganizationNetworkGraph: React.FC = () => {
 
     // Crear los grupos de nodos
     const node = g.append('g')
-      .selectAll('.node')
-      .data(data.nodes)
-      .join('g')
-      .attr('class', 'node')
-      .call(d3.drag<SVGGElement, GraphNode>()
-        .on('start', dragStarted)
-        .on('drag', dragged)
-        .on('end', dragEnded));
+        .selectAll('.node')
+        .data(data.nodes)
+        .join('g')
+        .attr('class', 'node')
+        .call((d3.drag() as any)  // ✅ Type assertion para resolver conflictos
+          .on('start', dragStarted)
+          .on('drag', dragged)
+          .on('end', dragEnded));
 
     // Añadir formas de nodos
     node.each(function(d) {

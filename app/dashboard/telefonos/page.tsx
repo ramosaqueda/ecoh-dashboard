@@ -16,6 +16,22 @@ import { TelefonoCausaManager } from '@/components/forms/Telefonos/TelefonoCausa
 import { toast } from 'sonner';
 import { Loader2, Plus } from 'lucide-react';
 
+// Interfaces de tipos
+interface TelefonoFormData {
+  numeroTelefonico: string;
+  idProveedorServicio: string;
+  id_ubicacion: string;
+  imei: string;
+  abonado: string;
+  solicitaTrafico: boolean | null;
+  solicitaImei: boolean | null;
+  extraccionForense: boolean | null;
+  enviar_custodia: boolean | null;
+  observacion?: string;
+}
+
+interface TelefonoPageProps {}
+
 async function getTelefonos(): Promise<Telefono[]> {
   const res = await fetch('/api/telefonos', {
     cache: 'no-store'
@@ -26,16 +42,14 @@ async function getTelefonos(): Promise<Telefono[]> {
   return res.json();
 }
 
-export default function TelefonosPage() {
+export default function TelefonosPage({}: TelefonoPageProps) {
   const [telefonos, setTelefonos] = useState<Telefono[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTelefono, setSelectedTelefono] = useState<Telefono | null>(
-    null
-  );
+  const [selectedTelefono, setSelectedTelefono] = useState<Telefono | null>(null);
 
-  const loadTelefonos = async () => {
+  const loadTelefonos = async (): Promise<void> => {
     try {
       setIsLoading(true);
       setError(null);
@@ -55,12 +69,12 @@ export default function TelefonosPage() {
     loadTelefonos();
   }, []);
 
-  const handleEdit = async (telefono: Telefono) => {
+  const handleEdit = async (telefono: Telefono): Promise<void> => {
     setSelectedTelefono(telefono);
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string): Promise<void> => {
     try {
       const response = await fetch(`/api/telefonos/${id}`, {
         method: 'DELETE'
@@ -78,7 +92,7 @@ export default function TelefonosPage() {
     }
   };
 
-  const handleSubmit = async (formData: any) => {
+  const handleSubmit = async (formData: TelefonoFormData): Promise<void> => {
     try {
       const url = selectedTelefono
         ? `/api/telefonos/${selectedTelefono.id}`
@@ -111,17 +125,37 @@ export default function TelefonosPage() {
   };
 
   // Manejador para actualizar la tabla cuando se modifiquen las causas
-  const handleCausaChange = async () => {
+  const handleCausaChange = async (): Promise<void> => {
     await loadTelefonos();
   };
 
   // Actualizar un teléfono específico en la tabla
-  const updateTelefonoInTable = (updatedTelefono: Telefono) => {
+  const updateTelefonoInTable = (updatedTelefono: Telefono): void => {
     setTelefonos((prevTelefonos) =>
       prevTelefonos.map((tel) =>
         tel.id === updatedTelefono.id ? updatedTelefono : tel
       )
     );
+  };
+
+  // Función para convertir Telefono a formato compatible con TelefonoForm
+  const convertToFormData = (telefono: Telefono | null) => {
+    if (!telefono) return undefined;
+    
+    return {
+      numeroTelefonico: telefono.numeroTelefonico?.toString() || '',
+      idProveedorServicio: (telefono as any).proveedorServicio?.id?.toString() || 
+                          (telefono as any).idProveedorServicio?.toString() || '',
+      id_ubicacion: (telefono as any).ubicacion?.id?.toString() || 
+                   (telefono as any).id_ubicacion?.toString() || '',
+      imei: (telefono as any).imei || '',
+      abonado: (telefono as any).abonado || '',
+      solicitaTrafico: (telefono as any).solicitaTrafico ?? null,
+      solicitaImei: (telefono as any).solicitaImei ?? null,
+      extraccionForense: (telefono as any).extraccionForense ?? null,
+      enviar_custodia: (telefono as any).enviar_custodia ?? null,
+      observacion: (telefono as any).observacion || ''
+    };
   };
 
   if (isLoading) {
@@ -169,7 +203,7 @@ export default function TelefonosPage() {
             </DialogTitle>
           </DialogHeader>
           <TelefonoForm
-            initialData={selectedTelefono}
+            initialData={convertToFormData(selectedTelefono)}
             onSubmit={handleSubmit}
             onCancel={() => {
               setIsModalOpen(false);

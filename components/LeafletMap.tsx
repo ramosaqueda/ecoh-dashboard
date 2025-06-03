@@ -14,7 +14,8 @@ import L from 'leaflet';
 
 // Función para inicializar los iconos de Leaflet
 const initializeLeafletIcons = () => {
-  delete L.Icon.Default.prototype._getIconUrl;
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: '/leaflet/marker-icon-2x.png',
     iconUrl: '/leaflet/marker-icon.png',

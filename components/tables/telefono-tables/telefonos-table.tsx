@@ -81,13 +81,15 @@ export function TelefonosDataTable<TData, TValue>({
   const exportToExcel = () => {
     try {
       const exportData = table.getFilteredRowModel().rows.map((row) => {
-        const rowData: any = {};
+        const rowData: Record<string, any> = {};
         columns.forEach((column: any) => {
           if (column.accessorKey && !column.id?.includes('actions')) {
             const keys = column.accessorKey.split('.');
-            let value = row.original;
+            let value: any = row.original;
+            
+            // Acceso seguro a propiedades anidadas
             for (const key of keys) {
-              value = value?.[key];
+              value = value && typeof value === 'object' ? value[key] : undefined;
             }
 
             if (typeof value === 'boolean') {

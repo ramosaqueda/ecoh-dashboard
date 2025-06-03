@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/popover';
 import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Imputado } from '@/types/organizacion.types';
+import { Imputado } from '@/types/organizacion';
 
 interface ImputadoComboboxProps {
   value: string;

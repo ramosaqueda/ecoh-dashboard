@@ -9,13 +9,13 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import ImputadoForm from '@/components/forms/ImputadoForm/';
-import type { imputado } from '@/components/tables/imputados-tables/columns';
+import type { Imputado } from '@/types/causaimputado';
 
 interface ImputadoFormContainerProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  initialData?: imputado | null;
+  initialData?: Imputado | null;
   isEditing?: boolean;
 }
 
@@ -23,6 +23,8 @@ interface ImputadoFormData {
   nombreSujeto: string;
   docId: string;
   nacionalidadId: string;
+  alias?: string;
+  caracteristicas?: string;
 }
 
 export default function ImputadoFormContainer({
@@ -34,6 +36,19 @@ export default function ImputadoFormContainer({
 }: ImputadoFormContainerProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Transformar los datos de Imputado al formato que espera el formulario
+  const transformInitialData = (data: Imputado | null | undefined) => {
+    if (!data) return undefined;
+    
+    return {
+      nombreSujeto: data.nombreSujeto || '',
+      docId: data.docId || '',
+      nacionalidadId: data.nacionalidadId?.toString() || '',
+      alias: data.alias || '',
+      caracteristicas: data.caracteristicas || ''
+    };
+  };
+
   const handleSubmit = async (data: ImputadoFormData) => {
     try {
       setIsSubmitting(true);
@@ -42,12 +57,18 @@ export default function ImputadoFormContainer({
         ? `/api/imputado/${initialData?.id}`
         : '/api/imputado';
 
+      // Transformar los datos para la API
+      const apiData = {
+        ...data,
+        nacionalidadId: parseInt(data.nacionalidadId, 10)
+      };
+
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(apiData)
       });
 
       if (!response.ok) {
@@ -56,8 +77,8 @@ export default function ImputadoFormContainer({
 
       toast.success(
         isEditing
-          ? 'imputado actualizado exitosamente'
-          : 'imputado creado exitosamente'
+          ? 'Imputado actualizado exitosamente'
+          : 'Imputado creado exitosamente'
       );
 
       onSuccess();
@@ -83,7 +104,7 @@ export default function ImputadoFormContainer({
         </DialogHeader>
         <div className="flex-1 overflow-auto px-6 pb-6">
           <ImputadoForm
-            initialValues={initialData || undefined}
+            initialValues={transformInitialData(initialData)}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             isEditing={isEditing}

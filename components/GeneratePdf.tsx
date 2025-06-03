@@ -5,10 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-if (pdfMake && pdfFonts && pdfFonts.pdfMake?.vfs) {
-    (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
-} else {
-    console.error('No se pudo asignar las fuentes vfs a pdfMake');
+// Configuración correcta de pdfMake con type assertion
+try {
+    (pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs || (pdfFonts as any);
+} catch (error) {
+    console.error('No se pudo asignar las fuentes vfs a pdfMake:', error);
+}
+
+// Interfaces de tipos
+interface Usuario {
+    nombre?: string;
+    email: string;
+}
+
+interface TipoActividad {
+    nombre: string;
 }
 
 interface Actividad {
@@ -17,13 +28,29 @@ interface Actividad {
     fechaTermino: string;
     observacion: string;
     estado: string;
-    tipoActividad: {
-        nombre: string;
-    };
-    usuario: {
-        nombre: string;
-        email: string;
-    };
+    tipoActividad: TipoActividad;
+    usuario: Usuario;
+}
+
+interface Tribunal {
+    nombre: string;
+}
+
+interface Delito {
+    nombre: string;
+}
+
+interface Cautelar {
+    id: number;
+    nombre: string;
+}
+
+interface Causa {
+    ruc: string;
+    denominacionCausa: string;
+    rit: string;
+    tribunal: Tribunal;
+    delito: Delito;
 }
 
 interface CausaImputado {
@@ -31,26 +58,12 @@ interface CausaImputado {
     essujetoInteres: boolean;
     formalizado: boolean;
     fechaFormalizacion: string | null;
-    cautelar?: {
-        id: number;
-        nombre: string;
-    };
-    causa: {
-        ruc: string;
-        denominacionCausa: string;
-        rit: string;
-        tribunal: {
-            nombre: string;
-        };
-        delito: {
-            nombre: string;
-        };
-    };
+    cautelar?: Cautelar;
+    causa: Causa;
 }
 
-// ✅ CORREGIDO: Cambiar id de number a string para consistencia
 interface DatosCausa {
-    id: string; // ✅ Cambiado de number a string
+    id: string;
     RUC: string;
     denominacion: string;
     fiscal: string | null;
@@ -87,7 +100,7 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
     };
 
     const getEstadoImputado = (imputado: CausaImputado): string => {
-        const estados = [];
+        const estados: string[] = [];
         if (imputado.esImputado) estados.push('Imputado');
         if (imputado.essujetoInteres) estados.push('Sujeto de Interés');
         if (imputado.formalizado) estados.push('Formalizado');
@@ -97,10 +110,9 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
     const fetchImputadosData = async (): Promise<CausaImputado[]> => {
         try {
             console.log('Fetching imputados for causa ID:', pdfData.id);
-            // ✅ Las URLs funcionan igual con string que con number
             const response = await fetch(`/api/causas-imputados/${pdfData.id}`);
             if (!response.ok) throw new Error('Error fetching imputados');
-            const data = await response.json();
+            const data: CausaImputado[] = await response.json();
             console.log('Imputados data:', data);
             return data;
         } catch (error) {
@@ -112,10 +124,9 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
     const fetchActividadesData = async (): Promise<Actividad[]> => {
         try {
             console.log('Fetching actividades for causa ID:', pdfData.id);
-            // ✅ Las URLs funcionan igual con string que con number
             const response = await fetch(`/api/actividades/causa/${pdfData.id}`);
             if (!response.ok) throw new Error('Error fetching actividades');
-            const data = await response.json();
+            const data: Actividad[] = await response.json();
             console.log('Actividades data:', data);
             return data;
         } catch (error) {
@@ -140,7 +151,7 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
                 fetchActividadesData()
             ]);
 
-            const documentDefinition = {
+            const documentDefinition: any = {
                 pageSize: 'A4',
                 pageMargins: [40, 60, 40, 60],
                 header: {
@@ -178,7 +189,7 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
                     font: 'Roboto',
                     fontSize: 10
                 },
-                footer: function(currentPage: number, pageCount: number) {
+                footer: function(currentPage: number, pageCount: number): any {
                     return {
                         columns: [
                             {
@@ -266,7 +277,7 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
                             ]
                         },
                         layout: {
-                            fillColor: function(rowIndex: number) {
+                            fillColor: function(rowIndex: number): string | null {
                                 return (rowIndex % 2 === 0 && rowIndex !== 0) ? '#f3f4f6' : null;
                             }
                         },
@@ -306,7 +317,7 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
                             ]
                         },
                         layout: {
-                            fillColor: function(rowIndex: number) {
+                            fillColor: function(rowIndex: number): string | null {
                                 return (rowIndex % 2 === 0 && rowIndex !== 0) ? '#f3f4f6' : null;
                             }
                         }
@@ -314,11 +325,12 @@ const GeneratePdf: React.FC<PdfProps> = ({ pdfData }) => {
                 ]
             };
 
-            pdfMake.createPdf(documentDefinition).download(`Informe_Causa_${pdfData.RUC}.pdf`);
+            (pdfMake as any).createPdf(documentDefinition).download(`Informe_Causa_${pdfData.RUC}.pdf`);
             toast.success('PDF generado exitosamente');
         } catch (error) {
             console.error('Error generating PDF:', error);
-            toast.error('Error al generar el PDF');
+            const errorMessage = error instanceof Error ? error.message : 'Error al generar el PDF';
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }

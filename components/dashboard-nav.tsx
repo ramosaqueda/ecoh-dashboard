@@ -134,27 +134,34 @@ interface DashboardNavProps {
   items: NavItem[];
   setOpen?: Dispatch<SetStateAction<boolean>>;
   isMobileNav?: boolean;
+  isMinimized?: boolean; // ← Agregar esta prop
+  className?: string;     // ← Agregar esta prop también
 }
 
 export function DashboardNav({
   items,
   setOpen,
-  isMobileNav = false
+  isMobileNav = false,
+  isMinimized: propIsMinimized, // ← Renombrar para evitar conflicto
+  className
 }: DashboardNavProps) {
-  const { isMinimized } = useSidebar();
+  const { isMinimized: hookIsMinimized } = useSidebar();
+  
+  // Usar la prop si se pasa, sino usar el hook
+  const isMinimized = propIsMinimized !== undefined ? propIsMinimized : (!isMobileNav && hookIsMinimized);
 
   if (!items?.length) {
     return null;
   }
 
   return (
-    <nav className="grid items-start gap-2">
+    <nav className={cn("grid items-start gap-2", className)}>
       <TooltipProvider>
         {items.map((item, index) => (
           <NavItemComponent
             key={item.href || index}
             item={item}
-            isMinimized={!isMobileNav && isMinimized}
+            isMinimized={isMinimized}
             onOpenChange={() => setOpen?.(false)}
           />
         ))}

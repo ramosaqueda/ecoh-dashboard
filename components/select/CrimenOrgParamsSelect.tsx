@@ -3,6 +3,20 @@ import { useFormContext } from 'react-hook-form';
 import MultipleSelector, { Option } from '@/components/ui/multiple-selector';
 import CrimenOrgGauge from '@/components/CrimenorgGauge';
 
+// Interfaces para tipificar los datos
+interface ParametroCrimenOrg {
+  id: number;
+  label: string;
+  value: string;
+  description?: string;
+}
+
+interface CausaParametro {
+  parametroId: number;
+  causaId: number;
+  parametro?: ParametroCrimenOrg;
+}
+
 interface CrimenOrganizadoParamsProps {
   causaId?: string;
 }
@@ -24,9 +38,16 @@ const CrimenOrgParamsSelect: React.FC<CrimenOrganizadoParamsProps> = ({ causaId 
         if (!response.ok) {
           throw new Error('Error al cargar los parámetros');
         }
-        const data = await response.json();
+        const data: ParametroCrimenOrg[] = await response.json();
         console.log('Parámetros recibidos:', data);
-        setParams(Array.isArray(data) ? data : []);
+        
+        // Convertir a formato Option
+        const options = Array.isArray(data) ? data.map((param: ParametroCrimenOrg) => ({
+          value: param.id.toString(),
+          label: param.label
+        })) : [];
+        
+        setParams(options);
       } catch (error) {
         console.error('Error fetching Parámetros de Crimen Organizado:', error);
       }
@@ -44,11 +65,11 @@ const CrimenOrgParamsSelect: React.FC<CrimenOrganizadoParamsProps> = ({ causaId 
           if (!response.ok) {
             throw new Error('Error al cargar parámetros seleccionados');
           }
-          const data = await response.json();
+          const data: CausaParametro[] = await response.json();
           console.log('Parámetros seleccionados recibidos:', data);
           
           // Mapear los parámetros a formato Option
-          const selectedOptions = data.map(item => ({
+          const selectedOptions = data.map((item: CausaParametro) => ({
             value: item.parametroId.toString(),
             label: item.parametro?.label || `Parámetro ${item.parametroId}`
           }));

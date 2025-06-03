@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/popover';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { OrganizacionFormValues, TipoOrganizacion } from '@/types/organizacion.types';
+import { OrganizacionFormValues, TipoOrganizacion } from '@/types/organizacion';
 
 interface GeneralFormProps {
   form: UseFormReturn<OrganizacionFormValues>;

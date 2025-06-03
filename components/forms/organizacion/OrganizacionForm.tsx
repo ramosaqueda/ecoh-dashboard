@@ -17,23 +17,33 @@ import {
   OrganizacionFormProps,
   OrganizacionFormValues,
   Miembro
-} from '@/types/organizacion.types';
+} from '@/types/organizacion';
 
-function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
+// Extender el tipo para incluir id opcional para modo edición
+interface ExtendedOrganizacionFormProps extends OrganizacionFormProps {
+  initialData?: Partial<OrganizacionFormValues> & {
+    id?: number; // Agregar id opcional para modo edición
+    miembros?: Miembro[];
+    causas?: any[];
+  };
+}
+
+function OrganizacionForm({ initialData, onSubmit }: ExtendedOrganizacionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTab, setCurrentTab] = useState('general');
   const [selectedMiembros, setSelectedMiembros] = useState<Miembro[]>(() => {
     if (!initialData?.miembros?.length) return [];
 
     return initialData.miembros.map((miembro) => ({
-      id: miembro.id,
-      organizacionId: miembro.organizacionId,
-      imputadoId: miembro.imputadoId.toString(),
+      ...((miembro as any).id && { id: (miembro as any).id }), // Safe access para id opcional
+      ...((miembro as any).organizacionId && { organizacionId: (miembro as any).organizacionId }), // Safe access para organizacionId opcional
+      imputadoId: miembro.imputadoId, // Ya es string según la interface
       rol: miembro.rol || '',
       orden: miembro.orden || 0,
       fechaIngreso: new Date(miembro.fechaIngreso),
       fechaSalida: miembro.fechaSalida ? new Date(miembro.fechaSalida) : null,
-      imputado: miembro.imputado
+      activo: (miembro as any).activo ?? true, // Safe access para activo opcional
+      imputado: (miembro as any).imputado
     }));
   });
 
@@ -113,13 +123,13 @@ function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
       for (const miembro of selectedMiembros) {
         const miembroData = {
           organizacionId: organizacionResponse.id,
-          imputadoId: parseInt(miembro.imputadoId),
+          imputadoId: miembro.imputadoId, // Ya es string
           rol: miembro.rol || '',
           fechaIngreso: miembro.fechaIngreso.toISOString(),
           fechaSalida: miembro.fechaSalida
             ? miembro.fechaSalida.toISOString()
             : null,
-          activo: true
+          activo: miembro.activo ?? true
         };
 
         console.log('Enviando miembro:', miembroData);
@@ -168,6 +178,7 @@ function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
         orden: selectedMiembros.length,
         fechaIngreso: new Date(),
         fechaSalida: null,
+        activo: true,
         imputado: undefined
       }
     ]);
@@ -227,7 +238,16 @@ function OrganizacionForm({ initialData, onSubmit }: OrganizacionFormProps) {
           
           <TabsContent value="causas">
             {initialData?.id ? (
-              <CausasForm organization={initialData} />
+              <CausasForm 
+                organization={{
+                  id: initialData.id,
+                  nombre: initialData.nombre || ''
+                }}
+                onClose={() => {
+                  // En el contexto de tabs, no necesitamos cerrar nada
+                  // Mantenemos vacío o podríamos cambiar de tab si fuera necesario
+                }}
+              />
             ) : (
               <div className="p-8 text-center border rounded-md bg-muted/10">
                 <p className="text-muted-foreground">

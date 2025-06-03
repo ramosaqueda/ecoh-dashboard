@@ -28,6 +28,12 @@ export type Telefono = {
   }[];
 };
 
+// Interfaz personalizada para meta con las funciones necesarias
+interface TelefonoTableMeta {
+  onEdit?: (telefono: Telefono) => void;
+  onDelete?: (id: string) => void;
+}
+
 const CausasCell = ({ telefono }: { telefono: Telefono }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -106,7 +112,7 @@ export const columns: ColumnDef<Telefono>[] = [
     id: 'actions',
     cell: ({ row, table }) => {
       const telefono = row.original;
-      const { onEdit, onDelete } = table.options.meta || {};
+      const { onEdit, onDelete } = (table.options.meta as TelefonoTableMeta) || {};
 
       return (
         <div className="flex items-center gap-2">

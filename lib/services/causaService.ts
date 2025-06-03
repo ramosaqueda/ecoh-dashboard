@@ -165,16 +165,12 @@ export const causaService = {
   /**
    * Transforma los datos del formulario para enviar al servidor
    */
-
-  /**
-   * Transforma los datos del formulario para enviar al servidor
-   */
-  transformFormData(data: CausaFormData) {
+  transformFormData(data: CausaFormData): Record<string, any> {
     // Log para depuración
     console.log('Datos originales del formulario:', data);
     console.log('causasCrimenOrg en datos originales:', data.causasCrimenOrg);
 
-    const transformedData = {
+    const transformedData: Record<string, any> = {
       // Campos booleanos
       causaEcoh: data.causaEcoh,
       causaLegada: data.causaLegada,
@@ -232,38 +228,33 @@ export const causaService = {
           : 2
     };
 
-    // Eliminar campos nulos o undefined
-    Object.keys(transformedData).forEach((key) => {
-      if (transformedData[key] === null || transformedData[key] === undefined) {
-        delete transformedData[key];
+    // Eliminar campos nulos o undefined usando Object.entries
+    const cleanedData: Record<string, any> = {};
+    Object.entries(transformedData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        cleanedData[key] = value;
       }
     });
 
     // Log para depuración
-    console.log('Datos transformados para enviar al API:', transformedData);
-    console.log(
-      'causasCrimenOrg en datos transformados:',
-      transformedData.causasCrimenOrg
-    );
+    console.log('Datos transformados para enviar al API:', cleanedData);
+    console.log('causasCrimenOrg en datos transformados:', cleanedData.causasCrimenOrg);
 
-    return transformedData;
+    return cleanedData;
   },
 
   /**
    * Transforma los datos iniciales para el formulario
    */
-  /**
-   * Transforma los datos iniciales para el formulario
-   */
-  transformInitialData(data: any) {
+  transformInitialData(data: any): Record<string, any> {
     if (!data) return {};
 
     console.log('Datos recibidos para inicializar formulario:', data);
 
     // Extraer los IDs de los parámetros de crimen organizado si existen
-    let causasCrimenOrg = [];
+    let causasCrimenOrg: number[] = [];
     if (data.causasCrimenOrg && Array.isArray(data.causasCrimenOrg)) {
-      causasCrimenOrg = data.causasCrimenOrg.map((item) =>
+      causasCrimenOrg = data.causasCrimenOrg.map((item: any) =>
         item.parametroId ? item.parametroId : parseInt(item.toString())
       );
     }

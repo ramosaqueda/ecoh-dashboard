@@ -22,8 +22,26 @@ import {
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { useState, useCallback, useRef } from 'react';
-import debounce from 'lodash/debounce';
 
+// Función debounce personalizada
+function debounce<T extends (...args: any[]) => void>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout | null = null;
+  
+  return function (...args: Parameters<T>) {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+}
+
+// Interfaces de tipos
 interface TipoOrganizacion {
   id: number;
   nombre: string;
@@ -44,7 +62,7 @@ interface GraphControlsProps {
   svgRef: React.RefObject<SVGSVGElement>;
 }
 
-export const GraphControls = ({
+export const GraphControls: React.FC<GraphControlsProps> = ({
   onSearch,
   tipoOrganizacion,
   onTipoChange,
@@ -57,8 +75,8 @@ export const GraphControls = ({
   nodeSize,
   onNodeSizeChange,
   svgRef
-}: GraphControlsProps) => {
-  const [searchValue, setSearchValue] = useState('');
+}) => {
+  const [searchValue, setSearchValue] = useState<string>('');
   const formRef = useRef<HTMLFormElement>(null);
 
   // Debounced search function
@@ -69,18 +87,18 @@ export const GraphControls = ({
     [onSearch]
   );
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const value = e.target.value;
     setSearchValue(value);
     debouncedSearch(value);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     onSearch(searchValue);
   };
 
-  const handleClearSearch = () => {
+  const handleClearSearch = (): void => {
     setSearchValue('');
     onSearch('');
     if (formRef.current) {
@@ -88,7 +106,7 @@ export const GraphControls = ({
     }
   };
 
-  const handleTipoChange = (value: string) => {
+  const handleTipoChange = (value: string): void => {
     onTipoChange(value);
   };
 
@@ -107,8 +125,13 @@ export const GraphControls = ({
     [onNodeSizeChange]
   );
 
+  const handleSliderChange = (values: number[], onChange: (value: number) => void): void => {
+    const [value] = values;
+    onChange(value);
+  };
+
   return (
-    <Card className={`p-4 ${className}`}>
+    <Card className={`p-4 ${className || ''}`}>
       <div className="flex flex-wrap items-center gap-4">
         <form 
           ref={formRef}
@@ -184,7 +207,7 @@ export const GraphControls = ({
                   </div>
                   <Slider
                     value={[linkDistance]}
-                    onValueChange={([value]) => debouncedLinkDistanceChange(value)}
+                    onValueChange={(values) => handleSliderChange(values, debouncedLinkDistanceChange)}
                     min={100}
                     max={400}
                     step={50}
@@ -204,7 +227,7 @@ export const GraphControls = ({
                   </div>
                   <Slider
                     value={[nodeSize]}
-                    onValueChange={([value]) => debouncedNodeSizeChange(value)}
+                    onValueChange={(values) => handleSliderChange(values, debouncedNodeSizeChange)}
                     min={10}
                     max={30}
                     step={5}

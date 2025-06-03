@@ -7,6 +7,14 @@ import { ArrowUpDown, Edit, Trash2, FileText, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type Imputado } from '@/types/causaimputado';
 
+// Interfaz personalizada para meta con las funciones necesarias
+interface ImputadoTableMeta {
+  onViewCausas?: (imputado: Imputado) => void;
+  onEdit?: (imputado: Imputado) => void;
+  onDelete?: (id: number) => void;
+  onView?: (imputado: Imputado) => void;
+}
+
 export const columns: ColumnDef<Imputado>[] = [
   // nombreImputado
   {
@@ -59,7 +67,7 @@ export const columns: ColumnDef<Imputado>[] = [
     header: 'Causas',
     cell: ({ row, table }) => {
       const imputado = row.original;
-      const { onViewCausas } = table.options.meta || {};
+      const { onViewCausas } = (table.options.meta as ImputadoTableMeta) || {};
       const causasCount = imputado.causas?.length || 0;
 
       return causasCount > 0 ? (
@@ -82,7 +90,7 @@ export const columns: ColumnDef<Imputado>[] = [
     id: 'actions',
     cell: ({ row, table }) => {
       const imputado = row.original;
-      const { onEdit, onDelete, onView } = table.options.meta || {};
+      const { onEdit, onDelete, onView } = (table.options.meta as ImputadoTableMeta) || {};
 
       return (
         <div className="flex items-center gap-2">

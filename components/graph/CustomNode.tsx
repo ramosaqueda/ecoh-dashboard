@@ -14,12 +14,37 @@ interface CustomNodeProps {
   isConnectable: boolean;
 }
 
-const CustomNode = ({ data, isConnectable }: CustomNodeProps) => {
+const CustomNode: React.FC<CustomNodeProps> = ({ data, isConnectable }) => {
+  // Función para manejar errores de imagen con type safety
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>): void => {
+    const img = e.currentTarget; // Usar currentTarget para mejor type safety
+    
+    // Verificar si ya se intentó el placeholder
+    if (img.src.includes('placeholder-person.png')) {
+      // Si el placeholder también falla, reemplazar con icono
+      const parent = img.parentElement;
+      if (parent) {
+        parent.innerHTML = `
+          <div class="w-6 h-6 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-green-700">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+        `;
+      }
+    } else {
+      // Primer intento: usar imagen placeholder
+      img.onerror = null; // Prevenir loop infinito
+      img.src = '/placeholder-person.png';
+    }
+  };
+
   // Determinar colores según el tipo de nodo
   let bgColor = 'bg-gray-100';
   let borderColor = 'border-gray-500';
   let textColor = 'text-gray-900';
-  let icon = null;
+  let icon: React.ReactNode = null;
 
   switch (data.type) {
     case 'organization':
@@ -38,12 +63,7 @@ const CustomNode = ({ data, isConnectable }: CustomNodeProps) => {
             src={data.photoUrl} 
             alt={data.name} 
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/placeholder-person.png'; // Imagen placeholder
-              // Reemplazar la imagen con el icono como fallback
-              e.target.parentElement.innerHTML = '<div class="w-6 h-6 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-green-700"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>';
-            }}
+            onError={handleImageError}
           />
         </div>
       ) : (

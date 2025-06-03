@@ -13,9 +13,92 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Interfaces de tipos
+interface TipoOrganizacion {
+  id: number;
+  nombre: string;
+}
+
+interface Nacionalidad {
+  id: number;
+  nombre: string;
+}
+
+interface Tribunal {
+  id: number;
+  nombre: string;
+}
+
+interface Fiscal {
+  id: number;
+  nombre: string;
+}
+
+interface Delito {
+  id: number;
+  nombre: string;
+}
+
+interface Imputado {
+  id: number;
+  nombreSujeto: string;
+  docId?: string;
+  fotoPrincipal?: string;
+  alias?: string;
+  caracterisiticas?: string;
+  nacionalidad?: Nacionalidad;
+}
+
+interface Miembro {
+  id: number;
+  rol?: string;
+  imputado?: Imputado;
+}
+
+interface Causa {
+  id: number;
+  ruc?: string;
+  denominacionCausa: string;
+  fechaDelHecho?: string;
+  observacion?: string;
+  tribunal?: Tribunal;
+  fiscal?: Fiscal;
+  delito?: Delito;
+}
+
+interface CausaRelacion {
+  id: number;
+  causa?: Causa;
+}
+
+interface Organization {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  fechaIdentificacion: string;
+  activa: boolean;
+  tipoOrganizacion?: TipoOrganizacion;
+  miembros?: Miembro[];
+  causas?: CausaRelacion[];
+}
+
 interface DetailPanelProps {
   node: any;
   onClose: () => void;
+}
+
+interface OrganizationDetailsProps {
+  org: Organization;
+}
+
+interface ImputadoDetailsProps {
+  imputado: Imputado;
+  role?: string;
+}
+
+interface CausaDetailsProps {
+  causa: Causa;
+  delito?: string;
 }
 
 export const DetailPanel: React.FC<DetailPanelProps> = ({ node, onClose }) => {
@@ -23,8 +106,8 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ node, onClose }) => {
 
   // Determinar título y contenido según el tipo de nodo
   let title = '';
-  let icon = null;
-  let content = null;
+  let icon: React.ReactNode = null;
+  let content: React.ReactNode = null;
 
   switch (node.type) {
     case 'organization':
@@ -62,8 +145,18 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ node, onClose }) => {
   );
 };
 
+// Función para manejar errores de imagen
+const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, fallbackHtml: string): void => {
+  const img = e.currentTarget;
+  img.onerror = null;
+  const parent = img.parentElement;
+  if (parent) {
+    parent.innerHTML = fallbackHtml;
+  }
+};
+
 // Componente para detalles de organización
-const OrganizationDetails = ({ org }) => {
+const OrganizationDetails: React.FC<OrganizationDetailsProps> = ({ org }) => {
   if (!org) return <p>No hay datos disponibles</p>;
 
   return (
@@ -143,10 +236,9 @@ const OrganizationDetails = ({ org }) => {
                             src={miembro.imputado.fotoPrincipal}
                             alt={miembro.imputado.nombreSujeto}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.parentElement.innerHTML = '<div class="w-8 h-8 bg-green-100 flex items-center justify-center rounded-full"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-700"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg></div>';
-                            }}
+                            onError={(e) => handleImageError(e, 
+                              '<div class="w-8 h-8 bg-green-100 flex items-center justify-center rounded-full"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-700"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="10" r="3"></circle><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"></path></svg></div>'
+                            )}
                           />
                         </div>
                       ) : (
@@ -209,10 +301,16 @@ const OrganizationDetails = ({ org }) => {
 };
 
 // Componente para detalles de imputado
-const ImputadoDetails = ({ imputado, role }) => {
-  const [showFullPhoto, setShowFullPhoto] = useState(false);
+const ImputadoDetails: React.FC<ImputadoDetailsProps> = ({ imputado, role }) => {
+  const [showFullPhoto, setShowFullPhoto] = useState<boolean>(false);
   
   if (!imputado) return <p>No hay datos disponibles</p>;
+
+  const handlePhotoError = (e: React.SyntheticEvent<HTMLImageElement>): void => {
+    const img = e.currentTarget;
+    img.onerror = null;
+    img.style.display = 'none';
+  };
 
   return (
     <div className="space-y-4">
@@ -233,10 +331,7 @@ const ImputadoDetails = ({ imputado, role }) => {
                   src={imputado.fotoPrincipal} 
                   alt={imputado.nombreSujeto} 
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.style.display = 'none';
-                  }}
+                  onError={handlePhotoError}
                 />
               </div>
               <p className="text-xs text-center mt-1 text-muted-foreground">
@@ -304,7 +399,7 @@ const ImputadoDetails = ({ imputado, role }) => {
 };
 
 // Componente para detalles de causa
-const CausaDetails = ({ causa, delito }) => {
+const CausaDetails: React.FC<CausaDetailsProps> = ({ causa, delito }) => {
   if (!causa) return <p>No hay datos disponibles</p>;
 
   return (

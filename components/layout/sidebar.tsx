@@ -22,6 +22,15 @@ const Sidebar = ({ className }: SidebarProps) => {
   const { user } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Debug logs
+  console.log('Sidebar render - isMinimized:', isMinimized);
+
+  const handleToggle = () => {
+    console.log('Toggle clicked - current isMinimized:', isMinimized);
+    toggle();
+    console.log('Toggle called - new isMinimized should be:', !isMinimized);
+  };
+
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user?.id) {
@@ -55,7 +64,7 @@ const Sidebar = ({ className }: SidebarProps) => {
                 <h1>Sidebar</h1>
               </Link>
             </div>
-            <DashboardNav items={navItems} />
+            <DashboardNav items={navItems} isMobileNav={true} />
             {isAdmin && (
               <div className="px-3 py-2">
                 <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
@@ -77,26 +86,27 @@ const Sidebar = ({ className }: SidebarProps) => {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <aside
-        className={cn(
-          'fixed left-0 z-20 flex h-screen flex-col border-r bg-card transition-all duration-300 ease-in-out md:relative',
-          isMinimized ? 'w-[72px]' : 'w-72',
-          className
-        )}
-      >
-        {/* Toggle Button */}
+      <div className="relative">
+        {/* Toggle Button - Posición ajustada para evitar traslape */}
         <Button
           variant="ghost"
           size="icon"
           className={cn(
-            'absolute -right-3 top-6 z-50 h-6 w-6 rounded-full border bg-background shadow-md',
-            isMinimized ? 'rotate-180' : 'rotate-0'
+            'fixed top-20 z-50 h-6 w-6 rounded-full border bg-background shadow-md hover:bg-accent transition-all duration-300',
+            isMinimized ? 'left-[60px] rotate-180' : 'left-[276px] rotate-0'
           )}
-          onClick={toggle}
+          onClick={handleToggle}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
+        <aside
+          className={cn(
+            'fixed left-0 z-20 flex h-screen flex-col border-r bg-card transition-all duration-300 ease-in-out md:relative',
+            isMinimized ? 'w-[72px]' : 'w-72',
+            className
+          )}
+        >
         {/* Header with Logo */}
         <div className="flex h-16 items-center px-4">
           <div
@@ -104,7 +114,12 @@ const Sidebar = ({ className }: SidebarProps) => {
               'w-full transition-all duration-300 ease-in-out',
               isMinimized ? 'opacity-0' : 'opacity-100'
             )}
-          />
+          >
+            {!isMinimized && (
+             <p className="text-xs text-gray-900 dark:text-white">ECOH/SACFI</p>
+
+            )}
+          </div>
         </div>
 
         {/* Navigation */}
@@ -175,7 +190,8 @@ const Sidebar = ({ className }: SidebarProps) => {
             </div>
           </div>
         </div>
-      </aside>
+              </aside>
+      </div>
     </>
   );
 };

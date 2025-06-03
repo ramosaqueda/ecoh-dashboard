@@ -8,18 +8,25 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { type ImputadoDetail, type CausaImputado } from '@/types/imputado';
 
-if (pdfMake && pdfFonts && pdfFonts.pdfMake?.vfs) {
-    (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
+// Configuración de fuentes para pdfMake con tipado correcto
+if (typeof window !== 'undefined' && pdfMake.vfs === undefined) {
+    (pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
 }
 
 interface ImputadoPdfProps {
     imputadoData: ImputadoDetail;
 }
 
+interface PhotoData {
+    id: string;
+    url: string;
+    createdAt: string;
+}
+
 const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
     const [isLoading, setIsLoading] = useState(false);
 
-    const fetchImputadoPhotos = async (imputadoId: string) => {
+    const fetchImputadoPhotos = async (imputadoId: string): Promise<PhotoData[]> => {
         try {
             const response = await fetch(`/api/imputado/${imputadoId}/photos`);
             if (!response.ok) throw new Error('Error fetching photos');
@@ -48,9 +55,10 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
         });
     };
 
-    const formatDate = (date: string | null): string => {
+    const formatDate = (date: string | Date | null): string => {
         if (!date) return '-';
-        return format(new Date(date), "d 'de' MMMM 'de' yyyy", { locale: es });
+        const dateObj = date instanceof Date ? date : new Date(date);
+        return format(dateObj, "d 'de' MMMM 'de' yyyy", { locale: es });
     };
 
     const getCurrentDateTime = (): string => {
@@ -68,7 +76,7 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
 
     const getCausasContent = (causas: CausaImputado[]) => {
         return causas.map(causa => {
-            const badges = [];
+            const badges: string[] = [];
             
             if (causa.formalizado) badges.push('Formalizado');
             if (causa.esimputado) badges.push('Imputado');
@@ -125,12 +133,12 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
         try {
             // Obtener las fotos
             const photos = await fetchImputadoPhotos(imputadoData.id.toString());
-            let photosContent = [];
+            let photosContent: any[] = [];
             
             if (photos && photos.length > 0) {
-                const photoRows = [];
+                const photoRows: any[] = [];
                 for (let i = 0; i < photos.length; i += 2) {
-                    const row = {
+                    const row: any = {
                         columns: []
                     };
                     
@@ -195,7 +203,8 @@ const ImputadoPdfGenerator: React.FC<ImputadoPdfProps> = ({ imputadoData }) => {
                     ...photoRows
                 ];
             }
-            const documentDefinition = {
+
+            const documentDefinition: any = {
                 pageSize: 'A4',
                 pageMargins: [40, 60, 40, 60],
                 header: {

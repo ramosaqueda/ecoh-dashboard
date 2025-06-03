@@ -26,6 +26,12 @@ export type Actividad = {
   };
 };
 
+// Interfaz personalizada para meta con las funciones necesarias
+interface ActividadTableMeta {
+  onEdit?: (actividad: Actividad) => void;
+  onDelete?: (id: number) => void;
+}
+
 const estadoBadgeColors = {
   inicio: 'bg-yellow-100 text-yellow-800',
   en_proceso: 'bg-blue-100 text-blue-800',
@@ -93,7 +99,7 @@ export const columns: ColumnDef<Actividad>[] = [
     id: 'actions',
     cell: ({ row, table }) => {
       const actividad = row.original;
-      const { onEdit, onDelete } = table.options.meta || {};
+      const { onEdit, onDelete } = (table.options.meta as ActividadTableMeta) || {};
 
       return (
         <div className="flex justify-end gap-2">

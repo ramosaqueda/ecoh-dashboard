@@ -20,10 +20,30 @@ import {
 import { ChevronDown, CalendarDays, GavelIcon, FileText } from 'lucide-react';
 import { useState } from 'react';
 
+// Interfaz extendida para la causa
+interface CausaExtendida {
+  ruc: string;
+  denominacionCausa?: string;
+  rit?: string;
+  delito?: {
+    id: number;
+    nombre: string;
+  };
+  tribunal?: {
+    id: number;
+    nombre: string;
+  };
+}
+
+// Interfaz extendida para CausaImputado
+interface CausaImputadoExtendida extends Omit<CausaImputado, 'causa'> {
+  causa?: CausaExtendida;
+}
+
 interface CausasModalProps {
   isOpen: boolean;
   onClose: () => void;
-  causas: CausaImputado[];
+  causas: CausaImputadoExtendida[];
   nombreSujeto: string;
   onUpdateCausa?: (
     causaId: number,
@@ -68,16 +88,16 @@ export function CausasModal({
               <div className="mb-4 flex items-center justify-between">
                 <div className="space-y-1">
                   <h3 className="text-lg font-semibold">
-                    {causa.causa.denominacionCausa}
+                    {causa.causa?.denominacionCausa || 'Sin denominación'}
                   </h3>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {causa.causa.ruc && (
+                    {causa.causa?.ruc && (
                       <span className="flex items-center gap-1">
                         <FileText className="h-4 w-4" />
                         RUC: {causa.causa.ruc}
                       </span>
                     )}
-                    {causa.causa.rit && (
+                    {causa.causa?.rit && (
                       <span className="flex items-center gap-1">
                         <GavelIcon className="h-4 w-4" />
                         RIT: {causa.causa.rit}
@@ -85,7 +105,7 @@ export function CausasModal({
                     )}
                   </div>
                 </div>
-                {causa.causa.delito && (
+                {causa.causa?.delito && (
                   <Badge variant="secondary" className="h-fit">
                     {causa.causa.delito.nombre}
                   </Badge>
@@ -146,7 +166,7 @@ export function CausasModal({
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-2">
                   <div className="space-y-2 rounded-lg bg-accent/50 p-3">
-                    {causa.causa.tribunal && (
+                    {causa.causa?.tribunal && (
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">
                           Tribunal: {causa.causa.tribunal.nombre}

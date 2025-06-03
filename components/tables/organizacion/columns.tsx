@@ -22,6 +22,12 @@ export type Organization = {
   };
 };
 
+// Interfaz personalizada para meta con las funciones necesarias
+interface OrganizationTableMeta {
+  onEdit?: (organization: Organization) => void;
+  onDelete?: (organization: Organization) => void;
+}
+
 export const columns: ColumnDef<Organization>[] = [
   {
     accessorKey: 'nombre',
@@ -52,6 +58,7 @@ export const columns: ColumnDef<Organization>[] = [
     id: 'actions',
     cell: ({ row, table }) => {
       const organization = row.original;
+      const { onEdit, onDelete } = (table.options.meta as OrganizationTableMeta) || {};
 
       return (
         <div className="flex gap-2">
@@ -77,14 +84,14 @@ export const columns: ColumnDef<Organization>[] = [
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => table.options.meta?.onEdit(organization)}
+            onClick={() => onEdit?.(organization)}
           >
             <Edit className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => table.options.meta?.onDelete(organization)}
+            onClick={() => onDelete?.(organization)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

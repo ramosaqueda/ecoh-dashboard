@@ -9,10 +9,9 @@ export const metadata: Metadata = {
 
 export default function OrganizacionPage() {
   return (
-    <main>
-      <OrganizationDashboard onClose={function (): void {
-        throw new Error('Function not implemented.');
-      } } />
+    <main className="container mx-auto py-6">
+      {/* ✅ No pasar props de función */}
+      <OrganizationDashboard />
     </main>
   );
 }

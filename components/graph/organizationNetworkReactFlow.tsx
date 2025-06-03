@@ -5,11 +5,11 @@ import dynamic from 'next/dynamic';
 import { 
   Background, 
   Controls, 
-  MiniMap,
+  
   useNodesState, 
   useEdgesState, 
   addEdge,
-  Position,
+  Connection,        // ✅ IMPORTAR Connection
   MarkerType,
   Node,
   Edge,
@@ -201,7 +201,7 @@ const OrganizationNetworkReactFlow = ({ organizationId }: OrganizationNetworkRea
   }, [organizacion, processData]);
 
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),  // ✅ Tipado correcto
     [setEdges]
   );
 

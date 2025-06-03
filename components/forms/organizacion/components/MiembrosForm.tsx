@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import MiembroItem from './MiembroItem';
 
-import { Imputado, Miembro } from '@/types/organizacion.types';
+import { Imputado, Miembro } from '@/types/organizacion';
 
 // ✅ Interfaces TypeScript específicas
 interface MiembrosFormProps {

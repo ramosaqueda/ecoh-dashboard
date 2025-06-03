@@ -29,37 +29,75 @@ import {
 } from "@/components/ui/alert-dialog";
 import ImputadoCombobox from './components/ImputadoCombobox'; // Ajusta la ruta según sea necesario
 
-const AddMemberForm = ({ organization, onClose, onSuccess }) => {
-  const [formData, setFormData] = useState({
+// Importar tipos existentes del proyecto
+import type { 
+  Miembro, 
+  Imputado 
+} from '@/types/organizacion';
+
+// Definir interface Organization localmente (no existe en organizacion.ts)
+interface Organization {
+  id: number;
+  nombre: string;
+}
+
+interface MemberFormData {
+  imputadoId: string | '';
+  rol: string;
+  fechaIngreso: string;
+  fechaSalida: null;
+  activo: boolean;
+}
+
+interface AddMemberFormProps {
+  organization: Organization;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
+
+interface MembersFormProps {
+  organization: Organization;
+  onClose: () => void;
+}
+
+const AddMemberForm: React.FC<AddMemberFormProps> = ({ organization, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState<MemberFormData>({
     imputadoId: '',
     rol: '',
     fechaIngreso: new Date().toISOString().split('T')[0],
     fechaSalida: null,
     activo: true
   });
-  const [imputados, setImputados] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [imputados, setImputados] = useState<Imputado[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchImputados();
   }, []);
 
-  const fetchImputados = async () => {
+  const fetchImputados = async (): Promise<void> => {
     try {
       const response = await fetch('/api/imputado');
       if (!response.ok) throw new Error('Error al cargar imputados');
-      const data = await response.json();
+      const data: Imputado[] = await response.json();
       setImputados(data);
     } catch (error) {
-      setError(error.message);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+    
+    // Validar que se haya seleccionado un imputado
+    if (!formData.imputadoId || formData.imputadoId === '') {
+      setError('Debe seleccionar un imputado');
+      return;
+    }
+    
     try {
       const response = await fetch(`/api/organizacion/${organization.id}/miembros`, {
         method: 'POST',
@@ -72,7 +110,7 @@ const AddMemberForm = ({ organization, onClose, onSuccess }) => {
       onSuccess?.();
       onClose();
     } catch (error) {
-      setError(error.message);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
     }
   };
 
@@ -87,8 +125,8 @@ const AddMemberForm = ({ organization, onClose, onSuccess }) => {
       <div>
         <label className="block text-sm font-medium mb-1">Imputado</label>
         <ImputadoCombobox
-          value={formData.imputadoId.toString()}
-          onChange={(value) => setFormData({...formData, imputadoId: parseInt(value)})}
+          value={formData.imputadoId}
+          onChange={(value: string) => setFormData({...formData, imputadoId: value})}
           imputados={imputados}
           isDisabled={loading}
           error={error ? "Error al cargar imputados" : undefined}
@@ -126,13 +164,13 @@ const AddMemberForm = ({ organization, onClose, onSuccess }) => {
   );
 };
 
-const MembersForm = ({ organization, onClose }) => {
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [memberToDelete, setMemberToDelete] = useState(null);
-  const [deleteError, setDeleteError] = useState(null);
+const MembersForm: React.FC<MembersFormProps> = ({ organization, onClose }) => {
+  const [members, setMembers] = useState<Miembro[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddMember, setShowAddMember] = useState<boolean>(false);
+  const [memberToDelete, setMemberToDelete] = useState<Miembro | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (organization) {
@@ -140,21 +178,21 @@ const MembersForm = ({ organization, onClose }) => {
     }
   }, [organization]);
 
-  const fetchMembers = async () => {
+  const fetchMembers = async (): Promise<void> => {
     try {
       setLoading(true);
       const response = await fetch(`/api/organizacion/${organization.id}/miembros`);
       if (!response.ok) throw new Error('Error al cargar los miembros');
-      const data = await response.json();
+      const data: Miembro[] = await response.json();
       setMembers(data);
     } catch (error) {
-      setError(error.message);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteMember = async (memberId) => {
+  const handleDeleteMember = async (memberId: number): Promise<void> => {
     try {
       const response = await fetch(
         `/api/organizacion/${organization.id}/miembros/${memberId}`, 
@@ -169,7 +207,7 @@ const MembersForm = ({ organization, onClose }) => {
       setMemberToDelete(null);
       setDeleteError(null);
     } catch (error) {
-      setDeleteError(error.message);
+      setDeleteError(error instanceof Error ? error.message : 'Error desconocido');
     }
   };
 
@@ -230,7 +268,7 @@ const MembersForm = ({ organization, onClose }) => {
             <TableBody>
               {members.map((member) => (
                 <TableRow key={member.id}>
-                  <TableCell>{member.imputado.nombreSujeto}</TableCell>
+                  <TableCell>{member.imputado?.nombreSujeto}</TableCell>
                   <TableCell>{member.rol}</TableCell>
                   <TableCell>{new Date(member.fechaIngreso).toLocaleDateString()}</TableCell>
                   <TableCell>
@@ -285,7 +323,7 @@ const MembersForm = ({ organization, onClose }) => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => memberToDelete && handleDeleteMember(memberToDelete.id)}
+              onClick={() => memberToDelete?.id && handleDeleteMember(memberToDelete.id)}
             >
               Eliminar
             </AlertDialogAction>

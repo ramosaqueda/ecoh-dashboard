@@ -34,13 +34,14 @@ export function TelefonoCausaManager({
   const [asociaciones, setAsociaciones] = useState<TelefonoCausa[]>(initialCausas);
 
   useEffect(() => {
-    const fetchCausas = async () => {
+    const fetchCausas = async (): Promise<void> => {
       try {
         const response = await fetch('/api/causas');
         if (!response.ok) throw new Error('Error al cargar causas');
-        const data = await response.json();
+        const data: Causa[] = await response.json();
         setCausas(data);
       } catch (error) {
+        console.error('Error:', error);
         toast.error('Error al cargar las causas');
       }
     };
@@ -48,7 +49,7 @@ export function TelefonoCausaManager({
     fetchCausas();
   }, []);
 
-  const handleAsociar = async () => {
+  const handleAsociar = async (): Promise<void> => {
     if (!selectedCausaId) return;
 
     try {
@@ -64,11 +65,11 @@ export function TelefonoCausaManager({
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Error al asociar causa');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al asociar causa');
       }
 
-      const nuevaAsociacion = await response.json();
+      const nuevaAsociacion: TelefonoCausa = await response.json();
       setAsociaciones((prev) => [...prev, nuevaAsociacion]);
       setSelectedCausaId('');
       toast.success('Causa asociada exitosamente');
@@ -78,19 +79,20 @@ export function TelefonoCausaManager({
       }
     } catch (error) {
       console.error('Error:', error);
-      toast.error(error.message || 'Error al asociar la causa');
+      const errorMessage = error instanceof Error ? error.message : 'Error al asociar la causa';
+      toast.error(errorMessage);
     }
   };
 
-  const handleDesasociar = async (asociacionId: number) => {
+  const handleDesasociar = async (asociacionId: number): Promise<void> => {
     try {
       const response = await fetch(`/api/telefonos-causa/${asociacionId}`, {
         method: 'DELETE'
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Error al desasociar causa');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al desasociar causa');
       }
 
       setAsociaciones((prev) => prev.filter((a) => a.id !== asociacionId));
@@ -101,7 +103,8 @@ export function TelefonoCausaManager({
       }
     } catch (error) {
       console.error('Error:', error);
-      toast.error(error.message || 'Error al desasociar la causa');
+      const errorMessage = error instanceof Error ? error.message : 'Error al desasociar la causa';
+      toast.error(errorMessage);
     }
   };
 

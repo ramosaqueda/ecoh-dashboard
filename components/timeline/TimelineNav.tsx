@@ -36,12 +36,12 @@ export default function TimelineNav({ dates, onSelectDate, selectedDate }: Timel
   
   return (
     <div className="w-full bg-background/80 backdrop-blur-sm border-b sticky top-0 z-10 py-2">
-      <ScrollArea orientation="horizontal" className="w-full">
-        <div className="flex gap-2 px-4">
+      <ScrollArea className="w-full">
+        <div className="flex gap-2 px-4 overflow-x-auto min-w-max">
           {Object.entries(timeGroups).sort(([yearA], [yearB]) => 
             parseInt(yearA) - parseInt(yearB)
           ).map(([year, yearDates]) => (
-            <div key={year} className="flex flex-col gap-1">
+            <div key={year} className="flex flex-col gap-1 shrink-0">
               <div className="font-medium text-sm">{year}</div>
               <div className="flex gap-1">
                 {yearDates.sort((a, b) => 
@@ -59,7 +59,7 @@ export default function TimelineNav({ dates, onSelectDate, selectedDate }: Timel
                       key={`${date}-${index}`}
                       size="sm"
                       variant={isSelected ? "default" : "outline"}
-                      className="text-xs"
+                      className="text-xs shrink-0"
                       onClick={() => onSelectDate(date)}
                     >
                       {day} {month}

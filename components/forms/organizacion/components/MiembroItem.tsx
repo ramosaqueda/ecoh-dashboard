@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import ImputadoCombobox from './ImputadoCombobox';
-import { Miembro, Imputado } from '@/types/organizacion.types';
+import { Miembro, Imputado } from '@/types/organizacion';
 
 interface MiembroItemProps {
   miembro: Miembro;

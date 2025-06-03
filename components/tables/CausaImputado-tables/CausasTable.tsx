@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { CausaImputado } from '@/types/causaimputado';
+import { Causa } from '@/types/causaimputado'; // ← Importar el tipo Causa correcto
 import {
   CalendarDays,
   GavelIcon,
@@ -27,8 +28,13 @@ import {
 } from '@/components/ui/tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+// Interfaz para CausaImputado usando el tipo Causa correcto
+interface CausaImputadoConCausa extends Omit<CausaImputado, 'causa'> {
+  causa?: Causa; // ← Usar el tipo Causa que ya existe con delito y tribunal
+}
+
 interface CausasTableProps {
-  causas: CausaImputado[];
+  causas: CausaImputadoConCausa[];
 }
 
 export const CausasTable = ({ causas }: CausasTableProps) => {
@@ -55,7 +61,6 @@ export const CausasTable = ({ causas }: CausasTableProps) => {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[100px]">RUC</TableHead>
-
                 <TableHead>Estado</TableHead>
                 <TableHead>Formalización</TableHead>
                 <TableHead>Delito</TableHead>
@@ -68,7 +73,7 @@ export const CausasTable = ({ causas }: CausasTableProps) => {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
-                      {causa.causa.ruc}
+                      {causa.causa?.ruc || 'Sin RUC'}
                     </div>
                   </TableCell>
 
@@ -102,7 +107,7 @@ export const CausasTable = ({ causas }: CausasTableProps) => {
                   </TableCell>
 
                   <TableCell>
-                    {causa.causa.delito ? (
+                    {causa.causa?.delito ? (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
@@ -111,11 +116,11 @@ export const CausasTable = ({ causas }: CausasTableProps) => {
                               className="flex items-center gap-1"
                             >
                               <AlertCircle className="h-3 w-3" />
-                              {causa.causa.delito.nombre}
+                              {causa.causa?.delito?.nombre || 'Delito no especificado'}
                             </Badge>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>{causa.causa.delito.nombre}</p>
+                            <p>{causa.causa?.delito?.nombre || 'Delito no especificado'}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>

@@ -1,6 +1,6 @@
 // hooks/use-imputados.ts
 import { useState, useEffect } from 'react';
-import { type Imputado } from '@/types';
+import { type Imputado } from '@/types/causaimputado';
 import { useToast } from '@/components/ui/use-toast';
 
 export const useImputados = () => {

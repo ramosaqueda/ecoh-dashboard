@@ -11,20 +11,19 @@ export default function Header() {
   return (
     <header className="fixed left-0 right-0 top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/70">
       <nav className="h-16 px-2">
-        {' '}
-        {/* Reducimos el padding */}
         <div className="flex h-full items-center justify-between">
           {/* Logo y título + Mobile Sidebar */}
           <div className="flex items-center">
             <div className={cn('mr-2 block lg:!hidden')}>
               <MobileSidebar />
             </div>
-            <div className="flex items-center pl-0">
-              {' '}
-              {/* Eliminamos el padding izquierdo */}
-              <Logo className="h-8 w-8" />
-              <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">
-                ECOHInsight {/* Cambiamos el nombre a "ECOHInsight" */}
+            <div className="flex items-center pl-4">
+              {/* Logo sin restricción de ancho fijo */}
+              <div className="flex h-12 items-center justify-center">
+                <Logo />
+              </div>
+              <span className="ml-4 text-xl font-semibold text-gray-900 dark:text-white">
+                ECOHInsight  
               </span>
             </div>
           </div>

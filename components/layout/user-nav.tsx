@@ -1,6 +1,7 @@
 'use client';
 
 import { UserButton } from '@clerk/nextjs';
+import { useClerk } from '@clerk/nextjs'; // ← Agregar esta importación
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import { useSession } from '@clerk/clerk-react';
 
 export function UserNav() {
   const { isLoaded, session, isSignedIn } = useSession();
+  const { signOut } = useClerk(); // ← Obtener signOut del hook
 
   if (session) {
     return (
@@ -26,11 +28,10 @@ export function UserNav() {
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">
-                el cooreo del usuario es:
+                {session.user.firstName} {session.user.lastName}
               </p>
               <p className="text-xs leading-none text-muted-foreground">
-                el correo del usuario es:{' '}
-                {session.user.primaryEmailAddress.emailAddress}
+                {session.user.primaryEmailAddress?.emailAddress || 'No email disponible'}
               </p>
             </div>
           </DropdownMenuLabel>
@@ -51,7 +52,7 @@ export function UserNav() {
             <DropdownMenuItem>New Team</DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => signOut()}>
+          <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/' })}>
             Log out
             <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -59,4 +60,6 @@ export function UserNav() {
       </DropdownMenu>
     );
   }
+
+  return null; // ← Agregar return por si no hay sesión
 }

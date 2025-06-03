@@ -226,6 +226,12 @@ export default function ActividadesPage() {
     fetchActividades(tipoActividadFilter, newPage);
   };
 
+  // 🆕 Función para manejar la apertura del modal de TodoList
+  const handleViewTodos = (actividadId: number): void => {
+    console.log('Ver tareas para actividad:', actividadId);
+    // Opcionalmente puedes agregar lógica adicional aquí como tracking o logs
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -322,6 +328,7 @@ export default function ActividadesPage() {
           data={actividades}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onViewTodos={handleViewTodos} // 🆕 Nueva prop para manejar TodoList
           pageSize={pageSize}
           pageIndex={pageIndex}
           pageCount={pageCount}

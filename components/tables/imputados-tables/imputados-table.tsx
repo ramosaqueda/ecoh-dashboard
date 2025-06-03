@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CausasDrawer } from '@/components/drawer/causas-drawer';
 import { useToast } from '@/components/ui/use-toast';
-import { type Imputado } from '@/types';
+import { type Imputado } from '@/types/causaimputado'; // ← Corrección de importación
 import { Loader2 } from 'lucide-react';
 
 interface DataTableProps<TData, TValue> {

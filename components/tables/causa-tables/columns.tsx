@@ -43,6 +43,30 @@ export type Causa = {
   };
 };
 
+// Interface para CausaTableMeta
+interface CausaTableMeta {
+  onEdit?: (causa: Causa) => void;
+  onDelete?: (id: string) => void;
+}
+
+// Interface para props de DeleteButton
+interface DeleteButtonProps {
+  causa: Causa;
+  onDelete?: (id: string) => void;
+}
+
+// Interface para props de ActionsCell
+interface ActionsCellProps {
+  row: {
+    original: Causa;
+  };
+  table: {
+    options: {
+      meta?: CausaTableMeta;
+    };
+  };
+}
+
 const formatDate = (dateString: string | null) => {
   if (!dateString) return '-';
   try {
@@ -106,7 +130,7 @@ const ImputadosCell = ({ causa }: { causa: Causa }) => {
 };
 
 // Componente para el botón de eliminar con confirmación
-const DeleteButton = ({ causa, onDelete }) => {
+const DeleteButton = ({ causa, onDelete }: DeleteButtonProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { canDelete } = useUserPermissions();
   
@@ -137,14 +161,14 @@ const DeleteButton = ({ causa, onDelete }) => {
                 Esta acción no se puede deshacer y eliminará todos los datos asociados.
               </div>
               
-              {(causa._count?.imputados > 0 || 
-                (causa._count?.causasRelacionadasMadre || 0) > 0 || 
-                (causa._count?.causasRelacionadasArista || 0) > 0) && (
+              {((causa._count?.imputados || 0) > 0 || 
+                ((causa._count?.causasRelacionadasMadre || 0) > 0) || 
+                ((causa._count?.causasRelacionadasArista || 0) > 0)) && (
                 <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
                   <p className="text-amber-700 font-medium">¡Atención!</p>
                   <ul className="list-disc ml-5 text-amber-700 text-sm">
-                    {causa._count?.imputados > 0 && (
-                      <li>Esta causa tiene {causa._count.imputados} imputado(s) que también serán eliminados.</li>
+                    {(causa._count?.imputados || 0) > 0 && (
+                      <li>Esta causa tiene {causa._count?.imputados || 0} imputado(s) que también serán eliminados.</li>
                     )}
                     {((causa._count?.causasRelacionadasMadre || 0) + 
                       (causa._count?.causasRelacionadasArista || 0)) > 0 && (
@@ -161,7 +185,7 @@ const DeleteButton = ({ causa, onDelete }) => {
             <AlertDialogAction
               onClick={() => {
                 setShowDeleteDialog(false);
-                onDelete(causa.id);
+                onDelete?.(causa.id);
               }}
               className="bg-red-600 hover:bg-red-700"
             >
@@ -175,7 +199,7 @@ const DeleteButton = ({ causa, onDelete }) => {
 };
 
 // Componente de acciones extraído a un componente separado para poder usar hooks
-const ActionsCell = ({ row, table }) => {
+const ActionsCell = ({ row, table }: ActionsCellProps) => {
   const causa = row.original;
   const { onEdit, onDelete } = table.options.meta || {};
   const { canEdit } = useUserPermissions(); // Ahora es válido usar hooks aquí
