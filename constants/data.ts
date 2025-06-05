@@ -118,6 +118,12 @@ export const navItems: NavItem[] = [
     ]
   },
   {
+    title: 'Reportes',
+    href: '/dashboard/reportes',
+    icon: 'reporte',
+    label: 'reporte'
+  },
+  {
     title: 'Login',
     href: '/',
     icon: 'login',
