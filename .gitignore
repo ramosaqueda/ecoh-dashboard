@@ -43,3 +43,6 @@ next-env.d.ts
 
 # fotos
 /public/uploads
+
+/scriptsPowershell
+/dockerScript
