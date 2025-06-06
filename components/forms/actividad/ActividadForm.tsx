@@ -22,11 +22,13 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users } from 'lucide-react';
 import CausaSelector from '@/components/select/CausaSelector';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import dynamic from 'next/dynamic';
 
+// Schema actualizado con delegación
 const ActividadSchema = z
   .object({
     causaId: z.string().min(1, 'Debe seleccionar una causa'),
@@ -34,7 +36,8 @@ const ActividadSchema = z
     fechaInicio: z.string().min(1, 'Debe seleccionar una fecha de inicio'),
     fechaTermino: z.string().min(1, 'Debe seleccionar una fecha de término'),
     observacion: z.string().optional(),
-    estado: z.enum(['inicio', 'en_proceso', 'terminado'])
+    estado: z.enum(['inicio', 'en_proceso', 'terminado']),
+    usuarioAsignadoId: z.string().optional()
   })
   .refine((data) => data.fechaTermino >= data.fechaInicio, {
     message: 'La fecha de término debe ser posterior a la fecha de inicio',
@@ -45,6 +48,16 @@ interface TipoActividad {
   id: number;
   nombre: string;
   activo: boolean;
+}
+
+interface Usuario {
+  id: number;
+  email: string;
+  nombre?: string;
+  rol: {
+    id: number;
+    nombre: string;
+  };
 }
 
 export type ActividadFormValues = z.infer<typeof ActividadSchema>;
@@ -60,8 +73,77 @@ interface ActividadFormProps {
     fechaTermino: string;
     estado: 'inicio' | 'en_proceso' | 'terminado';
     observacion?: string;
+    usuarioAsignadoId?: string;
   };
 }
+
+// 🔥 COMPONENTE DE DELEGACIÓN SEPARADO - Solo cliente
+const DelegationField = ({ field, userRole }: { field: any; userRole: number | null }) => {
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsuarios = async () => {
+      try {
+        const response = await fetch('/api/usuarios?roles=2,3,4');
+        if (response.ok) {
+          const data = await response.json();
+          setUsuarios(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsuarios();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Cargando usuarios...
+      </div>
+    );
+  }
+
+  return (
+    <FormItem>
+      <FormLabel className="flex items-center gap-2">
+        <Users className="h-4 w-4" />
+        Delegar Actividad
+      </FormLabel>
+      <FormControl>
+        <select
+          className="w-full p-2 border rounded-md bg-background"
+          value={field.value || ""}
+          onChange={(e) => field.onChange(e.target.value)}
+        >
+          <option value="">Sin delegar (yo me haré cargo)</option>
+          {usuarios.map((usuario) => (
+            <option key={usuario.id} value={usuario.id.toString()}>
+              {usuario.nombre || usuario.email} - {usuario.rol?.nombre || 'Sin rol'}
+            </option>
+          ))}
+        </select>
+      </FormControl>
+      <p className="text-xs text-muted-foreground">
+        Como {userRole === 1 ? 'Admin' : userRole === 4 ? 'Manager' : 'Usuario'}, puedes delegar esta actividad.
+      </p>
+    </FormItem>
+  );
+};
+
+// 🔥 COMPONENTE DINÁMICO - Solo se renderiza en cliente
+const DynamicDelegationField = dynamic(
+  () => Promise.resolve(DelegationField),
+  { 
+    ssr: false,
+    loading: () => <div className="h-20 flex items-center text-sm text-muted-foreground">Cargando opciones de delegación...</div>
+  }
+);
 
 export default function ActividadForm({
   onSubmit,
@@ -70,6 +152,7 @@ export default function ActividadForm({
 }: ActividadFormProps) {
   const [tiposActividad, setTiposActividad] = useState<TipoActividad[]>([]);
   const [isLoadingTipos, setIsLoadingTipos] = useState(true);
+  const [userRole, setUserRole] = useState<number | null>(null);
 
   const form = useForm<ActividadFormValues>({
     resolver: zodResolver(ActividadSchema),
@@ -79,7 +162,8 @@ export default function ActividadForm({
       fechaInicio: new Date().toISOString().split('T')[0],
       fechaTermino: new Date().toISOString().split('T')[0],
       estado: 'inicio',
-      observacion: ''
+      observacion: '',
+      usuarioAsignadoId: ''
     }
   });
 
@@ -90,6 +174,24 @@ export default function ActividadForm({
     }
   }, [form, initialData]);
 
+  // Obtener rol del usuario
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const response = await fetch('/api/usuarios/me');
+        if (response.ok) {
+          const userData = await response.json();
+          setUserRole(userData.rolId);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
+
+  // Cargar tipos de actividad
   useEffect(() => {
     const fetchTiposActividad = async () => {
       try {
@@ -108,6 +210,9 @@ export default function ActividadForm({
 
     fetchTiposActividad();
   }, []);
+
+  // Verificar si puede delegar
+  const canDelegate = userRole === 1 || userRole === 4;
 
   return (
     <Form {...form}>
@@ -163,6 +268,17 @@ export default function ActividadForm({
                 </FormItem>
               )}
             />
+
+            {/* 🔥 CAMPO DE DELEGACIÓN - SOLUCIÓN SIMPLE SIN HIDRATACIÓN */}
+            {canDelegate && (
+              <FormField
+                control={form.control}
+                name="usuarioAsignadoId"
+                render={({ field }) => (
+                  <DynamicDelegationField field={field} userRole={userRole} />
+                )}
+              />
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField

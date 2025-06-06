@@ -17,7 +17,7 @@ que maneja la logica de carga de datos y errores
 */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
+console.log ("el cos es "+API_BASE_URL)
 async function getCausas(): Promise<Causa[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/causas`, {

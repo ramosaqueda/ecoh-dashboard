@@ -375,12 +375,18 @@ model Usuario {
   email         String    @unique
   nombre        String
   cargo         String?
-  rolId         Int       @default(3)  // 3 podría ser el ID para READ
+  rolId         Int       @default(3)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  actividades   Actividad[]  // Nueva relación
-  rol           Rol       @relation(fields: [rolId], references: [id])
+  
+  // 🔥 ELIMINAR ESTA LÍNEA (comentarla o borrarla):
+  // actividades   Actividad[]  // Nueva relación
  
+  // 🔥 MANTENER SOLO ESTAS:
+  actividadesCreadas   Actividad[] @relation("ActividadCreador")
+  actividadesAsignadas Actividad[] @relation("ActividadAsignado") 
+  
+  rol           Rol       @relation(fields: [rolId], references: [id])
 
   @@map("usuarios")
 }
@@ -433,22 +439,27 @@ model TipoActividad {
 
 model Actividad {
   id              Int            @id @default(autoincrement())
-  causa_id        Int            // Cambiado a snake_case
-  tipo_actividad_id Int         // Cambiado a snake_case
-  usuario_id      Int            // Cambiado a snake_case
+  causa_id        Int            
+  tipo_actividad_id Int         
+  usuario_id      Int            
+  usuario_asignado_id Int?       // 🔥 AGREGAR ESTA LÍNEA
   fechaInicio     DateTime
   fechaTermino    DateTime
   estado          EstadoActividad @default(inicio)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-  observacion     String?
-  causa          Causa          @relation(fields: [causa_id], references: [id])
-  tipoActividad  TipoActividad  @relation(fields: [tipo_actividad_id], references: [id])
-  usuario        Usuario        @relation(fields: [usuario_id], references: [id])
+  observacion     String? 
+ 
+  // Relaciones actualizadas
+  causa            Causa          @relation(fields: [causa_id], references: [id])
+  tipoActividad    TipoActividad  @relation(fields: [tipo_actividad_id], references: [id])
+  usuario          Usuario        @relation("ActividadCreador", fields: [usuario_id], references: [id])
+  usuarioAsignado  Usuario?       @relation("ActividadAsignado", fields: [usuario_asignado_id], references: [id])
 
   @@index([causa_id])
   @@index([tipo_actividad_id])
   @@index([usuario_id])
+  @@index([usuario_asignado_id])
 }
 
 

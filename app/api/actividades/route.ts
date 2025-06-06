@@ -1,3 +1,4 @@
+// app/api/actividades/route.ts - MANTIENE toda funcionalidad + delegación
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { EstadoActividad } from '@prisma/client';
@@ -15,8 +16,12 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
+    
+    // 🔥 NUEVO: Parámetro para incluir usuario asignado
+    const includeAssigned = searchParams.get('include_assigned') === 'true';
 
-    const includeConfig = {
+    // 🔥 ACTUALIZADO: Include config con usuario asignado opcional
+    const includeConfig: any = {
       causa: true,
       tipoActividad: true,
       usuario: {
@@ -27,6 +32,23 @@ export async function GET(req: NextRequest) {
         }
       },
     };
+
+    // 🔥 AGREGAR usuario asignado si se solicita
+    if (includeAssigned) {
+      includeConfig.usuarioAsignado = {
+        select: {
+          id: true,
+          nombre: true,
+          email: true,
+          rol: {
+            select: {
+              id: true,
+              nombre: true
+            }
+          }
+        }
+      };
+    }
 
     if (id) {
       const actividad = await prisma.actividad.findUnique({
@@ -101,10 +123,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-
     const { userId } = await auth();
 
-   
     if (!userId) {
       return NextResponse.json(
         { message: 'No autorizado' },
@@ -125,11 +145,31 @@ export async function POST(req: NextRequest) {
 
     const data = await req.json();
     
+    // 🔥 NUEVA LÓGICA: Manejo de delegación
+    let finalUsuarioAsignadoId = usuario.id; // Por defecto, auto-asignar
+
+    if (data.usuarioAsignadoId && data.usuarioAsignadoId.trim() !== '') {
+      // Verificar que el usuario delegado existe
+      const usuarioAsignado = await prisma.usuario.findUnique({
+        where: { id: parseInt(data.usuarioAsignadoId) }
+      });
+      
+      if (usuarioAsignado) {
+        finalUsuarioAsignadoId = parseInt(data.usuarioAsignadoId);
+        console.log(`🔄 Delegating activity to user: ${finalUsuarioAsignadoId}`);
+      } else {
+        console.warn(`⚠️ Assigned user ${data.usuarioAsignadoId} not found, self-assigning`);
+      }
+    }
+
+    console.log(`📝 Creating activity - Creator: ${usuario.id}, Assigned: ${finalUsuarioAsignadoId}`);
+    
     const actividad = await prisma.actividad.create({
       data: {
         causa_id: parseInt(data.causaId),
         tipo_actividad_id: parseInt(data.tipoActividadId),
-        usuario_id: usuario.id,
+        usuario_id: usuario.id, // Usuario creador
+        usuario_asignado_id: finalUsuarioAsignadoId, // 🔥 NUEVO: Usuario asignado
         fechaInicio: new Date(data.fechaInicio),
         fechaTermino: new Date(data.fechaTermino),
         estado: data.estado as EstadoActividad,
@@ -144,11 +184,27 @@ export async function POST(req: NextRequest) {
             nombre: true,
             email: true
           }
+        },
+        // 🔥 NUEVO: Incluir usuario asignado
+        usuarioAsignado: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rol: {
+              select: {
+                id: true,
+                nombre: true
+              }
+            }
+          }
         }
       },
     });
 
+    console.log(`✅ Activity created: ${actividad.id}`);
     return NextResponse.json(actividad, { status: 201 });
+
   } catch (error) {
     console.error('Error en POST /api/actividades:', error);
     return NextResponse.json(
@@ -174,15 +230,46 @@ export async function PUT(req: NextRequest) {
     }
 
     const data = await req.json();
+    
+    // 🔥 NUEVA LÓGICA: Preparar datos de actualización
+    const updateData: any = {
+      tipo_actividad_id: data.tipoActividadId ? parseInt(data.tipoActividadId) : undefined,
+      fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : undefined,
+      fechaTermino: data.fechaTermino ? new Date(data.fechaTermino) : undefined,
+      estado: data.estado as EstadoActividad,
+      observacion: data.observacion
+    };
+
+    // 🔥 NUEVO: Manejo de reasignación
+    if (data.usuarioAsignadoId !== undefined) {
+      if (data.usuarioAsignadoId && data.usuarioAsignadoId.trim() !== '') {
+        // Verificar que el usuario existe
+        const usuarioAsignado = await prisma.usuario.findUnique({
+          where: { id: parseInt(data.usuarioAsignadoId) }
+        });
+        
+        if (usuarioAsignado) {
+          updateData.usuario_asignado_id = parseInt(data.usuarioAsignadoId);
+          console.log(`🔄 Reassigning activity ${id} to user: ${data.usuarioAsignadoId}`);
+        }
+      } else {
+        // Si se envía vacío, obtener usuario actual y auto-asignar
+        const { userId } = await auth();
+        if (userId) {
+          const currentUser = await prisma.usuario.findUnique({
+            where: { clerk_id: userId }
+          });
+          if (currentUser) {
+            updateData.usuario_asignado_id = currentUser.id;
+            console.log(`🔄 Self-assigning activity ${id} to current user: ${currentUser.id}`);
+          }
+        }
+      }
+    }
+
     const actividad = await prisma.actividad.update({
       where: { id: Number(id) },
-      data: {
-        tipo_actividad_id: data.tipoActividadId ? parseInt(data.tipoActividadId) : undefined,
-        fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : undefined,
-        fechaTermino: data.fechaTermino ? new Date(data.fechaTermino) : undefined,
-        estado: data.estado as EstadoActividad,
-        observacion: data.observacion
-      },
+      data: updateData,
       include: {
         causa: true,
         tipoActividad: true,
@@ -192,11 +279,27 @@ export async function PUT(req: NextRequest) {
             nombre: true,
             email: true
           }
+        },
+        // 🔥 NUEVO: Incluir usuario asignado
+        usuarioAsignado: {
+          select: {
+            id: true,
+            nombre: true,
+            email: true,
+            rol: {
+              select: {
+                id: true,
+                nombre: true
+              }
+            }
+          }
         }
       },
     });
 
+    console.log(`✅ Activity updated: ${actividad.id}`);
     return NextResponse.json(actividad);
+
   } catch (error) {
     console.error('Error en PUT /api/actividades:', error);
     if (error instanceof Error && error.name === 'PrismaClientKnownRequestError' && (error as any).code === 'P2025') {

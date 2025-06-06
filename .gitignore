@@ -47,3 +47,6 @@ next-env.d.ts
 
 /scriptsPowershell
 /dockerScript
+/uploads
+
+docker-compose.yml

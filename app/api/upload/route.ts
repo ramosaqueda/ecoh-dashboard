@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       await writeFile(filePath, buffer);
 
       // Return the URL to the uploaded file
-      const fileUrl = `/uploads/${fileName}`;
+      const fileUrl = `api/uploads/${fileName}`;
       return NextResponse.json({ url: fileUrl });
     } catch (error) {
       console.error('Error writing file:', error);

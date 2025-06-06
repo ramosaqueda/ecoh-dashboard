@@ -19,12 +19,12 @@ export function useSelectData<T extends SelectData>({
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const fetchData = async () => {
     setIsLoading(true);
     setError(null);
-    try {
-      const response = await fetch(`http://localhost:3000/api/${endpoint}`);
+    try {      
+      const response = await fetch(`${API_BASE_URL}/api/${endpoint}`);
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }

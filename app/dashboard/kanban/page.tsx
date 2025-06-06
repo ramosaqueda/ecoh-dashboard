@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Loader2, Mail } from 'lucide-react';
+import { Loader2, Mail, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import PageContainer from '@/components/layout/page-container';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -26,8 +26,19 @@ interface Actividad {
   fechaInicio: string;
   fechaTermino: string;
   estado: 'inicio' | 'en_proceso' | 'terminado';
+  observacion?: string;  // 🔥 AGREGADO: Campo observaciones
   usuario?: {
+    id: number;
     email?: string;
+    nombre?: string;
+  };
+  usuarioAsignado?: {
+    id: number;
+    email?: string;
+    nombre?: string;
+    rol?: {
+      nombre: string;
+    };
   };
 }
 
@@ -60,6 +71,7 @@ export default function ActividadesKanban() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showOnlyUserActivities, setShowOnlyUserActivities] = useState<boolean>(false);
   const [selectedCausaId, setSelectedCausaId] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // 🔥 NUEVO: Usuario actual
 
   // ✅ Esta función mapea posibles variaciones de estado a los valores válidos
   const mapearEstado = (estado: string): 'inicio' | 'en_proceso' | 'terminado' => {
@@ -99,46 +111,92 @@ export default function ActividadesKanban() {
         fechaInicio: act.fechaInicio || act.fecha_inicio || new Date().toISOString(),
         fechaTermino: act.fechaTermino || act.fecha_termino || new Date().toISOString(),
         estado: mapearEstado(act.estado || 'inicio'),
+        observacion: act.observacion || undefined, // 🔥 AGREGADO: Mapear observaciones
         usuario: {
-          email: act.usuario?.email || act.assignedTo || undefined
-        }
+          id: act.usuario?.id || 0,
+          email: act.usuario?.email || undefined,
+          nombre: act.usuario?.nombre || undefined
+        },
+        // 🔥 NUEVO: Mapear usuario asignado
+        usuarioAsignado: act.usuarioAsignado ? {
+          id: act.usuarioAsignado.id || 0,
+          email: act.usuarioAsignado.email || undefined,
+          nombre: act.usuarioAsignado.nombre || undefined,
+          rol: act.usuarioAsignado.rol ? {
+            nombre: act.usuarioAsignado.rol.nombre || 'Sin rol'
+          } : undefined
+        } : undefined
       };
       
       return actividad;
     });
   };
 
-  const fetchActividades = async (onlyUser: boolean = false): Promise<void> => {
+  // 🔥 NUEVO: Obtener información del usuario actual
+  const fetchCurrentUser = async (): Promise<void> => {
+    try {
+      const response = await fetch('/api/usuarios/me');
+      if (response.ok) {
+        const userData = await response.json();
+        setCurrentUserId(userData.id);
+        console.log('🔍 Current user ID:', userData.id);
+      }
+    } catch (error) {
+      console.error('Error obteniendo usuario actual:', error);
+    }
+  };
+
+  // 🔥 ACTUALIZADO: Función para filtrar actividades por usuario asignado
+  const filterByUser = (actividadesList: Actividad[], onlyMyActivities: boolean): Actividad[] => {
+    if (!onlyMyActivities || !currentUserId) {
+      return actividadesList;
+    }
+
+    const myActivities = actividadesList.filter((actividad: Actividad) => {
+      // 🔥 NUEVO: Filtrar por usuario ASIGNADO, no por creador
+      const assignedUserId = actividad.usuarioAsignado?.id;
+      const isAssignedToMe = assignedUserId === currentUserId;
+      
+      console.log(`Activity ${actividad.id}: assigned to ${assignedUserId}, current user: ${currentUserId}, matches: ${isAssignedToMe}`);
+      
+      return isAssignedToMe;
+    });
+
+    console.log(`📋 Filtered activities: ${myActivities.length}/${actividadesList.length} assigned to current user`);
+    return myActivities;
+  };
+
+  const fetchActividades = async (): Promise<void> => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
-      params.append('limit', '1000'); // Solicitamos todas las actividades
+      params.append('limit', '1000');
+      params.append('include_assigned', 'true'); // 🔥 NUEVO: Incluir usuario asignado
       
-      const url = onlyUser 
-        ? `/api/actividades/usuario?${params.toString()}` 
-        : `/api/actividades?${params.toString()}`;
+      const url = `/api/actividades?${params.toString()}`;
       
-      console.log('Fetching from URL:', url);
+      console.log('🔍 Fetching from URL:', url);
       
       const response = await fetch(url);
       if (!response.ok) throw new Error('Error al cargar actividades');
       
       const jsonResponse = await response.json();
-      console.log('API Response:', jsonResponse);
+      console.log('📥 API Response:', jsonResponse);
       
-      // Verificar la estructura de la respuesta
       const data = jsonResponse.data || [];
-      
-      // Transformar y validar los datos
       const actividadesTransformadas = transformarActividades(data);
-      console.log('Actividades transformadas:', actividadesTransformadas);
+      
+      console.log('✅ Actividades transformadas:', actividadesTransformadas.length);
       
       setActividades(actividadesTransformadas);
-      filterActividades(actividadesTransformadas, selectedCausaId);
+      
+      // 🔥 ACTUALIZADO: Aplicar filtros de usuario y causa
+      const filteredByUser = filterByUser(actividadesTransformadas, showOnlyUserActivities);
+      filterActividades(filteredByUser, selectedCausaId);
+      
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error:', error);
       toast.error('Error al cargar las actividades');
-      // En caso de error, establecemos arrays vacíos
       setActividades([]);
       setFilteredActividades([]);
     } finally {
@@ -147,10 +205,9 @@ export default function ActividadesKanban() {
   };
 
   const filterActividades = (actividadesList: Actividad[], causaId: string): void => {
-    // Aseguramos que actividadesList sea un array
     const arrayToFilter = Array.isArray(actividadesList) ? actividadesList : [];
-    console.log('Filtering actividades. Total count:', arrayToFilter.length);
-    console.log('Selected Causa ID:', causaId);
+    console.log('🔍 Filtering actividades. Total count:', arrayToFilter.length);
+    console.log('🔍 Selected Causa ID:', causaId);
     
     if (!causaId) {
       setFilteredActividades(arrayToFilter);
@@ -161,58 +218,79 @@ export default function ActividadesKanban() {
       (actividad: Actividad) => actividad.causa && actividad.causa.id && 
       actividad.causa.id.toString() === causaId
     );
-    console.log('Filtered actividades count:', filtered.length);
+    console.log('✅ Filtered actividades count:', filtered.length);
     setFilteredActividades(filtered);
   };
 
+  // 🔥 NUEVO: Effect para cargar usuario actual al inicio
   useEffect(() => {
-    console.log('Effect triggered - showOnlyUserActivities:', showOnlyUserActivities);
-    fetchActividades(showOnlyUserActivities);
-  }, [showOnlyUserActivities]);
+    fetchCurrentUser();
+  }, []);
+
+  // 🔥 ACTUALIZADO: Effect que se ejecuta cuando cambia el filtro de usuario o se carga el usuario actual
+  useEffect(() => {
+    if (currentUserId !== null) {
+      console.log('🔄 Effect triggered - showOnlyUserActivities:', showOnlyUserActivities);
+      fetchActividades();
+    }
+  }, [showOnlyUserActivities, currentUserId]);
 
   useEffect(() => {
-    console.log('Effect triggered - selectedCausaId:', selectedCausaId);
-    filterActividades(actividades, selectedCausaId);
+    console.log('🔄 Effect triggered - selectedCausaId:', selectedCausaId);
+    // 🔥 ACTUALIZADO: Aplicar filtro de usuario antes del filtro de causa
+    const filteredByUser = filterByUser(actividades, showOnlyUserActivities);
+    filterActividades(filteredByUser, selectedCausaId);
   }, [selectedCausaId]);
 
   const actividadesPorEstado = (estado: string): Actividad[] => {
-    // Aseguramos que filteredActividades sea un array
     if (!Array.isArray(filteredActividades)) {
       console.error('filteredActividades no es un array:', filteredActividades);
       return [];
     }
     
-    // ✅ CORREGIDO: Verificar valores de estado en las actividades
-    console.log('Estados en las actividades:', 
+    console.log('🔍 Estados en las actividades:', 
       Array.from(new Set(filteredActividades.map((a: Actividad) => a.estado)))
     );
 
-    // ✅ CORREGIDO: Mostrar una muestra de las actividades para inspección
     if (filteredActividades.length > 0) {
-      console.log('Muestra de actividad:', JSON.stringify(filteredActividades[0], null, 2));
+      console.log('📋 Muestra de actividad:', JSON.stringify(filteredActividades[0], null, 2));
     }
     
-    // ✅ CORREGIDO: Filtrado más tolerante
     const actividades = filteredActividades.filter((actividad: Actividad) => {
-      // Si hay un problema con la propiedad estado, lo registramos
       if (!actividad.estado) {
-        console.warn('Actividad sin estado:', actividad);
+        console.warn('⚠️ Actividad sin estado:', actividad);
         return false;
       }
       
-      // ✅ CORREGIDO: Convertimos ambos a string correctamente
       const actividadEstado = actividad.estado.toLowerCase();
       const estadoComparar = estado.toLowerCase();
       
-      // Verificamos si coinciden exactamente o si contienen el texto
       const coincide = actividadEstado === estadoComparar || 
                       actividadEstado.includes(estadoComparar);
       
       return coincide;
     });
     
-    console.log(`Actividades en estado ${estado}:`, actividades.length);
+    console.log(`📊 Actividades en estado ${estado}:`, actividades.length);
     return actividades;
+  };
+
+  // 🔥 NUEVO: Función para obtener información del responsable de la actividad
+  const getResponsableInfo = (actividad: Actividad) => {
+    // Priorizar usuario asignado, si no existe, mostrar usuario creador
+    const responsable = actividad.usuarioAsignado || actividad.usuario;
+    
+    if (!responsable) return null;
+    
+    const nombre = responsable.nombre || responsable.email || 'Usuario desconocido';
+    const esDelgado = !!actividad.usuarioAsignado;
+    
+    return {
+      nombre,
+      email: responsable.email,
+      esDelgado,
+      rol: actividad.usuarioAsignado?.rol?.nombre
+    };
   };
 
   const handleDragEnd = async (result: any): Promise<void> => {
@@ -241,15 +319,19 @@ export default function ActividadesKanban() {
             ? { ...actividad, estado: newEstado }
             : actividad
         );
-        filterActividades(updatedActividades, selectedCausaId);
+        
+        // 🔥 ACTUALIZADO: Aplicar filtros después de actualizar
+        const filteredByUser = filterByUser(updatedActividades, showOnlyUserActividades);
+        filterActividades(filteredByUser, selectedCausaId);
+        
         return updatedActividades;
       });
 
       toast.success('Estado actualizado correctamente');
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error:', error);
       toast.error('Error al actualizar el estado');
-      fetchActividades(showOnlyUserActivities);
+      fetchActividades();
     }
   };
 
@@ -263,14 +345,14 @@ export default function ActividadesKanban() {
             <h1 className="text-2xl font-bold">Tablero de Actividades</h1>
             <div className="flex items-center gap-2">
               <label htmlFor="user-activities" className="text-sm text-muted-foreground">
-                Ver solo mis actividades
+                Ver solo mis actividades asignadas
               </label>
               <Switch
                 id="user-activities"
                 checked={showOnlyUserActivities}
                 onCheckedChange={(value: boolean) => {
-                  console.log('Switch changed to:', value);
-                  setShowOnlyUserActivities(value);
+                  console.log('🔄 Switch changed to:', value);
+                  setShowOnlyUserActividades(value);
                 }}
               />
             </div>
@@ -313,78 +395,111 @@ export default function ActividadesKanban() {
                         } p-2 ${snapshot.isDraggingOver ? 'bg-muted/50' : ''}`}
                       >
                         {actividadesPorEstado(estado.id).map(
-                          (actividad: Actividad, index: number) => (
-                            <Draggable
-                              key={actividad.id}
-                              draggableId={actividad.id.toString()}
-                              index={index}
-                            >
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className="mb-2"
-                                >
-                                  <Card
-                                    className={`transition-shadow hover:shadow-md ${
-                                      snapshot.isDragging ? 'shadow-lg' : ''
-                                    }`}
+                          (actividad: Actividad, index: number) => {
+                            const responsableInfo = getResponsableInfo(actividad);
+                            
+                            return (
+                              <Draggable
+                                key={actividad.id}
+                                draggableId={actividad.id.toString()}
+                                index={index}
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className="mb-2"
                                   >
-                                    <CardContent className="space-y-2 p-4">
-                                       
-                                      <div className="font-medium">
-                                        {actividad.tipoActividad.nombre}
-                                      </div>
-                                      <div className="text-sm text-muted-foreground">
-                                        RUC: {actividad.causa.ruc}
-                                      </div>
-                                      <div className="line-clamp-2 text-sm text-muted-foreground">
-                                        {actividad.causa.denominacionCausa}
-                                      </div>
-                                      <div className="border-t pt-2 text-xs text-muted-foreground">
-                                        <div>
-                                          Inicio:{' '}
-                                          {format(
-                                            new Date(actividad.fechaInicio),
-                                            'dd/MM/yyyy',
-                                            { locale: es }
-                                          )}
+                                    <Card
+                                      className={`transition-shadow hover:shadow-md ${
+                                        snapshot.isDragging ? 'shadow-lg' : ''
+                                      }`}
+                                    >
+                                      <CardContent className="space-y-2 p-4">
+                                        <div className="font-medium">
+                                          {actividad.tipoActividad.nombre}
                                         </div>
-                                        <div>
-                                          Término:{' '}
-                                          {format(
-                                            new Date(actividad.fechaTermino),
-                                            'dd/MM/yyyy',
-                                            { locale: es }
-                                          )}
+                                        <div className="text-sm text-muted-foreground">
+                                          RUC: {actividad.causa.ruc}
                                         </div>
-                                      </div>
-                                    </CardContent>
-                                    
-                                    {/* Sección para mostrar el correo encargado */}
-                                    {actividad.usuario?.email && (
-                                      <CardFooter className="border-t border-secondary px-3 py-2">
-                                        <TooltipProvider>
-                                          <Tooltip>
-                                            <TooltipTrigger className="flex items-center gap-1">
-                                              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                                              <span className="truncate max-w-[180px] text-sm text-muted-foreground">
-                                                {actividad.usuario.email}
-                                              </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                              <p>{actividad.usuario.email}</p>
-                                            </TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      </CardFooter>
-                                    )}
-                                  </Card>
-                                </div>
-                              )}
-                            </Draggable>
-                          )
+                                        <div className="line-clamp-2 text-sm text-muted-foreground">
+                                          {actividad.causa.denominacionCausa}
+                                        </div>
+                                        
+                                        {/* 🔥 NUEVO: Campo observaciones */}
+                                        {actividad.observacion && (
+                                          <div className="line-clamp-2 text-xs text-gray-600 bg-gray-50 rounded-sm p-2 border-l-2 border-gray-300">
+                                            <span className="font-medium text-gray-700">Observación: </span>
+                                            {actividad.observacion}
+                                          </div>
+                                        )}
+                                        
+                                        <div className="border-t pt-2 text-xs text-muted-foreground">
+                                          <div>
+                                            Inicio:{' '}
+                                            {format(
+                                              new Date(actividad.fechaInicio),
+                                              'dd/MM/yyyy',
+                                              { locale: es }
+                                            )}
+                                          </div>
+                                          <div>
+                                            Término:{' '}
+                                            {format(
+                                              new Date(actividad.fechaTermino),
+                                              'dd/MM/yyyy',
+                                              { locale: es }
+                                            )}
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                      
+                                      {/* 🔥 ACTUALIZADO: Mostrar responsable (usuario asignado o creador) */}
+                                      {responsableInfo && (
+                                        <CardFooter className="border-t border-secondary px-3 py-2">
+                                          <TooltipProvider>
+                                            <Tooltip>
+                                              <TooltipTrigger className="flex items-center gap-1 w-full">
+                                                {responsableInfo.esDelgado ? (
+                                                  <UserCheck className="h-3.5 w-3.5 text-blue-600" />
+                                                ) : (
+                                                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                                                )}
+                                                <div className="flex flex-col items-start flex-1 min-w-0">
+                                                  <span className="truncate max-w-[160px] text-sm font-medium">
+                                                    {responsableInfo.nombre}
+                                                  </span>
+                                                  {responsableInfo.esDelgado && responsableInfo.rol && (
+                                                    <span className="text-xs text-blue-600">
+                                                      {responsableInfo.rol}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                <div className="text-center">
+                                                  <p className="font-medium">
+                                                    {responsableInfo.esDelgado ? 'Actividad delegada a:' : 'Creado por:'}
+                                                  </p>
+                                                  <p>{responsableInfo.email}</p>
+                                                  {responsableInfo.rol && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                      Rol: {responsableInfo.rol}
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        </CardFooter>
+                                      )}
+                                    </Card>
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          }
                         )}
                         {provided.placeholder}
                         {actividadesPorEstado(estado.id).length === 0 && (
